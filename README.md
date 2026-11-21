@@ -15,6 +15,8 @@ Trabajo de Integración "del Discovery al primer Change, con Spec-Driven Develop
 | Sanjua | (se asigna en la reunión) |
 | (sexto integrante) | (se asigna en la reunión) |
 
+Cada integrante trabaja en su propia rama `dev-<alias>`, que crea él mismo (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
+
 ## Estado
 
 - [x] Etapa 0: entorno y repositorio (`evidencias/etapa-0/`)
