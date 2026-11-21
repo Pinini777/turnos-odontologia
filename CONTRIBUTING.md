@@ -8,7 +8,7 @@
    git config --global user.name "Tu Nombre"
    git config --global user.email "mail-de-tu-cuenta-github"
    ```
-3. Cloná el repo **sin renombrar la carpeta**: Engram usa el nombre `turnos-odontologia` para encontrar la memoria del proyecto.
+3. Cloná el repo (Engram reconoce el proyecto `turnos-odontologia` por el remoto de GitHub):
    ```powershell
    git clone https://github.com/Pinini777/turnos-odontologia.git
    ```
