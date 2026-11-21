@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "step": "kb",
+  "step": "roadmap",
   "owner": "active-orchestrator",
   "foundation": {
     "version": 1,
@@ -32,21 +32,31 @@
       },
       "kb": {
         "variant": "import",
-        "status": "pending",
+        "status": "done",
         "requires": [
           "discovery"
         ],
         "outputs": [
           "knowledge-base/"
-        ]
+        ],
+        "completed_at": "2026-11-21"
       },
       "visual-design": {
-        "variant": "off",
-        "status": "pending",
+        "variant": "system-and-mockups",
+        "status": "deferred",
         "requires": [],
         "outputs": [
-          "design-system/README.md"
-        ]
+          "design-system/README.md",
+          "design-system/brand.md",
+          "design-system/brand.js",
+          "design-system/tokens.css",
+          "design-system/components.html",
+          "design-system/assets/logo.svg",
+          "design-system/previews/"
+        ],
+        "changed_at": "2026-11-21",
+        "changed_by": "EP (antes: off)",
+        "deferred_reason": "EP: dejar el design system para después y enfocarse en la etapa 3 (2026-11-21). Revisión 1 creada, aprobación pendiente."
       },
       "roadmap": {
         "variant": "local-markdown",
@@ -277,5 +287,37 @@
       "box": "Puesto de atención reservado junto con el profesional; los proveedores lo llaman sillón o unidad dental"
     },
     "report_pdf": "docs/discovery/informe-discovery.pdf"
+  },
+  "kb": {
+    "created_by": "kb-creator",
+    "source": "ingest",
+    "discovery": {
+      "problem": "Consultorios odontológicos de 1 a 3 profesionales con recepcionista no tienen garantía de que un profesional o un box no queden con turnos superpuestos; ningún competidor documenta cómo lo previene.",
+      "system_type": "web_app",
+      "domain": "salud / odontología — gestión de turnos y agenda",
+      "scale": "team",
+      "stack": "Node.js 22 + TypeScript + Fastify + Zod + Vitest (API); React + Vite + TypeScript (web)",
+      "needs_infra": true
+    },
+    "files": [
+      "knowledge-base/01_vision_y_objetivos.md",
+      "knowledge-base/02_descripcion_general.md",
+      "knowledge-base/03_actores_y_roles.md",
+      "knowledge-base/04_modelo_de_datos.md",
+      "knowledge-base/05_reglas_de_negocio.md",
+      "knowledge-base/06_funcionalidades.md",
+      "knowledge-base/07_flujos_principales.md",
+      "knowledge-base/08_arquitectura_propuesta.md",
+      "knowledge-base/09_decisiones_y_supuestos.md",
+      "knowledge-base/10_preguntas_abiertas.md",
+      "knowledge-base/README.md"
+    ]
+  },
+  "visual_design": {
+    "created_by": "design-system",
+    "mode": "system-and-mockups",
+    "status": "pending",
+    "revision": 1,
+    "path": "design-system/README.md"
   }
 }
