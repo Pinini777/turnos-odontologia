@@ -6,7 +6,7 @@
 
 ## 1. Problema que resuelve
 
-Los consultorios odontológicos chicos (1 a 3 profesionales, con recepcionista) gestionan los turnos a mano o con herramientas que no garantizan que un profesional o un sillón no queden con dos turnos superpuestos. Ninguno de los 16 sistemas relevados documenta públicamente cómo previene esos solapamientos, que son la regla central de una agenda odontológica.
+Los consultorios odontológicos chicos (1 a 3 profesionales, con recepcionista) gestionan los turnos a mano o con herramientas que no garantizan que un profesional o un box no queden con dos turnos superpuestos. Ninguno de los 16 sistemas relevados documenta públicamente cómo previene esos solapamientos, que son la regla central de una agenda odontológica.
 
 ## 2. Usuarios / roles
 
@@ -30,18 +30,18 @@ Detalle completo en `informe-discovery.md` (tablas A.1 y A.2, matriz B). Resumen
 | Competidor | Problema que resuelve | Pricing | Diferenciadores |
 |---|---|---|---|
 | Bilog (AR) | Gestión integral de consultorio y clínica | Freemium gratis; Lite y Premium a cotizar | Más de 20 años en el sector argentino, liquidaciones a obras sociales, app |
-| AgendaPro (LATAM) | Llenar la agenda con reserva online y cobros | ARS 9.900 a 129.900 por mes | Agenda por sillón, Google Reserve, marketplace, IA por WhatsApp |
-| OdontoClinIA (AR) | Digitalizar la consulta odontológica | No publicado | Agenda por sillón, odontograma versionado, receta ReNaPDiS |
+| AgendaPro (LATAM) | Llenar la agenda con reserva online y cobros | ARS 9.900 a 129.900 por mes | Agenda por box, Google Reserve, marketplace, IA por WhatsApp |
+| OdontoClinIA (AR) | Digitalizar la consulta odontológica | No publicado | Agenda por box, odontograma versionado, receta ReNaPDiS |
 | DentalTec (AR) | Débitos y facturación a obras sociales | No publicado | Validación online con más de 15 obras sociales, ARCA, roles y auditoría |
 | Dentalink (CL) | Gestión de clínica dental con IA | A cotizar | Módulo argentino documentado, IA en todo el recorrido del paciente |
 
-**Notas**: casi toda la evidencia es afirmación comercial del proveedor. Ninguno documenta la prevención de solapamientos, y solo AgendaPro y OdontoClinIA mencionan la agenda por sillón.
+**Notas**: casi toda la evidencia es afirmación comercial del proveedor. Ninguno documenta la regla de prevención de solapamientos. Solo 3 tratan el box como recurso: AgendaPro y OdontoClinIA lo declaran, y Dentalink lo documenta junto con un "sobreagendamiento" explícito.
 
 ## 5. Funcionalidades necesarias (MVP)
 
-- Alta y gestión de profesionales, sillones o boxes y prestaciones con duración y precio.
-- Agenda diaria y semanal por profesional y por sillón.
-- Crear turno evitando solapamientos por profesional y por sillón.
+- Alta y gestión de profesionales, boxes y prestaciones con duración y precio.
+- Agenda diaria y semanal por profesional y por box.
+- Crear turno evitando solapamientos por profesional y por box.
 - Cancelar y reprogramar turno liberando el horario.
 - Estados del turno (reservado, confirmado, atendido, ausente, cancelado) y bloqueos de agenda.
 - Reserva online del paciente.
@@ -62,8 +62,8 @@ Detalle completo en `informe-discovery.md` (tablas A.1 y A.2, matriz B). Resumen
 
 ## 7. Reglas de negocio
 
-- Todo turno ocupa **un profesional y un sillón** a la vez.
-- **No se permiten solapamientos**: un profesional no puede tener dos turnos superpuestos, y un sillón tampoco.
+- Todo turno ocupa **un profesional y un box** a la vez.
+- **No se permiten solapamientos**: un profesional no puede tener dos turnos superpuestos, y un box tampoco.
 - Los intervalos se tratan como **[inicio, fin)**: un turno que empieza justo cuando termina otro **no** se solapa.
 - **No existen sobreturnos.**
 - La agenda usa **bloques de 15 minutos**: los turnos empiezan en múltiplos de 15 y las prestaciones duran 15, 30, 45 o 60 minutos (múltiplos de 15).
@@ -98,9 +98,9 @@ Detalle completo en `informe-discovery.md` (tablas A.1 y A.2, matriz B). Resumen
 ## 11. Preguntas abiertas
 
 - ¿El paciente necesita cuenta con login para reservar, o alcanza con nombre, documento y email por turno?
-- ¿Quién define y cómo los horarios de atención de cada profesional y la disponibilidad de cada sillón?
+- ¿Quién define y cómo los horarios de atención de cada profesional y la disponibilidad de cada box?
 - ¿El precio de una prestación puede variar por profesional?
 - ¿Qué pasa con las ganancias si un turno atendido se cancela o corrige después?
 - ¿Qué nivel de detalle tiene el odontograma del MVP (piezas y estados, o también caras)?
 - ¿Cómo se cumple con las Leyes 25.326 y 26.529 (consentimiento, acceso, conservación de la historia clínica)? Ningún competidor lo declara (No evidenciado).
-- Puntos que el informe dejó como **No evidenciado** y que habría que validar con demos: exportación de datos, sobreturnos, sillones como recurso, precios ocultos (7 de 16 sistemas).
+- Puntos que el informe dejó como **No evidenciado** y que habría que validar con demos: exportación de datos, regla de prevención de solapamientos, sobreturnos y box como recurso (solo Dentalink documenta ambos), precios ocultos (7 de 16 sistemas).

@@ -13,7 +13,8 @@ Consultorios, clínicas dentales y servicios hospitalarios de Argentina (ClinIA 
 
 ## Features detectadas
 
-- Agenda por profesional, especialidad o sillón.
+- Agenda por profesional, especialidad o box (en su sitio: "sillón").
+- Verificación de cobertura del paciente con la API de PUCO; prácticas del odontograma que pasan a facturación a obras sociales y prepagas con factura electrónica ARCA; caja para cobros particulares (sección "Facturación y obras sociales"; agregado tras la verificación de fuentes).
 - Asistente de IA por WhatsApp que toma el pedido, lo valida contra la agenda real y confirma; recuerda, cancela y reprograma por el mismo canal; deriva a una persona.
 - Recordatorios automáticos por WhatsApp y correo; turnero web y app para pacientes.
 - Odontograma FDI de 52 piezas (permanente, mixta, temporaria), por cara, versionado y bloqueado al finalizar, con comparación entre versiones y control para que dos profesionales no se pisen.
@@ -36,4 +37,4 @@ IA conversacional para turnos por WhatsApp, odontograma versionado y recetario i
 
 ## Notas del investigador
 
-La página tiene un odontograma interactivo de demostración, lo que permite comprobar esa función en parte. RENAPER, PUCO y facturación electrónica aparecen en un párrafo genérico sobre lo que "puede agregar" un software; no está claro que sean integraciones propias. La página aclara que el recetario registrado "no implica aprobación general de todo el software".
+La página tiene un odontograma interactivo de demostración, lo que permite comprobar esa función en parte. RENAPER aparece solo en un párrafo genérico sobre lo que "puede agregar" un software. PUCO y ARCA, en cambio, sí se declaran como funciones propias en la sección de facturación (corregido tras la verificación). La página aclara que el recetario registrado "no implica aprobación general de todo el software".

@@ -13,17 +13,17 @@ Desde profesionales independientes hasta equipos y cadenas multisede; multirrubr
 
 ## Features detectadas
 
-- Agenda por odontólogo, práctica y sillón, con duración por práctica.
+- Agenda por odontólogo, práctica y box (en su sitio: "sillón"), con duración por práctica.
 - Turnos online 24/7, sitio de reservas, reserva desde Google (Reserve/Maps), marketplace propio.
 - Recordatorios automáticos por WhatsApp; seña o pago total con Mercado Pago al reservar.
 - Recepcionista IA en WhatsApp, Instagram y Messenger; detección de "oportunidades de nueva visita"; campañas segmentadas.
 - Ficha con anamnesis, odontograma, evoluciones, radiografías, consentimiento y firma electrónica, presupuestos (planes Premium y superiores).
-- Reportes de ocupación por médico y sillón, ingresos, honorarios, control multisede; caja e inventario.
+- Reportes de ocupación por médico y box, ingresos, honorarios, control multisede; caja e inventario.
 - App móvil iOS/Android; sincronización con Google Calendar.
 
 ## Pricing
 
-Argentina, IVA incluido: Individual ARS 9.900/mes; Básico ARS 19.900 (2 profesionales); Premium ARS 39.900 (2 profesionales, incluye ficha clínica); Pro IA ARS 129.900 (5 profesionales). Recepcionista IA desde +ARS 30.000. Plan a medida para cadenas o API.
+Argentina, IVA incluido: Individual ARS 9.900/mes; Básico ARS 19.900 (2 profesionales); Premium ARS 39.900 (2 profesionales, incluye ficha clínica; en Individual, ficha clínica como adicional "+$10.000"); Pro IA ARS 129.900 (5 profesionales). Recepcionista IA desde +ARS 30.000. Plan a medida para cadenas o API.
 
 ## Posicionamiento
 

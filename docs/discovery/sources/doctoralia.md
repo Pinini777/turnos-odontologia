@@ -32,4 +32,4 @@ Directorio/marketplace de pacientes con opiniones (efecto red), del grupo DocPla
 
 ## Notas del investigador
 
-Es una herramienta generalista: no se ven odontograma, obras sociales, sillones, WhatsApp ni facturación ARCA. La razón social que figura en el pie es Doctoralia Internet SL (España). Un blog de un competidor menciona comisiones sobre pagos online, pero no se pudo verificar en la fuente oficial.
+Es una herramienta generalista: no se ven odontograma, obras sociales, boxes, WhatsApp ni facturación ARCA. La razón social que figura en el pie es Doctoralia Internet SL (España). Un blog de un competidor menciona comisiones sobre pagos online, pero no se pudo verificar en la fuente oficial.

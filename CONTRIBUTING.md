@@ -58,7 +58,7 @@ Abrí el PR de `dev-<alias>` hacia `main` y completá la plantilla.
 
 `tipo(alcance): descripción` — tipos: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`.
 
-Ejemplos: `docs(discovery): verificar fuentes 1 a 5`, `feat(C-04): validar solapamiento por sillón`, `test(C-04): escenario de borde 10:30`.
+Ejemplos: `docs(discovery): verificar fuentes 1 a 5`, `feat(C-04): validar solapamiento por box`, `test(C-04): escenario de borde 10:30`.
 
 ## Prohibido
 

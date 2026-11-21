@@ -187,7 +187,7 @@
         "notes_file": "docs/discovery/sources/dentally.md"
       }
     ],
-    "problema": "Consultorios odontológicos de 1 a 3 profesionales con recepcionista no tienen garantía de que un profesional o un sillón no queden con turnos superpuestos; ningún competidor documenta cómo lo previene.",
+    "problema": "Consultorios odontológicos de 1 a 3 profesionales con recepcionista no tienen garantía de que un profesional o un box no queden con turnos superpuestos; ningún competidor documenta cómo lo previene.",
     "usuarios": [
       "Profesional: agenda, prestaciones y precios, HC y odontograma; único que ve ganancias",
       "Recepcionista: ve pacientes y turnos; agenda, modifica y cancela turnos",
@@ -202,8 +202,8 @@
       "Profesional registra HC y odontograma"
     ],
     "funcionalidades_necesarias": [
-      "Profesionales, sillones y prestaciones con duración y precio",
-      "Agenda por profesional y sillón",
+      "Profesionales, boxes y prestaciones con duración y precio",
+      "Agenda por profesional y box",
       "Crear turno sin solapamientos",
       "Cancelar y reprogramar",
       "Estados de turno y bloqueos",
@@ -224,8 +224,8 @@
       "App móvil, multisucursal, API, IA"
     ],
     "reglas_de_negocio": [
-      "Todo turno ocupa un profesional y un sillón",
-      "Sin solapamientos por profesional ni por sillón",
+      "Todo turno ocupa un profesional y un box",
+      "Sin solapamientos por profesional ni por box",
       "Intervalos [inicio, fin): borde contiguo no solapa",
       "Sin sobreturnos",
       "Bloques de 15 min; duraciones múltiplo de 15",
@@ -255,17 +255,26 @@
     ],
     "preguntas_abiertas": [
       "Login del paciente o datos por turno",
-      "Definición de horarios de profesionales y disponibilidad de sillones",
+      "Definición de horarios de profesionales y disponibilidad de boxes",
       "Precio por profesional",
       "Ganancias ante correcciones de turnos atendidos",
       "Nivel de detalle del odontograma",
       "Cumplimiento Leyes 25.326 y 26.529",
-      "No evidenciados: exportación, sobreturnos, sillones, precios ocultos"
+      "No evidenciados: exportación, regla anti-solapamiento, precios ocultos; sobreturnos y box como recurso solo documentados por Dentalink"
     ],
     "pending": [
-      "Verificación humana de fuentes (sección del informe)",
-      "PDF del informe",
-      "Nombres de integrantes en la portada"
-    ]
+      "Verificación personal de las fuentes 6 (Capterra) y 7 (video oficial de Dentalink)",
+      "Regenerar docs/discovery/informe-discovery.pdf desde el .md corregido (verificación, box, B y C.3)"
+    ],
+    "verified_by_team": [
+      "DentalTec (Facundo Blanes)",
+      "AgendaPro (Facundo Blanes)",
+      "Dentalink ayuda (Lautaro Chanampa)",
+      "ClinIA (Facundo Blanes)",
+      "Odonto.ar (Lucas Moreira)"
+    ],
+    "terminology": {
+      "box": "Puesto de atención reservado junto con el profesional; los proveedores lo llaman sillón o unidad dental"
+    }
   }
 }

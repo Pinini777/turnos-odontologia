@@ -24,7 +24,7 @@ Consultorios odontológicos (declara cuentas de 22 países). Hecho en Argentina.
 
 - Gratis: sin tarjeta ni vencimiento; 2 consultas de IA.
 - Odonthia IA: ARS 78.700/mes (US$ 47 fuera de Argentina).
-- Odonthia Max: ARS 162.500/mes (US$ 97); "para clínicas con varios sillones".
+- Odonthia Max: ARS 162.500/mes (US$ 97); para clínicas con varios boxes (en su sitio: "para clínicas con varios sillones").
 
 ## Posicionamiento
 

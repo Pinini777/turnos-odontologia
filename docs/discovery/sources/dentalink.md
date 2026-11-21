@@ -18,7 +18,8 @@ Clínicas dentales de todos los tamaños, desde consultorios con un solo profesi
 - Pagos presenciales y online, control de caja, tareas de morosidad, ingresos y gastos, liquidaciones a profesionales.
 - Tareas automáticas de control, encuestas NPS, email marketing.
 - Planes: Esencial (agenda, HC, odontograma, presupuestos, pagos), Pro (gastos, inventario, comisiones, multicentro, informes), Titanium (campañas, ortodoncia). API como adicional.
-- Módulo para Argentina (centro de ayuda): creación de obras sociales, cobro con obra social, conciliaciones con obras sociales, receta electrónica argentina.
+- Módulo para Argentina (centro de ayuda): creación de obras sociales, cobro con obra social, conciliaciones con obras sociales, receta electrónica argentina. Solo se vieron los títulos de los artículos.
+- Agendar una cita (centro de ayuda, artículo "¡Agenda la primera cita!", https://ayuda.softwaredentalink.com/es/articles/9488188-agenda-la-primera-cita): la cita se asigna a un "Recurso", que es la agenda principal con su box (en su ayuda: "sillón/unidad dental") o el **sobreagendamiento**; la duración respeta el intervalo de cada profesional; se puede agendar desde la agenda diaria, la semanal global o el perfil del paciente. Agregado tras la verificación de fuentes.
 
 ## Pricing
 

@@ -38,4 +38,4 @@ Conocimiento del sector argentino (obras sociales, liquidaciones, auditoría par
 
 ## Notas del investigador
 
-Las cifras de adopción las publica el propio proveedor y no tienen respaldo independiente. La seguridad se responde con un mensaje comercial ("gestiona millones de pacientes") y no con medidas técnicas. No aparece la prevención de solapamientos ni el manejo de sillones o boxes.
+Las cifras de adopción las publica el propio proveedor y no tienen respaldo independiente. La seguridad se responde con un mensaje comercial ("gestiona millones de pacientes") y no con medidas técnicas. No aparece la prevención de solapamientos ni el manejo de boxes.
