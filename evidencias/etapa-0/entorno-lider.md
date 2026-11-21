@@ -5,7 +5,7 @@ Relevado el 2026-11-21 con los comandos `--version` de cada herramienta y `~/.ac
 | Herramienta | Versión |
 |---|---|
 | Active Stack | v0.8.1 (compilado desde GitHub con `build.bat`) |
-| Modo de instalación | Full, agente Claude, permisos "balanceado" |
+| Modo de instalación | Full (Completo), permisos "balanceado", para Claude, Codex, OpenCode y Antigravity (reaplicado el 21/11 con el instalador gráfico v0.8.1) |
 | Claude Code | 2.1.310 |
 | OpenSpec | 2.1.1 (perfil `core`) |
 | Engram | 3.6.0 |
@@ -22,5 +22,5 @@ Lista completa de harnesses del modo Full: [harnesses-plan-full.txt](harnesses-p
 ## Capturas
 
 - `00-Creacion-Repo.png`: repositorio `Pinini777/turnos-odontologia` creado, público y vacío.
-- `00-Instalacion-Completo.png`: instalador gráfico de Active Stack con el modo **Completo** (Full) seleccionado.
+- `00-Instalacion-Completo.png`: instalador gráfico de Active Stack, pantalla "Revisá tu configuración" con el modo **Completo** (Full) y la lista de componentes (harnesses) a instalar.
 - `harnesses-plan-full.txt`: lista de harnesses del modo Full.
