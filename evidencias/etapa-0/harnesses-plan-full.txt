@@ -1,0 +1,27 @@
+# active-stack install --dry-run --agent claude --mode full  (2026-11-21, v0.8.1)
+Dry-run: plan steps (not executed):
+  [prepare] snapshot
+  [apply]   skill:active-delivery
+  [apply]   skill:active-roadmap
+  [apply]   skill:agent-instruction
+  [apply]   external:context7
+  [apply]   skill:design-taste-frontend-v1
+  [apply]   skill:emil-design-eng
+  [apply]   external:engram
+  [apply]   skill:find-skill
+  [apply]   skill:kb-creator
+  [apply]   external:openspec
+  [apply]   permissions:permissions
+  [apply]   external:playwright
+  [apply]   skill:roadmap-generator
+  [apply]   config:sdd-orchestrator
+  [apply]   skill:design-system
+  [apply]   skill:active-orchestrator
+  [apply]   config:design-mockups
+  [apply]   skill:skill-creator
+  [apply]   skill:skill-registry
+  [apply]   command:starter-add-command
+  [apply]   skill:web-scraper
+  [apply]   skill:discovery-research
+  [apply]   self-install
+  [apply]   verify-hook
