@@ -13,7 +13,7 @@
    git clone https://github.com/Pinini777/turnos-odontologia.git
    ```
 4. Tené instalado Active Stack en modo Full para Claude Code (ver la Guía Contexto).
-5. Creá tu rama y subila (alias en minúsculas, por ejemplo `dev-renzo`):
+5. Creá tu rama y subila (alias en minúsculas, por ejemplo `dev-ep`):
    ```powershell
    git switch -c dev-<alias>
    git push -u origin dev-<alias>
