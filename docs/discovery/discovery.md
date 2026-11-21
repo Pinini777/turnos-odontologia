@@ -103,4 +103,4 @@ Detalle completo en `informe-discovery.md` (tablas A.1 y A.2, matriz B). Resumen
 - ¿Qué pasa con las ganancias si un turno atendido se cancela o corrige después?
 - ¿Qué nivel de detalle tiene el odontograma del MVP (piezas y estados, o también caras)?
 - ¿Cómo se cumple con las Leyes 25.326 y 26.529 (consentimiento, acceso, conservación de la historia clínica)? Ningún competidor lo declara (No evidenciado).
-- Puntos que el informe dejó como **No evidenciado** y que habría que validar con demos: exportación de datos, regla de prevención de solapamientos, sobreturnos y box como recurso (solo Dentalink documenta ambos), precios ocultos (7 de 16 sistemas).
+- Puntos que el informe dejó como **No evidenciado** y que habría que validar con demos: exportación de datos, regla de prevención de solapamientos, sobreturnos y box como recurso (solo Dentalink documenta ambos), precios ocultos (8 de 16 sistemas, más 2 que publican solo una parte).

@@ -18,7 +18,7 @@
 1. La agenda multiprofesional, la reserva online, los recordatorios por WhatsApp, el odontograma digital y la historia clínica son **estándar de mercado**: casi todos los proveedores locales los declaran.
 2. **Ninguno de los 16 sistemas documenta públicamente cómo previene los solapamientos de turnos** por profesional y por box. Solo 3 tratan el box como recurso de la agenda: AgendaPro y OdontoClinIA lo declaran, y Dentalink lo documenta en su centro de ayuda junto con un "sobreagendamiento" explícito. Es la regla de negocio central de una agenda odontológica y en todos la regla queda como "No evidenciado".
 3. Lo que realmente diferencia a los sistemas argentinos es **la integración con el ecosistema local**: obras sociales (validación online en DentalTec), ARCA (DentalTec, Reservo, DentalCore), receta electrónica en ReNaPDiS (OdontoClinIA, Dentalink AR, Bilog, Reservo) y Mercado Pago (AgendaPro, Reservo, Odonto.ar para la suscripción).
-4. **La transparencia de precios es baja**: 7 de 16 no publican el precio de la licencia. Los que sí lo publican van de un plan gratuito (Odonthia, Bilog Freemium, Doctocliq) a ARS 129.900/mes (AgendaPro Pro IA).
+4. **La transparencia de precios es baja**: 8 de 16 no publican el precio de la licencia y otros 2 (Bilog y Dentalink) solo publican una parte. Los que sí lo publican van de un plan gratuito (Odonthia, Bilog Freemium, Doctocliq) a ARS 129.900/mes (AgendaPro Pro IA).
 5. **Ninguna de las páginas consultadas declara adecuación a la Ley 25.326 (datos personales) ni a la Ley 26.529 (derechos del paciente e historia clínica).** La seguridad se comunica con mensajes comerciales, salvo DentalTec, que detalla roles, auditoría y cifrado.
 6. Casi toda la evidencia disponible es **afirmación comercial del proveedor**. Las cifras de adopción y los resultados ("40% menos ausentismo") no tienen respaldo independiente.
 
@@ -159,7 +159,7 @@ Total ponderado = Σ (nota × peso). El máximo posible es 5,00. Las cuentas se 
 2. **El box como recurso de agenda.** Solo 3 de 16 lo tratan como recurso: AgendaPro y OdontoClinIA lo declaran, y Dentalink lo documenta. El resto modela "profesional" o "consultorio", sin el box como recurso compartido con su propia disponibilidad.
 3. **Sobreturnos explícitos.** Solo Dentalink documenta el sobreagendamiento como opción explícita al agendar (centro de ayuda). Los demás no lo documentan; las "urgencias" de DentalSoft son lo más cercano. *Corregido tras la verificación: la versión anterior decía que ningún sistema los documentaba.*
 4. **Cumplimiento normativo declarado.** Ninguna página consultada menciona la Ley 25.326 ni la Ley 26.529, ni cómo se exportan los datos del paciente si el consultorio cambia de sistema (solo Odonto.ar responde en sus preguntas frecuentes "Si dejo de pagar o me voy, ¿pierdo mis datos?", sin respuesta visible en el texto relevado).
-5. **Opacidad de precios.** 7 de 16 no publican el precio de la licencia.
+5. **Opacidad de precios.** 8 de 16 no publican el precio de la licencia y otros 2 (Bilog y Dentalink) solo publican una parte.
 6. **Fragmentación.** Los que integran bien las obras sociales (DentalTec) no muestran reserva online, y los fuertes en experiencia del paciente (AgendaPro, Doctoralia) no muestran obras sociales ni ARCA.
 7. **Periodontograma.** Solo Dentidesk declara una ficha de periodoncia.
 
@@ -237,6 +237,7 @@ Cada integrante abrió personalmente la URL y comparó lo que afirma el informe 
 - **OdontoClinIA:** PUCO, ARCA y caja aparecen en una sección específica de su página y no solo en un párrafo genérico. Se corrigieron A.2, B (4,10 → 4,40) y C.2.
 - **AgendaPro:** "ficha clínica desde Premium" era incompleto, porque el plan Individual la ofrece como adicional. Se corrigió A.2.
 - **Dentalink AR:** "Doc." pasó a "Doc. (títulos de artículos)", porque no se revisó el procedimiento de cada artículo.
+- **Conteo de precios (detectado en la revisión de la KB, etapa 3):** decía "7 de 16 no publican el precio"; las fichas muestran 8 de 16, más 2 que publican solo una parte. Se corrigieron el resumen ejecutivo y C.3.
 
 **Hallazgos detectados por el propio agente durante la investigación** (sirven de insumo para la reflexión):
 - Un resumen automático de búsqueda nombró a "Benty" como software con fuerte manejo de obras sociales. **No se encontró ninguna fuente oficial** y se excluyó del informe.
