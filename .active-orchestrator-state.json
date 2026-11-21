@@ -263,15 +263,16 @@
       "No evidenciados: exportación, regla anti-solapamiento, precios ocultos; sobreturnos y box como recurso solo documentados por Dentalink"
     ],
     "pending": [
-      "Verificación personal de las fuentes 6 (Capterra) y 7 (video oficial de Dentalink)",
-      "Regenerar docs/discovery/informe-discovery.pdf desde el .md corregido (verificación, box, B y C.3)"
+      "Regenerar docs/discovery/informe-discovery.pdf desde el .docx corregido"
     ],
     "verified_by_team": [
       "DentalTec (Facundo Blanes)",
       "AgendaPro (Facundo Blanes)",
       "Dentalink ayuda (Lautaro Chanampa)",
       "ClinIA (Facundo Blanes)",
-      "Odonto.ar (Lucas Moreira)"
+      "Odonto.ar (Lucas Moreira)",
+      "Capterra (Lautaro Chanampa)",
+      "Video oficial Dentalink (Lautaro Chanampa)"
     ],
     "terminology": {
       "box": "Puesto de atención reservado junto con el profesional; los proveedores lo llaman sillón o unidad dental"
