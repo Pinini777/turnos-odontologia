@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "step": "discovery",
+  "step": "kb",
   "owner": "active-orchestrator",
   "foundation": {
     "version": 1,
@@ -20,13 +20,15 @@
       "discovery": {
         "variant": "competitors",
         "with_interview": true,
-        "status": "in_progress",
+        "status": "done",
         "requires": [],
         "outputs": [
           "docs/discovery/discovery.md",
           "docs/discovery/informe-discovery.md",
+          "docs/discovery/informe-discovery.pdf",
           "docs/discovery/sources/"
-        ]
+        ],
+        "completed_at": "2026-11-21"
       },
       "kb": {
         "variant": "import",
@@ -262,9 +264,6 @@
       "Cumplimiento Leyes 25.326 y 26.529",
       "No evidenciados: exportación, regla anti-solapamiento, precios ocultos; sobreturnos y box como recurso solo documentados por Dentalink"
     ],
-    "pending": [
-      "Regenerar docs/discovery/informe-discovery.pdf desde el .docx corregido"
-    ],
     "verified_by_team": [
       "DentalTec (Facundo Blanes)",
       "AgendaPro (Facundo Blanes)",
@@ -276,6 +275,7 @@
     ],
     "terminology": {
       "box": "Puesto de atención reservado junto con el profesional; los proveedores lo llaman sillón o unidad dental"
-    }
+    },
+    "report_pdf": "docs/discovery/informe-discovery.pdf"
   }
 }
