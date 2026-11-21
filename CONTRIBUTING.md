@@ -13,16 +13,15 @@
    git clone https://github.com/Pinini777/turnos-odontologia.git
    ```
 4. Tené instalado Active Stack en modo Full para Claude Code (ver la Guía Contexto).
-5. Creá tu rama y subila (alias en minúsculas, por ejemplo `dev-ep`):
+5. Pasate a tu rama, que ya creó el líder (`dev-lautaro`, `dev-agustin`, `dev-lucas`, `dev-renzo`, `dev-facundo` o `dev-ep`):
    ```powershell
-   git switch -c dev-<alias>
-   git push -u origin dev-<alias>
+   git switch dev-<alias>
    ```
 
 ## Ramas
 
 - `main`: protegida. Solo entra por Pull Request y solo el líder mergea.
-- `dev-<alias>`: tu rama, la creás vos. Trabajás tus changes ahí.
+- `dev-<alias>`: tu rama, la crea el líder. Trabajás tus changes ahí.
 
 ## Flujo de un change
 
