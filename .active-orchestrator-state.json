@@ -1,0 +1,28 @@
+{
+  "version": 5,
+  "step": "discovery",
+  "owner": "active-orchestrator",
+  "foundation": {
+    "version": 1,
+    "route": "foundation",
+    "approved_at": "2026-11-21",
+    "approved_by": "EP",
+    "order": ["discovery", "kb", "visual-design", "roadmap", "find-skill", "registry", "agents"],
+    "phases": {
+      "discovery": {
+        "variant": "competitors",
+        "with_interview": true,
+        "status": "pending",
+        "requires": [],
+        "outputs": ["docs/discovery/discovery.md", "docs/discovery/informe-discovery.md", "docs/discovery/sources/"]
+      },
+      "kb": {"variant": "import", "status": "pending", "requires": ["discovery"], "outputs": ["knowledge-base/"]},
+      "visual-design": {"variant": "off", "status": "pending", "requires": [], "outputs": ["design-system/README.md"]},
+      "roadmap": {"variant": "local-markdown", "status": "pending", "requires": ["kb"], "outputs": ["CHANGES.md"]},
+      "task-management": {"variant": null, "status": "skipped", "requires": ["roadmap"], "outputs": []},
+      "find-skill": {"variant": "install-selected", "status": "pending", "requires": ["kb"], "outputs": []},
+      "registry": {"variant": "index", "status": "pending", "requires": ["find-skill"], "outputs": [".atl/skill-registry.md"]},
+      "agents": {"variant": "generate", "status": "pending", "requires": ["kb", "roadmap", "registry"], "outputs": ["AGENTS.md", "CLAUDE.md"]}
+    }
+  }
+}
