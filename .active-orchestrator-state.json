@@ -7,22 +7,265 @@
     "route": "foundation",
     "approved_at": "2026-11-21",
     "approved_by": "EP",
-    "order": ["discovery", "kb", "visual-design", "roadmap", "find-skill", "registry", "agents"],
+    "order": [
+      "discovery",
+      "kb",
+      "visual-design",
+      "roadmap",
+      "find-skill",
+      "registry",
+      "agents"
+    ],
     "phases": {
       "discovery": {
         "variant": "competitors",
         "with_interview": true,
+        "status": "in_progress",
+        "requires": [],
+        "outputs": [
+          "docs/discovery/discovery.md",
+          "docs/discovery/informe-discovery.md",
+          "docs/discovery/sources/"
+        ]
+      },
+      "kb": {
+        "variant": "import",
+        "status": "pending",
+        "requires": [
+          "discovery"
+        ],
+        "outputs": [
+          "knowledge-base/"
+        ]
+      },
+      "visual-design": {
+        "variant": "off",
         "status": "pending",
         "requires": [],
-        "outputs": ["docs/discovery/discovery.md", "docs/discovery/informe-discovery.md", "docs/discovery/sources/"]
+        "outputs": [
+          "design-system/README.md"
+        ]
       },
-      "kb": {"variant": "import", "status": "pending", "requires": ["discovery"], "outputs": ["knowledge-base/"]},
-      "visual-design": {"variant": "off", "status": "pending", "requires": [], "outputs": ["design-system/README.md"]},
-      "roadmap": {"variant": "local-markdown", "status": "pending", "requires": ["kb"], "outputs": ["CHANGES.md"]},
-      "task-management": {"variant": null, "status": "skipped", "requires": ["roadmap"], "outputs": []},
-      "find-skill": {"variant": "install-selected", "status": "pending", "requires": ["kb"], "outputs": []},
-      "registry": {"variant": "index", "status": "pending", "requires": ["find-skill"], "outputs": [".atl/skill-registry.md"]},
-      "agents": {"variant": "generate", "status": "pending", "requires": ["kb", "roadmap", "registry"], "outputs": ["AGENTS.md", "CLAUDE.md"]}
+      "roadmap": {
+        "variant": "local-markdown",
+        "status": "pending",
+        "requires": [
+          "kb"
+        ],
+        "outputs": [
+          "CHANGES.md"
+        ]
+      },
+      "task-management": {
+        "variant": null,
+        "status": "skipped",
+        "requires": [
+          "roadmap"
+        ],
+        "outputs": []
+      },
+      "find-skill": {
+        "variant": "install-selected",
+        "status": "pending",
+        "requires": [
+          "kb"
+        ],
+        "outputs": []
+      },
+      "registry": {
+        "variant": "index",
+        "status": "pending",
+        "requires": [
+          "find-skill"
+        ],
+        "outputs": [
+          ".atl/skill-registry.md"
+        ]
+      },
+      "agents": {
+        "variant": "generate",
+        "status": "pending",
+        "requires": [
+          "kb",
+          "roadmap",
+          "registry"
+        ],
+        "outputs": [
+          "AGENTS.md",
+          "CLAUDE.md"
+        ]
+      }
     }
+  },
+  "discovery": {
+    "created_by": "discovery-research",
+    "sources_fetched_at": "2026-11-21",
+    "output_dir": "docs/discovery/",
+    "report": "docs/discovery/informe-discovery.md",
+    "checklist": "docs/discovery/discovery.md",
+    "sources": [
+      "https://bilog.com.ar/",
+      "https://web.dentaltec.com.ar/funcionalidades",
+      "https://www.clinia.com.ar/odontologia",
+      "https://www.dentalsoft.com.ar/",
+      "https://odonto.ar/",
+      "https://dentalcore.app/",
+      "https://odonthia.com/",
+      "https://agendapro.com/ar/dental/software-odontologico",
+      "https://www.softwaredentalink.com/",
+      "https://reservo.cl/ar/",
+      "https://pro.doctoralia.com/ar/precio",
+      "https://www.doctocliq.com/",
+      "https://www.dentidesk.com/",
+      "https://clinic-cloud.com/",
+      "https://www.opendental.com/",
+      "https://www.dentally.com/en-gb/"
+    ],
+    "competitors": [
+      {
+        "name": "Bilog",
+        "notes_file": "docs/discovery/sources/bilog.md"
+      },
+      {
+        "name": "DentalTec",
+        "notes_file": "docs/discovery/sources/dentaltec.md"
+      },
+      {
+        "name": "OdontoClinIA",
+        "notes_file": "docs/discovery/sources/odontoclinia.md"
+      },
+      {
+        "name": "DentalSoft",
+        "notes_file": "docs/discovery/sources/dentalsoft.md"
+      },
+      {
+        "name": "Odonto.ar",
+        "notes_file": "docs/discovery/sources/odonto-ar.md"
+      },
+      {
+        "name": "DentalCore",
+        "notes_file": "docs/discovery/sources/dentalcore.md"
+      },
+      {
+        "name": "Odonthia",
+        "notes_file": "docs/discovery/sources/odonthia.md"
+      },
+      {
+        "name": "AgendaPro",
+        "notes_file": "docs/discovery/sources/agendapro.md"
+      },
+      {
+        "name": "Dentalink",
+        "notes_file": "docs/discovery/sources/dentalink.md"
+      },
+      {
+        "name": "Reservo",
+        "notes_file": "docs/discovery/sources/reservo.md"
+      },
+      {
+        "name": "Doctoralia PRO",
+        "notes_file": "docs/discovery/sources/doctoralia.md"
+      },
+      {
+        "name": "Doctocliq",
+        "notes_file": "docs/discovery/sources/doctocliq.md"
+      },
+      {
+        "name": "Dentidesk",
+        "notes_file": "docs/discovery/sources/dentidesk.md"
+      },
+      {
+        "name": "Clinic Cloud",
+        "notes_file": "docs/discovery/sources/clinic-cloud.md"
+      },
+      {
+        "name": "Open Dental",
+        "notes_file": "docs/discovery/sources/open-dental.md"
+      },
+      {
+        "name": "Dentally",
+        "notes_file": "docs/discovery/sources/dentally.md"
+      }
+    ],
+    "problema": "Consultorios odontológicos de 1 a 3 profesionales con recepcionista no tienen garantía de que un profesional o un sillón no queden con turnos superpuestos; ningún competidor documenta cómo lo previene.",
+    "usuarios": [
+      "Profesional: agenda, prestaciones y precios, HC y odontograma; único que ve ganancias",
+      "Recepcionista: ve pacientes y turnos; agenda, modifica y cancela turnos",
+      "Paciente: reserva online; cancela o reprograma hasta 24 h antes"
+    ],
+    "casos_de_uso": [
+      "Paciente reserva turno online",
+      "Paciente cancela o reprograma hasta 24 h antes",
+      "Recepcionista agenda, modifica o cancela turnos",
+      "Profesional define prestaciones con duración y precio",
+      "Profesional ve sus ganancias",
+      "Profesional registra HC y odontograma"
+    ],
+    "funcionalidades_necesarias": [
+      "Profesionales, sillones y prestaciones con duración y precio",
+      "Agenda por profesional y sillón",
+      "Crear turno sin solapamientos",
+      "Cancelar y reprogramar",
+      "Estados de turno y bloqueos",
+      "Reserva online",
+      "Email de confirmación con botón Google Calendar",
+      "Ganancias del profesional",
+      "Historia clínica y odontograma",
+      "Roles y auditoría de turnos"
+    ],
+    "funcionalidades_opcionales": [
+      "Recordatorios WhatsApp",
+      "Lista de espera",
+      "Recall",
+      "Presupuestos, caja y Mercado Pago",
+      "ARCA y obras sociales",
+      "Receta electrónica ReNaPDiS",
+      "Periodontograma e imágenes",
+      "App móvil, multisucursal, API, IA"
+    ],
+    "reglas_de_negocio": [
+      "Todo turno ocupa un profesional y un sillón",
+      "Sin solapamientos por profesional ni por sillón",
+      "Intervalos [inicio, fin): borde contiguo no solapa",
+      "Sin sobreturnos",
+      "Bloques de 15 min; duraciones múltiplo de 15",
+      "Paciente cancela o reprograma hasta 24 h antes",
+      "Eliminar = cancelar (estado cancelado, sin borrado físico, con auditoría)",
+      "Ganancias = suma de precios de turnos atendidos, solo el profesional",
+      "Recepcionista no ve precios ni ganancias",
+      "Datos de pacientes siempre ficticios en el repo"
+    ],
+    "integraciones": [
+      "Email de confirmación",
+      "Google Calendar del lado del paciente (botón o .ics, sin OAuth)"
+    ],
+    "restricciones": [
+      "Entrega 2026-11-25 23:00",
+      "Sin UI obligatoria",
+      "Stack libre, se decide en kb",
+      "6 integrantes en paralelo por PR",
+      "Sin datos reales ni secretos"
+    ],
+    "riesgos": [
+      "Datos del Discovery mal citados arrastrados a KB y roadmap",
+      "Coordinación de 6 personas en paralelo",
+      "Alcance del MVP vs fecha",
+      "Supuesto: pacientes prefieren reservar online",
+      "Datos sensibles de salud (Leyes 25.326 y 26.529)"
+    ],
+    "preguntas_abiertas": [
+      "Login del paciente o datos por turno",
+      "Definición de horarios de profesionales y disponibilidad de sillones",
+      "Precio por profesional",
+      "Ganancias ante correcciones de turnos atendidos",
+      "Nivel de detalle del odontograma",
+      "Cumplimiento Leyes 25.326 y 26.529",
+      "No evidenciados: exportación, sobreturnos, sillones, precios ocultos"
+    ],
+    "pending": [
+      "Verificación humana de fuentes (sección del informe)",
+      "PDF del informe",
+      "Nombres de integrantes en la portada"
+    ]
   }
 }
