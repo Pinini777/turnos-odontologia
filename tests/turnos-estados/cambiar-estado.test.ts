@@ -149,30 +149,79 @@ describe('Auditoría de cada cambio de estado (RN-TU-05)', () => {
     expect(await auditoriaDe(deps, 'turno-reservado')).toHaveLength(1);
   });
 
-  describe('si falla la escritura de auditoría, el turno no queda cambiado', () => {
-    /** Repos en memoria reales, con una auditoría que rechaza cada escritura. */
-    function armarConAuditoriaRota(hora: string = HORA.diezYDiez) {
-      const deps = armar(hora);
+  describe('fallas de escritura: el turno nunca cambia sin su registro de auditoría', () => {
+    /**
+     * Repos en memoria reales con fallas inyectadas. Se rompen después de guardar el turno
+     * de prueba. `...FallaDesde`: número de escritura (1 = la primera) desde la que ese repo falla.
+     */
+    async function armarConFallas(estado: 'reservado' | 'confirmado', fallas: { auditoriaFallaDesde?: number; guardarFallaDesde?: number }) {
+      const deps = armar(HORA.diezYDiez);
+      const original = await guardarTurno(deps.repos, estado);
+      const auditoriaReal = deps.repos.auditoria;
+      let escrituras = 0;
       deps.repos.auditoria = {
-        agregar: () => Promise.reject(new Error('auditoría caída')),
-        listar: deps.repos.auditoria.listar,
+        agregar: (registro) => {
+          escrituras += 1;
+          if (fallas.auditoriaFallaDesde !== undefined && escrituras >= fallas.auditoriaFallaDesde) {
+            return Promise.reject(new Error('auditoría caída'));
+          }
+          return auditoriaReal.agregar(registro);
+        },
+        listar: auditoriaReal.listar,
       };
-      return deps;
+      const guardarReal = deps.repos.turnos.guardar.bind(deps.repos.turnos);
+      let guardados = 0;
+      deps.repos.turnos.guardar = (turno) => {
+        guardados += 1;
+        if (fallas.guardarFallaDesde !== undefined && guardados >= fallas.guardarFallaDesde) {
+          return Promise.reject(new Error('turnos caído'));
+        }
+        return guardarReal(turno);
+      };
+      return { deps, original };
     }
 
-    it('cancelarTurno propaga el error y el turno sigue reservado', async () => {
-      const deps = armarConAuditoriaRota();
-      const original = await guardarTurno(deps.repos, 'reservado');
+    it('falla la auditoría: cancelarTurno propaga el error, el turno sigue igual y no hay registros', async () => {
+      const { deps, original } = await armarConFallas('reservado', { auditoriaFallaDesde: 1 });
       await expect(cancelarTurno({ turnoId: original.id, actor: RECEPCION }, deps)).rejects.toThrow('auditoría caída');
       expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+      expect(await deps.repos.auditoria.listar()).toEqual([]);
     });
 
-    it('cambiarEstado propaga el error y el turno sigue confirmado', async () => {
-      const deps = armarConAuditoriaRota();
-      const original = await guardarTurno(deps.repos, 'confirmado');
+    it('falla la auditoría: cambiarEstado propaga el error y el turno sigue confirmado', async () => {
+      const { deps, original } = await armarConFallas('confirmado', { auditoriaFallaDesde: 1 });
       await expect(cambiarEstado({ turnoId: original.id, estado: 'atendido', actor: RECEPCION }, deps))
         .rejects.toThrow('auditoría caída');
       expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+    });
+
+    it('falla guardar: propaga el error, el turno sigue igual y queda el intento más su reversión', async () => {
+      const { deps, original } = await armarConFallas('confirmado', { guardarFallaDesde: 1 });
+      await expect(cambiarEstado({ turnoId: original.id, estado: 'atendido', actor: RECEPCION }, deps))
+        .rejects.toThrow('turnos caído');
+      expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+      expect(await deps.repos.auditoria.listar()).toEqual([
+        expect.objectContaining({ accion: 'estado_cambiado', detalle: { antes: { estado: 'confirmado' }, despues: { estado: 'atendido' } } }),
+        expect.objectContaining({
+          accion: 'estado_cambiado',
+          actor: RECEPCION,
+          detalle: { antes: { estado: 'atendido' }, despues: { estado: 'confirmado' }, revertido: true },
+        }),
+      ]);
+    });
+
+    it('caso del revisor: guardar anda, falla la auditoría y fallaría revertir → el turno sigue igual', async () => {
+      const { deps, original } = await armarConFallas('reservado', { auditoriaFallaDesde: 1, guardarFallaDesde: 2 });
+      await expect(cancelarTurno({ turnoId: original.id, actor: RECEPCION }, deps)).rejects.toThrow('auditoría caída');
+      expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+      expect(await deps.repos.auditoria.listar()).toEqual([]);
+    });
+
+    it('fallan guardar y el registro de reversión: el turno sigue igual y queda el intento auditado', async () => {
+      const { deps, original } = await armarConFallas('reservado', { auditoriaFallaDesde: 2, guardarFallaDesde: 1 });
+      await expect(cancelarTurno({ turnoId: original.id, actor: RECEPCION }, deps)).rejects.toThrow('turnos caído');
+      expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+      expect(await deps.repos.auditoria.listar()).toEqual([expect.objectContaining({ accion: 'cancelado' })]);
     });
   });
 

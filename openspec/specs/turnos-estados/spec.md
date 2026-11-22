@@ -93,7 +93,7 @@ La API SHALL permitir pasar un turno a `atendido` o `ausente` solo si la hora ac
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO`
 
 ### Requirement: Auditoría de cada cambio de estado
-Cada cancelación o cambio de estado exitoso SHALL agregar un registro de auditoría append-only con el turno, la acción (`cancelado` o `estado_cambiado`), el usuario que lo hizo, la fecha y hora y el estado de antes y de después. Un intento rechazado SHALL NOT agregar registros. Si la escritura de auditoría falla, el turno SHALL quedar en su estado anterior y la operación SHALL fallar: no hay cambio de estado sin registro.
+Cada cancelación o cambio de estado exitoso SHALL agregar un registro de auditoría append-only con el turno, la acción (`cancelado` o `estado_cambiado`), el usuario que lo hizo, la fecha y hora y el estado de antes y de después. Un intento rechazado SHALL NOT agregar registros. El registro SHALL escribirse antes de guardar el turno: no hay cambio de estado sin registro, para ninguna combinación de fallas. Si la escritura de auditoría falla, el turno SHALL quedar en su estado anterior y la operación SHALL fallar. Si falla guardar el turno después de auditar, la operación SHALL fallar, el turno SHALL quedar en su estado anterior y SHALL agregarse un registro de reversión (`revertido: true`); un intento así no es un rechazo de negocio.
 
 #### Scenario: Auditoría de una cancelación
 - **GIVEN** un turno `confirmado` y la hora actual 08:30
@@ -113,7 +113,17 @@ Cada cancelación o cambio de estado exitoso SHALL agregar un registro de audito
 #### Scenario: Falla la escritura de auditoría
 - **GIVEN** un turno `confirmado` y un repositorio de auditoría que rechaza la escritura
 - **WHEN** alguien lo pasa a `atendido` o lo cancela
-- **THEN** la operación falla con ese error y el turno sigue `confirmado`
+- **THEN** la operación falla con ese error, el turno sigue `confirmado` y no hay registros
+
+#### Scenario: Falla guardar el turno después de auditar
+- **GIVEN** un turno `confirmado` y un repositorio de turnos que rechaza la escritura
+- **WHEN** la recepcionista lo pasa a `atendido`
+- **THEN** la operación falla, el turno sigue `confirmado` y hay dos registros: el intento (`confirmado` → `atendido`) y su reversión (`atendido` → `confirmado`, `revertido: true`)
+
+#### Scenario: Fallan la auditoría y la reversión del turno
+- **GIVEN** un turno `reservado`, un repositorio de auditoría que rechaza la escritura y un repositorio de turnos que rechazaría una segunda escritura
+- **WHEN** alguien lo cancela
+- **THEN** la operación falla y el turno sigue `reservado`
 
 ### Requirement: Acceso a las rutas de estado
 Las rutas `POST /api/turnos/:id/cancelar` y `POST /api/turnos/:id/estado` SHALL estar disponibles solo para las sesiones `profesional` y `recepcionista`. Una sesión `paciente` SHALL recibir `403 SIN_PERMISO`. Un turno inexistente SHALL responder `404 NO_ENCONTRADO`. La respuesta exitosa SHALL incluir el turno actualizado, sin precio para la recepcionista.

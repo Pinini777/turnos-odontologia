@@ -33,31 +33,54 @@ export function cambiarEstado({ turnoId, estado, actor }: CambiarEstado, deps: D
   return transicionar(turnoId, estado, actor, deps);
 }
 
-/** Buscar → validar → guardar → auditar, todo dentro del lock de agenda (D5). */
+/**
+ * Buscar → validar → auditar → guardar, todo dentro del lock de agenda (D5).
+ * Se audita ANTES de guardar (D6): el turno solo cambia si su registro ya existe,
+ * así que ninguna combinación de fallas deja un cambio sin auditoría.
+ */
 function transicionar(turnoId: string, hacia: EstadoTurno, actor: string, deps: DepsEstados): Promise<Turno> {
   return deps.conLockDeAgenda(async () => {
     const turno = await deps.repos.turnos.buscarPorId(turnoId);
     if (!turno) throw new ReglaDeNegocioError('NO_ENCONTRADO');
     const ahora = deps.clock.ahora();
     validarTransicion(turno.estado, hacia, { ahora, inicio: turno.inicio });
+    const accion = hacia === 'cancelado' ? 'cancelado' : 'estado_cambiado';
+    // Si falla, el turno ni se tocó: el error sube y no queda nada a medias.
+    await deps.repos.auditoria.agregar({
+      id: randomUUID(),
+      turnoId,
+      accion,
+      actor,
+      fecha: ahora,
+      detalle: { antes: { estado: turno.estado }, despues: { estado: hacia } },
+    });
     const actualizado: Turno = { ...turno, estado: hacia };
-    // Después de guardar: si guardar falla, no queda auditado algo que no pasó (D6).
-    await deps.repos.turnos.guardar(actualizado);
     try {
-      await deps.repos.auditoria.agregar({
-        id: randomUUID(),
-        turnoId,
-        accion: hacia === 'cancelado' ? 'cancelado' : 'estado_cambiado',
-        actor,
-        fecha: ahora,
-        detalle: { antes: { estado: turno.estado }, despues: { estado: hacia } },
-      });
+      await deps.repos.turnos.guardar(actualizado);
     } catch (error) {
-      // Compensación (D6): sin auditoría no hay cambio. Seguimos dentro del lock,
-      // así que nadie llegó a ver el estado intermedio.
-      await deps.repos.turnos.guardar(turno);
+      await registrarReversion(turno, hacia, actor, ahora, deps);
       throw error;
     }
     return actualizado;
   });
+}
+
+/**
+ * Guardar falló después de auditar: la auditoría es append-only, así que en vez de borrar
+ * el intento se agrega su reversión. Si esto también falla, queda auditado un intento que
+ * no se aplicó (registra de más, nunca de menos) y se propaga el error original de guardar.
+ */
+async function registrarReversion(turno: Turno, hacia: EstadoTurno, actor: string, ahora: Date, deps: DepsEstados) {
+  try {
+    await deps.repos.auditoria.agregar({
+      id: randomUUID(),
+      turnoId: turno.id,
+      accion: 'estado_cambiado',
+      actor,
+      fecha: ahora,
+      detalle: { antes: { estado: hacia }, despues: { estado: turno.estado }, revertido: true },
+    });
+  } catch {
+    // Se ignora a propósito: el error que importa es el de guardar, que relanza transicionar.
+  }
 }
