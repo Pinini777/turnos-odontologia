@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "step": "find-skill",
+  "step": "done",
   "owner": "active-orchestrator",
   "foundation": {
     "version": 1,
@@ -81,25 +81,32 @@
       },
       "find-skill": {
         "variant": "install-selected",
-        "status": "pending",
+        "status": "done",
         "requires": [
           "kb"
         ],
-        "outputs": []
+        "outputs": [
+          "state.skills"
+        ],
+        "started_at": "2026-11-22",
+        "completed_at": "2026-11-22",
+        "approved_by": "EP"
       },
       "registry": {
         "variant": "index",
-        "status": "pending",
+        "status": "done",
         "requires": [
           "find-skill"
         ],
         "outputs": [
           ".atl/skill-registry.md"
-        ]
+        ],
+        "completed_at": "2026-11-22",
+        "approved_by": "EP"
       },
       "agents": {
         "variant": "generate",
-        "status": "pending",
+        "status": "done",
         "requires": [
           "kb",
           "roadmap",
@@ -108,7 +115,9 @@
         "outputs": [
           "AGENTS.md",
           "CLAUDE.md"
-        ]
+        ],
+        "completed_at": "2026-11-22",
+        "approved_by": "EP"
       }
     }
   },
@@ -344,5 +353,141 @@
       "C-14",
       "C-15"
     ]
+  },
+  "skills": {
+    "recommended_at": "2026-11-22",
+    "source": "npx skills find (skills.sh)",
+    "recommended": [
+      {
+        "n": 1,
+        "skill": "fastify-best-practices",
+        "repo": "mcollina/skills",
+        "installs": "106.6K",
+        "fit": "Del mantenedor de Fastify: rutas, plugins, autoload y manejo de errores en Fastify 5 (409/400 de C-01 y C-02)."
+      },
+      {
+        "n": 2,
+        "skill": "vitest",
+        "repo": "antfu/skills",
+        "installs": "49.1K",
+        "fit": "Del equipo de Vitest: un test por escenario, fake timers y configuración de workspaces."
+      },
+      {
+        "n": 3,
+        "skill": "tdd",
+        "repo": "mattpocock/skills",
+        "installs": "1.3M",
+        "fit": "Ciclo red-green-refactor que exige Apply; refuerza el TDD estricto del sdd-orchestrator."
+      },
+      {
+        "n": 4,
+        "skill": "test-driven-development",
+        "repo": "obra/superpowers",
+        "installs": "288.8K",
+        "fit": "Alternativa a la 3 (elegir una sola): TDD con disciplina de test que falla primero."
+      },
+      {
+        "n": 5,
+        "skill": "typescript-advanced-types",
+        "repo": "wshobson/agents",
+        "installs": "101.5K",
+        "fit": "Tipos estrictos para entidades, códigos de error y uniones discriminadas de src/shared/."
+      },
+      {
+        "n": 6,
+        "skill": "zod",
+        "repo": "pproenca/dot-skills",
+        "installs": "7.4K",
+        "fit": "Esquemas Zod de entrada (400); revisar que no asuma Zod 4, porque fijamos Zod 3."
+      },
+      {
+        "n": 7,
+        "skill": "vercel-react-best-practices",
+        "repo": "vercel-labs/agent-skills",
+        "installs": "922.9K",
+        "fit": "Solo si entra la UI (C-12 a C-15); orientada a React/Next, parte no aplica a Vite."
+      },
+      {
+        "n": 8,
+        "skill": "api-security-best-practices",
+        "repo": "sickn33/agentic-awesome-skills",
+        "installs": "9K",
+        "fit": "JWT, roles y validación para C-04 (CRITICO); fuente comunitaria, menos confiable."
+      }
+    ],
+    "installed": [
+      {
+        "skill": "fastify-best-practices",
+        "repo": "mcollina/skills",
+        "path": "~/.claude/skills/fastify-best-practices/SKILL.md"
+      },
+      {
+        "skill": "vitest",
+        "repo": "antfu/skills",
+        "path": "~/.claude/skills/vitest/SKILL.md"
+      },
+      {
+        "skill": "tdd",
+        "repo": "mattpocock/skills",
+        "path": "~/.claude/skills/tdd/SKILL.md"
+      },
+      {
+        "skill": "test-driven-development",
+        "repo": "obra/superpowers",
+        "path": "~/.claude/skills/test-driven-development/SKILL.md"
+      },
+      {
+        "skill": "typescript-advanced-types",
+        "repo": "wshobson/agents",
+        "path": "~/.claude/skills/typescript-advanced-types/SKILL.md"
+      },
+      {
+        "skill": "vercel-react-best-practices",
+        "repo": "vercel-labs/agent-skills",
+        "path": "~/.claude/skills/vercel-react-best-practices/SKILL.md"
+      },
+      {
+        "skill": "api-security-best-practices",
+        "repo": "sickn33/agentic-awesome-skills",
+        "path": "~/.claude/skills/api-security-best-practices/SKILL.md"
+      }
+    ],
+    "selected_by": "EP (todas menos la 6, zod)",
+    "installed_at": "2026-11-22",
+    "install_command": "npx skills add <repo> --skill <nombre> -g -y -a claude-code",
+    "not_selected": [
+      "zod (pproenca/dot-skills)"
+    ]
+  },
+  "registry": {
+    "created_by": "skill-registry",
+    "variant": "index",
+    "path": ".atl/skill-registry.md",
+    "generated_at": "2026-11-22",
+    "skills_indexed": 42,
+    "replaced": "índice previo de gentle-ai skill-registry refresh (35 skills, rutas absolutas); EP aprobó reemplazarlo"
+  },
+  "agents": {
+    "created_by": "agent-instruction",
+    "files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "global_instructions": "~/.claude/CLAUDE.md",
+    "context_file": "docs/BIBLIA-PROYECTO.md",
+    "reglas_applied": [
+      "D1 datos de pacientes ficticios (RN-DA-01)",
+      "D2 box, sin solapamientos ni sobreturnos (RN-AG-02 a 07)",
+      "D3 solo carpetas del change; congelados solo EP",
+      "D4 sin precios ni ganancias para recepción y paciente",
+      "D5 sin borrado físico; auditoría e HC append-only",
+      "S1 TypeScript strict, sin any",
+      "S2 Zod 400 y ReglaDeNegocioError 409 con códigos RN-EX-01",
+      "S3 un test de Vitest por escenario, TDD, FixedClock",
+      "S4 dominio puro: Clock, APP_TZ, puertos",
+      "G1 a main solo con OK de EP (PR desde dev-<alias>); en su rama cada uno commitea como prefiera"
+    ],
+    "confirmed_by": "EP",
+    "confirmed_at": "2026-11-22"
   }
 }
