@@ -23,3 +23,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+!.env.example
+
+# Caché local del registro de skills
+.atl/.skill-registry.cache.json

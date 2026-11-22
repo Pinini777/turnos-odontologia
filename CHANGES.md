@@ -204,7 +204,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 > Nadie más arranca `apply` hasta que C-01 esté en `main`. Esta fase congela todo lo que se comparte.
 
 ### [C-01] `fundacion-y-dominio-base`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: EP · **Capability**: `plataforma` · **Prioridad**: P0
 - **Scope**:
   - **Estructura** (§5.2 de la consigna): la API vive en la raíz (`src/` y `tests/`) y `web/` es un workspace de npm. El `package.json` raíz tiene `npm test`, `npm run typecheck` y `npm run lint`, que corren en los dos. Cada change pone su código en `src/modules/<capability>/` y sus tests en `tests/<capability>/` (DD-13).
