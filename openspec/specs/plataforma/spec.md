@@ -32,7 +32,7 @@ Una entrada que no cumple el esquema de validación del endpoint SHALL responder
 - **THEN** responde `400` con `code` `FORMATO_INVALIDO` y un detalle cuyo campo es `inicio`
 
 ### Requirement: Errores de regla de negocio
-La violación de una regla de negocio SHALL responder `409` con `{"code":"<CODIGO>"}`, donde el código pertenece a la lista cerrada de RN-EX-01 más `RECURSO_INACTIVO`. El código `NO_ENCONTRADO` responde `404`. No se aceptan códigos fuera de la lista.
+La violación de una regla de negocio SHALL responder `409` con `{"code":"<CODIGO>"}`, donde el código pertenece a la lista cerrada de RN-EX-01 más `RECURSO_INACTIVO` y `DUPLICADO` (un dato que debe ser único ya existe). El código `NO_ENCONTRADO` responde `404`. No se aceptan códigos fuera de la lista.
 
 #### Scenario: Regla violada
 - **WHEN** un caso de uso rechaza una operación con el código `SOLAPAMIENTO_BOX`
@@ -44,7 +44,7 @@ La violación de una regla de negocio SHALL responder `409` con `{"code":"<CODIG
 
 #### Scenario: Lista cerrada de códigos
 - **WHEN** se enumeran los códigos de negocio disponibles
-- **THEN** son exactamente `SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`, `NO_ENCONTRADO` y `RECURSO_INACTIVO`
+- **THEN** son exactamente `SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`, `NO_ENCONTRADO`, `RECURSO_INACTIVO` y `DUPLICADO`
 
 ### Requirement: Errores inesperados
 Un error no previsto SHALL responder `500` con `{"code":"ERROR_INTERNO"}`, sin mensaje, traza ni datos internos en el cuerpo.

@@ -12,7 +12,7 @@ import { crearDisponibilidad } from '../../src/modules/configuracion/disponibili
 describe('Errores de regla de negocio', () => {
   it('Lista cerrada de códigos', () => {
     expect([...CODIGOS_NEGOCIO].sort()).toEqual([
-      'DURACION_INVALIDA', 'EN_BLOQUEO', 'EN_EL_PASADO', 'FUERA_DE_GRILLA', 'FUERA_DE_HORARIO',
+      'DUPLICADO', 'DURACION_INVALIDA', 'EN_BLOQUEO', 'EN_EL_PASADO', 'FUERA_DE_GRILLA', 'FUERA_DE_HORARIO',
       'NO_ENCONTRADO', 'PLAZO_VENCIDO', 'RECURSO_INACTIVO', 'SOLAPAMIENTO_BOX', 'SOLAPAMIENTO_PROFESIONAL',
       'TRANSICION_INVALIDA',
     ]);

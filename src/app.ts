@@ -33,10 +33,12 @@ const MODULOS = fileURLToPath(new URL('./modules', import.meta.url));
 export async function buildApp(opciones: BuildAppOptions = {}): Promise<FastifyInstance> {
   const { modulesDir = MODULOS, logger = false, ...overrides } = opciones;
   const repos = overrides.repos ?? crearRepositoriosEnMemoria();
+  const clock = overrides.clock ?? new SystemClock();
   const deps: Deps = {
-    clock: overrides.clock ?? new SystemClock(),
+    clock,
     repos,
-    auth: overrides.auth ?? crearAuth(repos),
+    // El mismo reloj que el resto: con FixedClock, el vencimiento del JWT también es fijo.
+    auth: overrides.auth ?? crearAuth(repos, clock),
     notificador: overrides.notificador ?? crearNotificador(),
     disponibilidad: overrides.disponibilidad ?? crearDisponibilidad(repos),
     conLockDeAgenda: overrides.conLockDeAgenda ?? crearLockDeAgenda(),

@@ -76,4 +76,4 @@ Cada regla tiene un código `RN-{DOMINIO}-{NN}` para trazabilidad con specs, tes
 
 ## Excepciones globales
 
-- **RN-EX-01**: Toda violación de una regla de negocio responde `409` con un código estable (`SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`). Los errores de formato responden `400`.
+- **RN-EX-01**: Toda violación de una regla de negocio responde `409` con un código estable (`SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`, `DUPLICADO`). `DUPLICADO` se usa cuando un dato que debe ser único ya existe (email o documento del paciente, matrícula, nombre de box); se agregó el 2026-11-22 a pedido de C-03 y C-04. Los errores de formato responden `400`.

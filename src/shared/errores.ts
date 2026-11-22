@@ -1,4 +1,4 @@
-/** Códigos de regla de negocio (RN-EX-01 + NO_ENCONTRADO y RECURSO_INACTIVO). Un código nuevo se le pide a EP. */
+/** Códigos de regla de negocio (RN-EX-01 + NO_ENCONTRADO, RECURSO_INACTIVO y DUPLICADO). Un código nuevo se le pide a EP. */
 export const CODIGOS_NEGOCIO = [
   'SOLAPAMIENTO_PROFESIONAL',
   'SOLAPAMIENTO_BOX',
@@ -11,6 +11,7 @@ export const CODIGOS_NEGOCIO = [
   'TRANSICION_INVALIDA',
   'NO_ENCONTRADO',
   'RECURSO_INACTIVO',
+  'DUPLICADO', // un dato que debe ser único ya existe (email, documento, matrícula, nombre de box)
 ] as const;
 
 export type CodigoNegocio = (typeof CODIGOS_NEGOCIO)[number];
