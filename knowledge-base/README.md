@@ -14,7 +14,7 @@ Base de conocimiento generada con `kb-creator` (modo `import`) a partir de `docs
 | [06_funcionalidades.md](06_funcionalidades.md) | 7 épicas, US-001 a US-061, con criterios de aceptación; US-010 es el change evaluado |
 | [07_flujos_principales.md](07_flujos_principales.md) | F-01 crear turno, cancelar y reprogramar, reserva online, regla de 24 h, email + GCal, ganancias, clínica |
 | [08_arquitectura_propuesta.md](08_arquitectura_propuesta.md) | Patrones, estructura de directorios, seguridad, variables de entorno |
-| [09_decisiones_y_supuestos.md](09_decisiones_y_supuestos.md) | DD-01 a DD-11 (stack, intervalos, box, cancelación lógica, precio congelado, paciente con cuenta…) y SU-01 a SU-04 |
+| [09_decisiones_y_supuestos.md](09_decisiones_y_supuestos.md) | DD-01 a DD-13 (stack, intervalos, box, cancelación lógica, precio congelado, paciente con cuenta…) y SU-01 a SU-04 |
 | [10_preguntas_abiertas.md](10_preguntas_abiertas.md) | Inconsistencias resueltas, PA-00 a PA-09 y puntos "No evidenciado" del Discovery |
 
 ## Quick start para desarrolladores

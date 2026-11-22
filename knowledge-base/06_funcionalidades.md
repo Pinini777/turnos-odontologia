@@ -25,6 +25,15 @@ Organizadas por **épica** e **historia de usuario** (US-NNN). Todas son del MVP
 - [ ] Un turno dentro de un bloqueo del profesional o del box se rechaza (`EN_BLOQUEO`).
 **Reglas**: RN-AG-08, RN-AG-09
 
+### US-004 — Gestionar pacientes
+**Como** recepcionista o profesional **quiero** dar de alta y editar pacientes **para** poder darle turno a quien llama o se presenta sin cuenta.
+**Criterios de aceptación**:
+- [ ] Puedo crear y editar pacientes con contacto y obra social (informativa). Documento y email son únicos.
+- [ ] No hay borrado de pacientes.
+- [ ] El paciente con cuenta solo ve y edita sus propios datos.
+**Reglas**: RN-RO-04, RN-RE-03, RN-DA-01
+*Agregada en la revisión de la etapa 4 (2026-11-22): la matriz RBAC de 03 y US-022 la suponían, pero no tenía historia.*
+
 ## Épica 2: Agenda y turnos (núcleo)
 
 ### US-010 — Crear turno sin solapamientos ⭐ (change evaluado)

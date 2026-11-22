@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "step": "roadmap",
+  "step": "find-skill",
   "owner": "active-orchestrator",
   "foundation": {
     "version": 1,
@@ -60,13 +60,16 @@
       },
       "roadmap": {
         "variant": "local-markdown",
-        "status": "pending",
+        "status": "done",
         "requires": [
           "kb"
         ],
         "outputs": [
           "CHANGES.md"
-        ]
+        ],
+        "started_at": "2026-11-21",
+        "completed_at": "2026-11-22",
+        "approved_by": "EP"
       },
       "task-management": {
         "variant": null,
@@ -319,5 +322,27 @@
     "status": "pending",
     "revision": 1,
     "path": "design-system/README.md"
+  },
+  "roadmap": {
+    "created_by": "roadmap-generator",
+    "source": "CHANGES.md",
+    "changes_file": "CHANGES.md",
+    "changes": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06",
+      "C-07",
+      "C-08",
+      "C-09",
+      "C-10",
+      "C-11",
+      "C-12",
+      "C-13",
+      "C-14",
+      "C-15"
+    ]
   }
 }

@@ -4,7 +4,7 @@
 
 | Patrón | Dónde se usa | Por qué |
 |---|---|---|
-| Arquitectura hexagonal (puertos y adaptadores) | `src/domain` ↔ `src/application` ↔ `src/infrastructure` | Las reglas de agenda se testean sin HTTP ni base de datos |
+| Arquitectura hexagonal (puertos y adaptadores) | Dentro de cada `src/modules/<capability>/`: `dominio/` ↔ `aplicacion/` ↔ `routes.ts`, con puertos en `src/shared/` | Las reglas de agenda se testean sin HTTP ni base de datos |
 | Funciones de dominio puras | Detección de solapamientos, grilla, transiciones de estado | Deterministas: un test por escenario del spec, sin mocks |
 | Repository | `TurnoRepository`, `ProfesionalRepository`, etc. | Arranca en memoria y migra a SQLite sin tocar el dominio |
 | Caso de uso (application service) | `CrearTurno`, `CancelarTurno`, `ReprogramarTurno`, `ReservarOnline` | Un punto que orquesta validación, persistencia, auditoría y notificación |
@@ -17,29 +17,24 @@
 ```
 turnos-odontologia/
 ├── src/
-│   ├── domain/            # entidades y reglas puras (agenda, turno, prestación, box)
-│   │   ├── agenda.ts      # seSuperponen(), validarGrilla(), conflictos()
-│   │   ├── turno.ts       # estados y transiciones
-│   │   └── errores.ts     # códigos RN-EX-01
-│   ├── application/       # casos de uso: crear, cancelar, reprogramar, reservar, ganancias
-│   ├── infrastructure/
-│   │   ├── memory/        # repositorios en memoria (MVP y tests)
-│   │   ├── sqlite/        # adaptador posterior
-│   │   ├── email/         # SMTP + outbox de tests + generador .ics / link GCal
-│   │   └── clock.ts
-│   └── http/              # Fastify: rutas, esquemas Zod, auth, mapeo de errores
+│   ├── app.ts             # buildApp(): autoload de módulos y mapeo de errores (C-01, congelado)
+│   ├── shared/            # dominio común congelado: entidades, errores RN-EX-01, Clock, puertos y repos en memoria, seeds ficticios
+│   └── modules/
+│       └── <capability>/  # un módulo por change (DD-13), hexagonal por dentro:
+│           ├── dominio/   #   reglas puras (p. ej. turnos-alta/dominio/agenda.ts: seSuperponen(), conflictos())
+│           ├── aplicacion/#   casos de uso
+│           └── routes.ts  #   rutas Fastify + esquemas Zod (se cargan solas)
 ├── web/                   # React + Vite + TS: pantallas de paciente, recepción y profesional
 │   └── src/               # importa design-system/tokens.css; cada pantalla nace de un mockup aprobado
 ├── design-system/         # tokens, marca, componentes de referencia (política system-and-mockups)
 ├── tests/
-│   ├── domain/            # un test por escenario del spec (feliz, error, borde)
-│   └── http/              # tests de integración de la API
+│   └── <capability>/      # un test por escenario del spec (feliz, error, borde), de dominio y de HTTP
 ├── openspec/              # specs vigentes y changes
 ├── knowledge-base/
 └── docs/
 ```
 
-> La estructura exacta del primer change la fija su `design.md` en OpenSpec. Esta es la guía.
+> Estructura por módulo (DD-13): cada change de `CHANGES.md` escribe solo en `src/modules/<capability>/` y `tests/<capability>/`. La arquitectura hexagonal se mantiene dentro de cada módulo.
 
 ## Seguridad
 

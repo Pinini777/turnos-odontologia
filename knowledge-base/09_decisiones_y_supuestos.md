@@ -58,6 +58,12 @@
 **Alternativas consideradas**: HTML con plantillas del servidor (menos piezas, pero peor para la agenda interactiva); Vue o Svelte (válidos, sin ventaja clara para el equipo).
 **Trade-offs aceptados**: dos paquetes (`api` y `web`) en el repo.
 
+### DD-13 — Código organizado por módulo (una carpeta por capability)
+**Decisión**: el código va en `src/modules/<capability>/` y los tests en `tests/<capability>/`, con un módulo por change de `CHANGES.md`. El dominio común (entidades, errores, `Clock`, puertos) vive en `src/shared/` y queda congelado después de C-01. Las rutas se registran solas (`@fastify/autoload`) y las pantallas, por carpeta (`import.meta.glob`).
+**Contexto**: revisión de la etapa 4 (2026-11-22). Seis personas trabajan en paralelo por PR. Con capas horizontales (`src/domain/`, `src/application/`…), todos editarían las mismas carpetas y los mismos archivos de rutas.
+**Alternativas consideradas**: capas horizontales, como estaba en la primera versión de 08 (más conflictos de merge).
+**Trade-offs aceptados**: un módulo puede importar funciones de otro ya mergeado, pero no editarlo. Un cambio en `src/shared/` pasa por EP.
+
 ## Supuestos inferidos
 
 ### SU-01 — Los pacientes prefieren reservar online
