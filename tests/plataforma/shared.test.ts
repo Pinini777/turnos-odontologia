@@ -167,11 +167,11 @@ describe('Dependencias provisionales', () => {
     expect(notificador.bandeja).toEqual([{ para: 'paciente1@example.com', asunto: 'Turno', texto: 'Hola' }]);
   });
 
-  it('Disponibilidad provisional: acepta cualquier horario', async () => {
+  it('Disponibilidad (C-03): acepta horario válido dentro de la grilla semilla', async () => {
     const disponibilidad = crearDisponibilidad(crearRepositoriosEnMemoria());
     const motivo = await disponibilidad.verificar({
       profesionalId: SEED.profesionales.anaPerez.id, boxId: SEED.boxes.box1.id,
-      inicio: new Date('2026-11-22T03:00:00Z'), fin: new Date('2026-11-22T04:00:00Z'),
+      inicio: new Date('2026-11-23T12:00:00Z'), fin: new Date('2026-11-23T13:00:00Z'),
     });
     expect(motivo).toBeNull();
   });
