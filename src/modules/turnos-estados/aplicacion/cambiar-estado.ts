@@ -41,16 +41,23 @@ function transicionar(turnoId: string, hacia: EstadoTurno, actor: string, deps: 
     const ahora = deps.clock.ahora();
     validarTransicion(turno.estado, hacia, { ahora, inicio: turno.inicio });
     const actualizado: Turno = { ...turno, estado: hacia };
-    await deps.repos.turnos.guardar(actualizado);
     // Después de guardar: si guardar falla, no queda auditado algo que no pasó (D6).
-    await deps.repos.auditoria.agregar({
-      id: randomUUID(),
-      turnoId,
-      accion: hacia === 'cancelado' ? 'cancelado' : 'estado_cambiado',
-      actor,
-      fecha: ahora,
-      detalle: { antes: { estado: turno.estado }, despues: { estado: hacia } },
-    });
+    await deps.repos.turnos.guardar(actualizado);
+    try {
+      await deps.repos.auditoria.agregar({
+        id: randomUUID(),
+        turnoId,
+        accion: hacia === 'cancelado' ? 'cancelado' : 'estado_cambiado',
+        actor,
+        fecha: ahora,
+        detalle: { antes: { estado: turno.estado }, despues: { estado: hacia } },
+      });
+    } catch (error) {
+      // Compensación (D6): sin auditoría no hay cambio. Seguimos dentro del lock,
+      // así que nadie llegó a ver el estado intermedio.
+      await deps.repos.turnos.guardar(turno);
+      throw error;
+    }
     return actualizado;
   });
 }

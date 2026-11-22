@@ -60,6 +60,17 @@ describe('POST /api/turnos/:id/estado', () => {
     expect(res.json()).toEqual({ code: 'TRANSICION_INVALIDA' });
   });
 
+  it('atender un turno cancelado (final) → 409 TRANSICION_INVALIDA, sin cambios ni auditoría', async () => {
+    const { app, repos, turno } = await armar('cancelado');
+    const res = await app.inject({
+      method: 'POST', url: `/api/turnos/${turno.id}/estado`, headers: con('prof'), payload: { estado: 'atendido' },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ code: 'TRANSICION_INVALIDA' });
+    expect((await repos.turnos.buscarPorId(turno.id))?.estado).toBe('cancelado');
+    expect(await repos.auditoria.listar()).toEqual([]);
+  });
+
   it('pedir el mismo estado que ya tiene → 409 TRANSICION_INVALIDA', async () => {
     const { app, turno } = await armar('confirmado');
     const res = await app.inject({

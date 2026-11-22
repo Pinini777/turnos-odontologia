@@ -60,6 +60,8 @@ La firma es `cancelarTurno({ turnoId, actor }, deps)`, con `deps: Pick<Deps, 're
 
 Un registro por operación exitosa: `{ id: randomUUID(), turnoId, accion, actor, fecha: clock.ahora(), detalle: { antes: { estado }, despues: { estado } } }`. El `actor` es el `usuarioId` de la sesión (o `"paciente"` cuando llama C-11). La auditoría se escribe después de guardar el turno: si guardar falla, no queda un registro de algo que no pasó.
 
+**Ajuste por la revisión del PR (2026-11-22):** si falla la escritura de auditoría después de guardar, el caso de uso vuelve a guardar el turno original y relanza el error (compensación). Todo pasa dentro de `conLockDeAgenda`, así que nadie ve el estado intermedio. No se usa una transacción porque `src/shared/` está congelado; cuando llegue el adaptador SQLite, EP puede agregar un puerto de unidad de trabajo y reemplazar la compensación. Límite conocido: si también falla el `guardar` de compensación, el turno queda cambiado sin auditoría (con repos en memoria es prácticamente imposible). Test: `tests/turnos-estados/cambiar-estado.test.ts`, "si falla la escritura de auditoría…".
+
 ### D7 — Validación de entrada
 
 Zod en `routes.ts`: `params = { id: string no vacío }`, `body = { estado: z.enum(['confirmado','atendido','ausente']) }`. `cancelado` y `reservado` son errores de formato (`400`), no de negocio: cancelar tiene su propia ruta (por eso no hay dos caminos para lo mismo) y `reservado` es solo el estado inicial.

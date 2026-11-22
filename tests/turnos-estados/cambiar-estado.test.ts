@@ -149,6 +149,33 @@ describe('Auditoría de cada cambio de estado (RN-TU-05)', () => {
     expect(await auditoriaDe(deps, 'turno-reservado')).toHaveLength(1);
   });
 
+  describe('si falla la escritura de auditoría, el turno no queda cambiado', () => {
+    /** Repos en memoria reales, con una auditoría que rechaza cada escritura. */
+    function armarConAuditoriaRota(hora: string = HORA.diezYDiez) {
+      const deps = armar(hora);
+      deps.repos.auditoria = {
+        agregar: () => Promise.reject(new Error('auditoría caída')),
+        listar: deps.repos.auditoria.listar,
+      };
+      return deps;
+    }
+
+    it('cancelarTurno propaga el error y el turno sigue reservado', async () => {
+      const deps = armarConAuditoriaRota();
+      const original = await guardarTurno(deps.repos, 'reservado');
+      await expect(cancelarTurno({ turnoId: original.id, actor: RECEPCION }, deps)).rejects.toThrow('auditoría caída');
+      expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+    });
+
+    it('cambiarEstado propaga el error y el turno sigue confirmado', async () => {
+      const deps = armarConAuditoriaRota();
+      const original = await guardarTurno(deps.repos, 'confirmado');
+      await expect(cambiarEstado({ turnoId: original.id, estado: 'atendido', actor: RECEPCION }, deps))
+        .rejects.toThrow('auditoría caída');
+      expect(await deps.repos.turnos.buscarPorId(original.id)).toEqual(original);
+    });
+  });
+
   it('un cambio de estado rechazado por la hora no deja auditoría', async () => {
     const deps = armar(HORA.nueveCincuentaYNueve);
     await guardarTurno(deps.repos, 'confirmado');
