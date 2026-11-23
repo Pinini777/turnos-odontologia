@@ -272,7 +272,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-08, §DD-11
 
 ### [C-04] `cuentas-y-pacientes`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Facundo · **Capability**: `cuentas` · **Prioridad**: P1 · US-004, US-022, US-060
 - **Scope**:
   - `POST /api/public/login` (los tres roles): `bcryptjs` + JWT de corta duración con `jose`, firmado con `JWT_SECRET`. Reemplaza el stub `cuentas/adapter.ts` por la verificación real, que produce `UsuarioSesion` con `profesionalId` o `pacienteId`.
