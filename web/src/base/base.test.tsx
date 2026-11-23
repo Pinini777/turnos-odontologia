@@ -2,7 +2,15 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearClienteHttp, ErrorApi } from './api';
-import { AlertaErrorNegocio, BadgeEstadoTurno, Boton, EstadoVacio, Tabla } from './components';
+import {
+  AlertaErrorNegocio,
+  AvatarIniciales,
+  BadgeEstadoTurno,
+  Boton,
+  EstadoVacio,
+  obtenerIniciales,
+  Tabla,
+} from './components';
 import { AppLayout } from './AppLayout';
 import { InicioPage } from './InicioPage';
 import { LoginPage } from './LoginPage';
@@ -281,6 +289,8 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
     );
 
     expect(screen.getByText(/tu próximo turno/i)).toBeTruthy();
+    expect(screen.getByText('NOV')).toBeTruthy();
+    expect(screen.getByText('23')).toBeTruthy();
     expect(screen.getByText(/información de la clínica/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /reprogramar turno/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeTruthy();
@@ -289,5 +299,39 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
     expect(container.textContent).not.toContain('Sofía Morales');
     expect(container.textContent).not.toContain('Tomás Benítez');
     expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base/i);
+  });
+
+  it('AvatarIniciales ignora títulos profesionales y genera iniciales consistentes', () => {
+    expect(obtenerIniciales('Dra. Ana Pérez')).toBe('AP');
+    expect(obtenerIniciales('Dr. Bruno Gómez')).toBe('BG');
+    expect(obtenerIniciales('Lucía Fernández')).toBe('LF');
+
+    const { container } = render(<AvatarIniciales nombre="Lucía Fernández" />);
+    expect(container.textContent).toBe('LF');
+  });
+
+  it('Acciones rápidas en vivo cambian el estado de un turno y actualizan el contador', () => {
+    establecerSesion({
+      token: 'jwt-recep',
+      usuario: { id: 'u-r', email: 'recepcion@example.com', rol: 'recepcionista', activo: true },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/inicio']}>
+        <InicioPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('2 turnos')).toBeTruthy();
+
+    const botonesConfirmar = screen.getAllByRole('button', { name: /^confirmar$/i });
+    expect(botonesConfirmar.length).toBeGreaterThan(0);
+    fireEvent.click(botonesConfirmar[0]!);
+
+    expect(screen.getByText('1 turno')).toBeTruthy();
+
+    const botonesAtendido = screen.getAllByRole('button', { name: /marcar atendido/i });
+    fireEvent.click(botonesAtendido[0]!);
+    expect(screen.getByText('Atendido')).toBeTruthy();
   });
 });

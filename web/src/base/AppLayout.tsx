@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import type { UsuarioPublico } from './api';
 import { CLINICA } from './clinica';
-import { Boton, IconoMarca } from './components';
+import { AvatarIniciales, Boton, IconoMarca } from './components';
+import { Icono } from './iconos';
 import { destinoDeItem, ETIQUETA_ROL, obtenerMenuPorRol, type ItemMenu } from './menu';
 import { useSesion } from './sesion';
 import './styles.css';
@@ -11,6 +13,21 @@ interface GeometriaIndicador {
   readonly y: number;
   readonly ancho: number;
   readonly alto: number;
+}
+
+function nombreVisibleDeUsuario(usuario: UsuarioPublico): string {
+  const email = usuario.email.toLowerCase();
+  if (usuario.rol === 'profesional') {
+    return email.includes('profesional2') ? 'Dr. Bruno Gómez' : 'Dra. Ana Pérez';
+  }
+  if (usuario.rol === 'recepcionista') {
+    return 'Recepción Alvear';
+  }
+  if (email === 'paciente1@example.com') {
+    return 'Lucía Fernández';
+  }
+  const parteLocal = usuario.email.split('@')[0] ?? 'Paciente';
+  return parteLocal.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export interface PropsAppLayout {
@@ -41,6 +58,7 @@ export function AppLayout({
   const items = sesion ? obtenerMenuPorRol(sesion.usuario.rol, itemsExtra) : [];
   const rutaCompleta = `${location.pathname}${location.search}`;
   const claveTransicion = claveVista ?? rutaCompleta;
+  const nombrePerfil = sesion ? nombreVisibleDeUsuario(sesion.usuario) : '';
 
   useEffect(() => {
     document.title = `${titulo} — ${CLINICA.nombre}`;
@@ -91,7 +109,15 @@ export function AppLayout({
 
         {sesion ? (
           <div className="wb-rol-box">
-            <span className="wb-rol-pill">{ETIQUETA_ROL[sesion.usuario.rol]}</span>
+            <div className="wb-rol-perfil">
+              <AvatarIniciales nombre={nombrePerfil} tamano="md" />
+              <div className="wb-rol-perfil__info">
+                <span className="wb-rol-nombre" title={nombrePerfil}>
+                  {nombrePerfil}
+                </span>
+                <span className="wb-rol-pill">{ETIQUETA_ROL[sesion.usuario.rol]}</span>
+              </div>
+            </div>
             <span className="wb-rol-email" title={sesion.usuario.email}>
               {sesion.usuario.email}
             </span>
@@ -134,7 +160,10 @@ export function AppLayout({
                   .join(' ')}
                 aria-current={activo ? 'page' : undefined}
               >
-                <span>{item.etiqueta}</span>
+                <span className="wb-nav__contenido">
+                  {item.icono ? <Icono nombre={item.icono} tamano={17} className="wb-nav__icono" /> : null}
+                  <span>{item.etiqueta}</span>
+                </span>
               </Link>
             );
           })}
@@ -142,7 +171,8 @@ export function AppLayout({
 
         {sesion ? (
           <Boton variante="secundario" anchoCompleto onClick={handleCerrarSesion}>
-            Cerrar sesión
+            <Icono nombre="logout" tamano={16} />
+            <span>Cerrar sesión</span>
           </Boton>
         ) : null}
       </aside>

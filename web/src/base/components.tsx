@@ -193,6 +193,46 @@ export function BadgeEstadoTurno({ estado }: { readonly estado: EstadoTurnoUi })
   );
 }
 
+const PREFIJOS_TITULO = new Set(['dr.', 'dra.', 'dr', 'dra', 'lic.', 'odont.']);
+
+export function obtenerIniciales(nombre: string): string {
+  const partes = nombre
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 0 && !PREFIJOS_TITULO.has(p.toLowerCase()));
+  if (partes.length === 0) return 'US';
+  if (partes.length === 1) return (partes[0] ?? 'US').slice(0, 2).toUpperCase();
+  const primera = partes[0]?.[0] ?? '';
+  const segunda = partes[1]?.[0] ?? '';
+  return `${primera}${segunda}`.toUpperCase();
+}
+
+function tonoPorNombre(nombre: string): number {
+  let acc = 0;
+  for (let i = 0; i < nombre.length; i++) {
+    acc = (acc * 31 + nombre.charCodeAt(i)) % 5;
+  }
+  return acc;
+}
+
+export interface PropsAvatarIniciales {
+  readonly nombre: string;
+  readonly tamano?: 'sm' | 'md';
+}
+
+export function AvatarIniciales({ nombre, tamano = 'sm' }: PropsAvatarIniciales) {
+  const iniciales = obtenerIniciales(nombre);
+  const tono = tonoPorNombre(nombre);
+  return (
+    <span
+      className={`wb-avatar wb-avatar--${tamano} wb-avatar--t${tono}`}
+      aria-hidden="true"
+    >
+      {iniciales}
+    </span>
+  );
+}
+
 export interface PropsSkeleton {
   readonly ancho?: string;
   readonly alto?: string;

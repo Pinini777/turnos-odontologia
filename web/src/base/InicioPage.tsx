@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 import { CLINICA } from './clinica';
 import {
+  AvatarIniciales,
   BadgeEstadoTurno,
   Boton,
   EstadoVacio,
@@ -11,6 +12,7 @@ import {
   type ColumnaTabla,
   type EstadoTurnoUi,
 } from './components';
+import { Icono } from './iconos';
 import { useSesion } from './sesion';
 
 interface TurnoAgenda {
@@ -23,7 +25,7 @@ interface TurnoAgenda {
   readonly estado: EstadoTurnoUi;
 }
 
-const AGENDA_PROFESIONAL: readonly TurnoAgenda[] = [
+const AGENDA_PROFESIONAL_INICIAL: readonly TurnoAgenda[] = [
   {
     id: 'p-1',
     horario: '09:00 – 09:30',
@@ -62,7 +64,7 @@ const AGENDA_PROFESIONAL: readonly TurnoAgenda[] = [
   },
 ];
 
-const AGENDA_RECEPCION: readonly TurnoAgenda[] = [
+const AGENDA_RECEPCION_INICIAL: readonly TurnoAgenda[] = [
   {
     id: 'r-1',
     horario: '09:00 – 09:30',
@@ -101,62 +103,62 @@ const AGENDA_RECEPCION: readonly TurnoAgenda[] = [
   },
 ];
 
-const COLUMNAS_AGENDA: readonly ColumnaTabla<TurnoAgenda>[] = [
-  { encabezado: 'Horario', render: (t) => t.horario },
-  { encabezado: 'Box', render: (t) => t.box },
-  { encabezado: 'Profesional', render: (t) => t.profesional },
-  { encabezado: 'Prestación', render: (t) => t.prestacion },
-  { encabezado: 'Paciente', render: (t) => t.paciente },
-  { encabezado: 'Estado', render: (t) => <BadgeEstadoTurno estado={t.estado} /> },
-];
-
 const SECCIONES_SECUNDARIAS: Readonly<
   Record<string, { titulo: string; subtitulo: string; descripcion: string }>
 > = {
   agenda: {
     titulo: 'Agenda diaria y semanal',
     subtitulo: `${CLINICA.nombre} · Organización por profesional y por box`,
-    descripcion: 'Visualizá los turnos por bloque de 15 minutos, filtrá por box o profesional y registrá nuevos turnos sin superposiciones.',
+    descripcion:
+      'Visualizá los turnos por bloque de 15 minutos, filtrá por box o profesional y registrá nuevos turnos sin superposiciones.',
   },
   pacientes: {
     titulo: 'Pacientes',
     subtitulo: `${CLINICA.nombre} · Padrón de contacto y obra social`,
-    descripcion: 'Buscá pacientes registrados, cargá nuevas fichas para atención telefónica o presencial y actualizá sus datos de contacto.',
+    descripcion:
+      'Buscá pacientes registrados, cargá nuevas fichas para atención telefónica o presencial y actualizá sus datos de contacto.',
   },
   catalogo: {
     titulo: 'Catálogo y prestaciones',
     subtitulo: 'Profesionales, boxes y prestaciones de la clínica',
-    descripcion: 'Administrá prestaciones con su duración en múltiplos de 15 minutos, disponibilidad online y valores actualizados.',
+    descripcion:
+      'Administrá prestaciones con su duración en múltiplos de 15 minutos, disponibilidad online y valores actualizados.',
   },
   horarios: {
     titulo: 'Mis horarios y bloqueos',
     subtitulo: 'Franjas de atención semanal y bloqueos de agenda',
-    descripcion: 'Definí tus días y horarios de atención y registrá feriados, ausencias o mantenimiento de box.',
+    descripcion:
+      'Definí tus días y horarios de atención y registrá feriados, ausencias o mantenimiento de box.',
   },
   ganancias: {
     titulo: 'Mis ganancias',
     subtitulo: 'Resumen confidencial de tus turnos atendidos por período',
-    descripcion: 'Consultá el total facturado según el valor vigente al momento de cada reserva, visible exclusivamente para tu cuenta.',
+    descripcion:
+      'Consultá el total facturado según el valor vigente al momento de cada reserva, visible exclusivamente para tu cuenta.',
   },
   clinica: {
     titulo: 'Historia clínica y odontograma',
     subtitulo: 'Evoluciones clínicas y registro de piezas dentales',
-    descripcion: 'Consultá el historial de cada paciente y registrá nuevas evoluciones y estados por pieza dental.',
+    descripcion:
+      'Consultá el historial de cada paciente y registrá nuevas evoluciones y estados por pieza dental.',
   },
   reservar: {
     titulo: 'Reservar turno online',
     subtitulo: `${CLINICA.nombre} · ${CLINICA.horario}`,
-    descripcion: 'Elegí la prestación, seleccioná el horario disponible que prefieras y recibí la confirmación por correo con enlace a Google Calendar.',
+    descripcion:
+      'Elegí la prestación, seleccioná el horario disponible que prefieras y recibí la confirmación por correo con enlace a Google Calendar.',
   },
   turnos: {
     titulo: 'Mis turnos',
     subtitulo: 'Historial y próximas visitas programadas',
-    descripcion: 'Consultá tus próximos turnos confirmados, descargá el recordatorio de calendario o reprogramá hasta 24 horas antes.',
+    descripcion:
+      'Consultá tus próximos turnos confirmados, descargá el recordatorio de calendario o reprogramá hasta 24 horas antes.',
   },
   datos: {
     titulo: 'Mis datos personales',
     subtitulo: 'Información de contacto y cobertura médica',
-    descripcion: 'Mantené actualizados tu teléfono y tu obra social para agilizar la atención en recepción.',
+    descripcion:
+      'Mantené actualizados tu teléfono y tu obra social para agilizar la atención en recepción.',
   },
 };
 
@@ -170,12 +172,75 @@ function boxProfesional(email: string): string {
   return 'Box 1';
 }
 
+function construirColumnasConAcciones(
+  onCambiarEstado: (id: string, nuevoEstado: EstadoTurnoUi) => void,
+): ColumnaTabla<TurnoAgenda>[] {
+  return [
+    { encabezado: 'Horario', render: (t) => t.horario },
+    { encabezado: 'Box', render: (t) => t.box },
+    { encabezado: 'Profesional', render: (t) => t.profesional },
+    { encabezado: 'Prestación', render: (t) => t.prestacion },
+    {
+      encabezado: 'Paciente',
+      render: (t) => (
+        <span className="wb-persona-celda">
+          <AvatarIniciales nombre={t.paciente} tamano="sm" />
+          <span>{t.paciente}</span>
+        </span>
+      ),
+    },
+    { encabezado: 'Estado', render: (t) => <BadgeEstadoTurno estado={t.estado} /> },
+    {
+      encabezado: 'Acción rápida',
+      render: (t) => {
+        if (t.estado === 'reservado') {
+          return (
+            <button
+              type="button"
+              className="wb-accion-fila"
+              onClick={() => onCambiarEstado(t.id, 'confirmado')}
+            >
+              <Icono nombre="check" tamano={14} />
+              <span>Confirmar</span>
+            </button>
+          );
+        }
+        if (t.estado === 'confirmado') {
+          return (
+            <button
+              type="button"
+              className="wb-accion-fila"
+              onClick={() => onCambiarEstado(t.id, 'atendido')}
+            >
+              <Icono nombre="check" tamano={14} />
+              <span>Marcar atendido</span>
+            </button>
+          );
+        }
+        return (
+          <span className="wb-accion-completada">
+            <Icono nombre="check" tamano={14} />
+            <span>Completado</span>
+          </span>
+        );
+      },
+    },
+  ];
+}
+
 export function InicioPage() {
   const { sesion } = useSesion();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [aviso, setAviso] = useState<string | null>(null);
   const [actualizando, setActualizando] = useState(false);
+
+  const [turnosProfesional, setTurnosProfesional] = useState<readonly TurnoAgenda[]>(
+    AGENDA_PROFESIONAL_INICIAL,
+  );
+  const [turnosRecepcion, setTurnosRecepcion] = useState<readonly TurnoAgenda[]>(
+    AGENDA_RECEPCION_INICIAL,
+  );
 
   const vista = searchParams.get('vista') ?? '';
 
@@ -198,11 +263,7 @@ export function InicioPage() {
 
   if (seccion) {
     return (
-      <AppLayout
-        titulo={seccion.titulo}
-        subtitulo={seccion.subtitulo}
-        claveVista={vista}
-      >
+      <AppLayout titulo={seccion.titulo} subtitulo={seccion.subtitulo} claveVista={vista}>
         <EstadoVacio
           titulo={seccion.titulo}
           descripcion={seccion.descripcion}
@@ -218,6 +279,19 @@ export function InicioPage() {
 
   if (rol === 'profesional') {
     const boxAsignado = boxProfesional(sesion.usuario.email);
+    const confirmados = turnosProfesional.filter((t) => t.estado === 'confirmado').length;
+    const reservados = turnosProfesional.filter((t) => t.estado === 'reservado').length;
+    const atendidos = turnosProfesional.filter((t) => t.estado === 'atendido').length;
+    const proximo = turnosProfesional.find(
+      (t) => t.estado === 'confirmado' || t.estado === 'reservado',
+    );
+
+    const columnasProfesional = construirColumnasConAcciones((id, nuevoEstado) => {
+      setTurnosProfesional((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t)),
+      );
+    });
+
     return (
       <AppLayout
         titulo={saludoProfesional(sesion.usuario.email)}
@@ -239,19 +313,40 @@ export function InicioPage() {
         ) : (
           <div className="wb-cards-grid">
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 0 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Turnos de hoy</p>
-              <p className="wb-card__valor">8</p>
-              <p className="wb-card__texto">5 confirmados · 2 por confirmar · 1 atendido</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Turnos de hoy</p>
+                <span className="wb-card__icono">
+                  <Icono nombre="agenda" tamano={18} />
+                </span>
+              </div>
+              <p className="wb-card__valor">{turnosProfesional.length}</p>
+              <p className="wb-card__texto">
+                {confirmados} confirmados · {reservados} por confirmar · {atendidos} atendidos
+              </p>
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 1 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Próximo paciente</p>
-              <p className="wb-card__valor">09:30</p>
-              <p className="wb-card__texto">Martín Quiroga · Limpieza dental (45 min)</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Próximo paciente</p>
+                <span className="wb-card__icono wb-card__icono--esmeralda">
+                  <Icono nombre="horarios" tamano={18} />
+                </span>
+              </div>
+              <p className="wb-card__valor">{proximo ? proximo.horario.split(' ')[0] : 'Sin pendientes'}</p>
+              <p className="wb-card__texto">
+                {proximo
+                  ? `${proximo.paciente} · ${proximo.prestacion}`
+                  : 'Todos los turnos de hoy fueron atendidos'}
+              </p>
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 2 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Box asignado</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Box asignado</p>
+                <span className="wb-card__icono">
+                  <Icono nombre="box" tamano={18} />
+                </span>
+              </div>
               <p className="wb-card__valor">{boxAsignado}</p>
               <p className="wb-card__texto">Turno mañana · 09:00 a 13:00</p>
             </div>
@@ -266,8 +361,8 @@ export function InicioPage() {
             Tu agenda de hoy
           </h2>
           <Tabla
-            columnas={COLUMNAS_AGENDA}
-            filas={AGENDA_PROFESIONAL}
+            columnas={columnasProfesional}
+            filas={turnosProfesional}
             claveFila={(t) => t.id}
             cargando={actualizando}
             filasSkeleton={4}
@@ -278,6 +373,13 @@ export function InicioPage() {
   }
 
   if (rol === 'recepcionista') {
+    const pendientesConfirmar = turnosRecepcion.filter((t) => t.estado === 'reservado').length;
+    const columnasRecepcion = construirColumnasConAcciones((id, nuevoEstado) => {
+      setTurnosRecepcion((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t)),
+      );
+    });
+
     return (
       <AppLayout
         titulo={`Recepción · ${CLINICA.nombre}`}
@@ -296,10 +398,13 @@ export function InicioPage() {
             <Boton
               variante="primario"
               onClick={() =>
-                setAviso('Seleccioná profesional, box y horario libre en la agenda para agendar el nuevo turno.')
+                setAviso(
+                  'Seleccioná profesional, box y horario libre en la agenda para agendar el nuevo turno.',
+                )
               }
             >
-              + Nuevo turno
+              <Icono nombre="plus" tamano={16} />
+              <span>+ Nuevo turno</span>
             </Boton>
           </div>
         }
@@ -318,7 +423,12 @@ export function InicioPage() {
         ) : (
           <div className="wb-cards-grid">
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 0 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Estado · Box 1</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Estado · Box 1</p>
+                <span className="wb-card__icono">
+                  <Icono nombre="box" tamano={18} />
+                </span>
+              </div>
               <div className="wb-estado-box wb-estado-box--ocupado">
                 <BadgeEstadoTurno estado="confirmado" />
                 <span>Ocupado</span>
@@ -327,7 +437,12 @@ export function InicioPage() {
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 1 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Estado · Box 2</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Estado · Box 2</p>
+                <span className="wb-card__icono wb-card__icono--esmeralda">
+                  <Icono nombre="check" tamano={18} />
+                </span>
+              </div>
               <div className="wb-estado-box wb-estado-box--libre">
                 <span>Libre ahora</span>
               </div>
@@ -335,9 +450,20 @@ export function InicioPage() {
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 2 } as CSSProperties}>
-              <p className="wb-card__etiqueta">Pendientes de confirmar</p>
-              <p className="wb-card__valor">3 turnos</p>
-              <p className="wb-card__texto">2 por la mañana · 1 por la tarde</p>
+              <div className="wb-card__cab">
+                <p className="wb-card__etiqueta">Pendientes de confirmar</p>
+                <span className="wb-card__icono wb-card__icono--ambar">
+                  <Icono nombre="pendientes" tamano={18} />
+                </span>
+              </div>
+              <p className="wb-card__valor">
+                {pendientesConfirmar} {pendientesConfirmar === 1 ? 'turno' : 'turnos'}
+              </p>
+              <p className="wb-card__texto">
+                {pendientesConfirmar === 0
+                  ? 'Todos los turnos de hoy están confirmados'
+                  : 'Confirmalos con un clic desde la lista de hoy'}
+              </p>
             </div>
           </div>
         )}
@@ -350,8 +476,8 @@ export function InicioPage() {
             Turnos de hoy por box
           </h2>
           <Tabla
-            columnas={COLUMNAS_AGENDA}
-            filas={AGENDA_RECEPCION}
+            columnas={columnasRecepcion}
+            filas={turnosRecepcion}
             claveFila={(t) => t.id}
             cargando={actualizando}
             filasSkeleton={4}
@@ -361,18 +487,16 @@ export function InicioPage() {
     );
   }
 
-  // Vista exclusiva de Paciente: solo SU próximo turno + información útil de la clínica.
+  // Vista exclusiva de Paciente: bloque de fecha calendario + próximo turno + info de la clínica.
   return (
     <AppLayout
       titulo="Tu espacio de turnos"
       subtitulo={`${CLINICA.nombre} · Reservá, consultá o modificá tus visitas`}
       claveVista="inicio-paciente"
       acciones={
-        <Boton
-          variante="primario"
-          onClick={() => void navigate('/inicio?vista=reservar')}
-        >
-          Reservar nuevo turno
+        <Boton variante="primario" onClick={() => void navigate('/inicio?vista=reservar')}>
+          <Icono nombre="reservar" tamano={16} />
+          <span>Reservar nuevo turno</span>
         </Boton>
       }
     >
@@ -392,12 +516,19 @@ export function InicioPage() {
           aria-labelledby="titulo-proximo-turno"
         >
           <div className="wb-turno-destacado__top">
-            <div>
-              <p className="wb-card__etiqueta" id="titulo-proximo-turno">
-                Tu próximo turno
-              </p>
-              <h2 className="wb-turno-destacado__prestacion">Consulta odontológica (30 min)</h2>
-              <p className="wb-turno-destacado__fecha">Lunes 23 de noviembre · 09:00 a 09:30</p>
+            <div className="wb-turno-cab-izq">
+              <div className="wb-fecha-cal" aria-label="Lunes 23 de noviembre">
+                <span className="wb-fecha-cal__mes">NOV</span>
+                <span className="wb-fecha-cal__dia">23</span>
+                <span className="wb-fecha-cal__semana">Lun</span>
+              </div>
+              <div>
+                <p className="wb-card__etiqueta" id="titulo-proximo-turno">
+                  Tu próximo turno
+                </p>
+                <h2 className="wb-turno-destacado__prestacion">Consulta odontológica (30 min)</h2>
+                <p className="wb-turno-destacado__fecha">Lunes 23 de noviembre · 09:00 a 09:30</p>
+              </div>
             </div>
             <BadgeEstadoTurno estado="confirmado" />
           </div>
@@ -405,7 +536,12 @@ export function InicioPage() {
           <dl className="wb-turno-destacado__detalles">
             <div>
               <dt>Profesional</dt>
-              <dd>Dra. Ana Pérez</dd>
+              <dd>
+                <span className="wb-persona-celda">
+                  <AvatarIniciales nombre="Dra. Ana Pérez" tamano="sm" />
+                  <span>Dra. Ana Pérez</span>
+                </span>
+              </dd>
             </div>
             <div>
               <dt>Consultorio / Box</dt>
@@ -421,7 +557,9 @@ export function InicioPage() {
             <Boton
               variante="primario"
               onClick={() =>
-                setAviso('Podés elegir un nuevo horario disponible para reprogramar este turno desde Mis turnos.')
+                setAviso(
+                  'Podés elegir un nuevo horario disponible para reprogramar este turno desde Mis turnos.',
+                )
               }
             >
               Reprogramar turno
@@ -429,7 +567,9 @@ export function InicioPage() {
             <Boton
               variante="secundario"
               onClick={() =>
-                setAviso('La cancelación libera tu horario inmediatamente (disponible hasta 24 horas antes del inicio).')
+                setAviso(
+                  'La cancelación libera tu horario inmediatamente (disponible hasta 24 horas antes del inicio).',
+                )
               }
             >
               Cancelar turno
@@ -447,9 +587,14 @@ export function InicioPage() {
           style={{ '--stagger-i': 1 } as CSSProperties}
           aria-labelledby="titulo-info-clinica"
         >
-          <h2 id="titulo-info-clinica" className="wb-card__titulo" style={{ marginBottom: 0 }}>
-            Información de la clínica
-          </h2>
+          <div className="wb-card__cab" style={{ marginBottom: 0 }}>
+            <h2 id="titulo-info-clinica" className="wb-card__titulo" style={{ marginBottom: 0 }}>
+              Información de la clínica
+            </h2>
+            <span className="wb-card__icono">
+              <Icono nombre="box" tamano={18} />
+            </span>
+          </div>
 
           <ul className="wb-clinica-card__lista">
             <li>
