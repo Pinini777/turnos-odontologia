@@ -409,6 +409,37 @@ describe('Rutas HTTP de cuentas y pacientes (Tasks 5.1 y 5.2)', () => {
       expect(resMultibyteValido.statusCode).toBe(201);
       expect(contieneClaveRecursiva(resMultibyteValido.json(), 'hashPassword')).toBe(false);
     });
+
+    it('crea solo una cuenta cuando llegan dos registros simultáneos con el mismo email', async () => {
+      const repos = crearRepositoriosEnMemoria();
+      const app = await crearApp({ repos, clock: new FixedClock(FECHA_BASE) });
+      const usuariosAntes = (await repos.usuarios.listar()).length;
+      const pacientesAntes = (await repos.pacientes.listar()).length;
+
+      const peticion = (documento: string) =>
+        app.inject({
+          method: 'POST',
+          url: '/api/public/pacientes/registro',
+          payload: {
+            nombre: 'Paciente',
+            apellido: 'Concurrente',
+            documento,
+            email: 'concurrente@example.com',
+            password: 'clave-valida-123',
+          },
+        });
+
+      const respuestas = await Promise.all([peticion('00000101'), peticion('00000102')]);
+      expect(respuestas.map((res) => res.statusCode).sort((a, b) => a - b)).toEqual([201, 409]);
+      expect(respuestas.find((res) => res.statusCode === 409)?.json()).toEqual({ code: 'DUPLICADO' });
+
+      const usuariosConEmail = await repos.usuarios.listar((u) => u.email === 'concurrente@example.com');
+      const pacientesConEmail = await repos.pacientes.listar((p) => p.email === 'concurrente@example.com');
+      expect(usuariosConEmail).toHaveLength(1);
+      expect(pacientesConEmail).toHaveLength(1);
+      expect(await repos.usuarios.listar()).toHaveLength(usuariosAntes + 1);
+      expect(await repos.pacientes.listar()).toHaveLength(pacientesAntes + 1);
+    });
   });
 
   describe('Gestión de pacientes por personal (GET/POST/PATCH /api/pacientes)', () => {
@@ -493,6 +524,43 @@ describe('Rutas HTTP de cuentas y pacientes (Tasks 5.1 y 5.2)', () => {
       });
       expect(resDocumento.statusCode).toBe(409);
       expect(resDocumento.json()).toEqual({ code: 'DUPLICADO' });
+    });
+
+    it('crea solo un paciente cuando llegan dos altas simultáneas con el mismo documento', async () => {
+      const repos = crearRepositoriosEnMemoria();
+      const listarOriginal = repos.pacientes.listar.bind(repos.pacientes);
+      repos.pacientes.listar = async (filtro) => {
+        const resultado = await listarOriginal(filtro);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return resultado;
+      };
+      const app = await crearApp({ repos, clock: new FixedClock(FECHA_BASE) });
+      const { token } = await loginComo(app, 'recepcion@example.com', PASS_RECEPCION);
+      const pacientesAntes = (await repos.pacientes.listar()).length;
+
+      const peticion = (email: string) =>
+        app.inject({
+          method: 'POST',
+          url: '/api/pacientes',
+          headers: { authorization: `Bearer ${token}` },
+          payload: {
+            nombre: 'Paciente',
+            apellido: 'Concurrente',
+            documento: '00000201',
+            email,
+          },
+        });
+
+      const respuestas = await Promise.all([
+        peticion('concurrente-doc-1@example.com'),
+        peticion('concurrente-doc-2@example.com'),
+      ]);
+      expect(respuestas.map((res) => res.statusCode).sort((a, b) => a - b)).toEqual([201, 409]);
+      expect(respuestas.find((res) => res.statusCode === 409)?.json()).toEqual({ code: 'DUPLICADO' });
+
+      const pacientesConDoc = await repos.pacientes.listar((p) => p.documento === '00000201');
+      expect(pacientesConDoc).toHaveLength(1);
+      expect(await repos.pacientes.listar()).toHaveLength(pacientesAntes + 1);
     });
 
     it('actualiza un paciente vinculado y sincroniza usuario.email verificado en login posterior', async () => {
@@ -611,6 +679,36 @@ describe('Rutas HTTP de cuentas y pacientes (Tasks 5.1 y 5.2)', () => {
       });
       expect(resStrict.statusCode).toBe(400);
       expect(resStrict.json()).toMatchObject({ code: 'FORMATO_INVALIDO' });
+    });
+
+    it('serializa dos PATCH /api/pacientes/:id simultáneos que intentan asignar el mismo email a distintos pacientes', async () => {
+      const repos = crearRepositoriosEnMemoria();
+      const listarOriginal = repos.pacientes.listar.bind(repos.pacientes);
+      repos.pacientes.listar = async (filtro) => {
+        const resultado = await listarOriginal(filtro);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return resultado;
+      };
+      const app = await crearApp({ repos, clock: new FixedClock(FECHA_BASE) });
+      const { token } = await loginComo(app, 'recepcion@example.com', PASS_RECEPCION);
+
+      const peticion = (id: string) =>
+        app.inject({
+          method: 'PATCH',
+          url: `/api/pacientes/${id}`,
+          headers: { authorization: `Bearer ${token}` },
+          payload: { email: 'disputado@example.com' },
+        });
+
+      const respuestas = await Promise.all([
+        peticion(SEED.pacientes.uno.id),
+        peticion(SEED.pacientes.dos.id),
+      ]);
+      expect(respuestas.map((res) => res.statusCode).sort((a, b) => a - b)).toEqual([200, 409]);
+      expect(respuestas.find((res) => res.statusCode === 409)?.json()).toEqual({ code: 'DUPLICADO' });
+
+      const pacientesConEmail = await repos.pacientes.listar((p) => p.email === 'disputado@example.com');
+      expect(pacientesConEmail).toHaveLength(1);
     });
 
     it('rechaza con 403 SIN_PERMISO cuando un paciente intenta acceder a /api/pacientes*', async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { crearLockDeAgenda } from '../../src/shared/lock';
 import { crearRepositoriosEnMemoria } from '../../src/shared/repositorios';
 import { SEED } from '../../src/shared/seed';
 import {
@@ -18,7 +19,8 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
 
   it('crea un paciente sin usuarioId normalizando email y documento', async () => {
     const repos = crearRepositoriosEnMemoria();
-    const creado = await crearPaciente(repos, {
+    const conLock = crearLockDeAgenda();
+    const creado = await crearPaciente(repos, conLock, {
       nombre: 'Paciente',
       apellido: 'Ficticio Cuatro',
       documento: ' 00000004 ',
@@ -37,9 +39,10 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
 
   it('rechaza alta por email duplicado (en pacientes o usuarios) y por documento duplicado', async () => {
     const repos = crearRepositoriosEnMemoria();
+    const conLock = crearLockDeAgenda();
 
     await expect(
-      crearPaciente(repos, {
+      crearPaciente(repos, conLock, {
         nombre: 'Paciente',
         apellido: 'Ficticio',
         documento: '00000090',
@@ -48,7 +51,7 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
 
     await expect(
-      crearPaciente(repos, {
+      crearPaciente(repos, conLock, {
         nombre: 'Paciente',
         apellido: 'Ficticio',
         documento: '00000091',
@@ -57,7 +60,7 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
 
     await expect(
-      crearPaciente(repos, {
+      crearPaciente(repos, conLock, {
         nombre: 'Paciente',
         apellido: 'Ficticio',
         documento: ' 00000001 ',
@@ -68,7 +71,8 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
 
   it('actualiza un paciente vinculado y sincroniza el email del usuario asociado', async () => {
     const repos = crearRepositoriosEnMemoria();
-    const actualizado = await actualizarPaciente(repos, SEED.pacientes.uno.id, {
+    const conLock = crearLockDeAgenda();
+    const actualizado = await actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, {
       email: '  NUEVO1@Example.com ',
       obraSocial: 'Obra Social Nueva',
     });
@@ -81,7 +85,8 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
 
   it('permite reenviar el propio email y documento en actualizarPaciente sin falso DUPLICADO (con y sin usuarioId)', async () => {
     const repos = crearRepositoriosEnMemoria();
-    const actualizadoConCuenta = await actualizarPaciente(repos, SEED.pacientes.uno.id, {
+    const conLock = crearLockDeAgenda();
+    const actualizadoConCuenta = await actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, {
       documento: '00000001',
       email: 'PACIENTE1@example.com',
       telefono: '0000-999999',
@@ -91,7 +96,7 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
     expect(actualizadoConCuenta.email).toBe('paciente1@example.com');
     expect(actualizadoConCuenta.documento).toBe('00000001');
 
-    const actualizadoSinCuenta = await actualizarPaciente(repos, SEED.pacientes.dos.id, {
+    const actualizadoSinCuenta = await actualizarPaciente(repos, conLock, SEED.pacientes.dos.id, {
       documento: '00000002',
       email: 'PACIENTE2@example.com',
       telefono: '0000-888888',
@@ -104,22 +109,58 @@ describe('Casos de uso de pacientes para personal (Task 4.1)', () => {
 
   it('rechaza actualización de paciente inexistente (NO_ENCONTRADO) o con email/documento de otro registro (DUPLICADO)', async () => {
     const repos = crearRepositoriosEnMemoria();
+    const conLock = crearLockDeAgenda();
 
     await expect(
-      actualizarPaciente(repos, 'id-inexistente', { telefono: '0000-111111' }),
+      actualizarPaciente(repos, conLock, 'id-inexistente', { telefono: '0000-111111' }),
     ).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
 
     await expect(
-      actualizarPaciente(repos, SEED.pacientes.uno.id, { email: 'paciente2@example.com' }),
+      actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, { email: 'paciente2@example.com' }),
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
 
     await expect(
-      actualizarPaciente(repos, SEED.pacientes.uno.id, { email: 'profesional@example.com' }),
+      actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, { email: 'profesional@example.com' }),
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
 
     await expect(
-      actualizarPaciente(repos, SEED.pacientes.uno.id, { documento: '00000002' }),
+      actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, { documento: '00000002' }),
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
+  });
+
+  it('serializa llamadas concurrentes a crearPaciente y actualizarPaciente rechazando colisiones con DUPLICADO', async () => {
+    const repos = crearRepositoriosEnMemoria();
+    const conLock = crearLockDeAgenda();
+
+    const altas = await Promise.allSettled([
+      crearPaciente(repos, conLock, {
+        nombre: 'Paciente',
+        apellido: 'Concurrente A',
+        documento: '00000301',
+        email: 'conc-a@example.com',
+      }),
+      crearPaciente(repos, conLock, {
+        nombre: 'Paciente',
+        apellido: 'Concurrente B',
+        documento: '00000301',
+        email: 'conc-b@example.com',
+      }),
+    ]);
+
+    expect(altas.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const altaRechazada = altas.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
+    expect(altaRechazada?.reason).toMatchObject({ code: 'DUPLICADO' });
+    expect(await repos.pacientes.listar((p) => p.documento === '00000301')).toHaveLength(1);
+
+    const ediciones = await Promise.allSettled([
+      actualizarPaciente(repos, conLock, SEED.pacientes.uno.id, { documento: '00000401' }),
+      actualizarPaciente(repos, conLock, SEED.pacientes.dos.id, { documento: '00000401' }),
+    ]);
+
+    expect(ediciones.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const edicionRechazada = ediciones.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
+    expect(edicionRechazada?.reason).toMatchObject({ code: 'DUPLICADO' });
+    expect(await repos.pacientes.listar((p) => p.documento === '00000401')).toHaveLength(1);
   });
 });
 

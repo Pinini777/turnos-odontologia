@@ -86,6 +86,11 @@ La API SHALL exponer `POST /api/public/pacientes/registro` sin sesión previa pa
 - **WHEN** el cliente envía `POST /api/public/pacientes/registro` con una contraseña de menos de 8 caracteres, más de 72 bytes en UTF-8 (incluyendo caracteres multibyte que excedan 72 bytes aunque tengan menos de 72 caracteres), o un email inválido
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y los detalles de validación
 
+#### Scenario: Dos registros simultáneos con el mismo email
+- **GIVEN** un email que todavía no existe ni en usuarios ni en pacientes
+- **WHEN** llegan dos solicitudes simultáneas a `POST /api/public/pacientes/registro` con ese mismo email
+- **THEN** exactamente una responde `201`, la otra responde `409` con `{"code":"DUPLICADO"}` y en los repositorios queda persistido un único usuario y un único paciente para ese email
+
 ### Requirement: Gestión de pacientes por el personal del consultorio
 La API SHALL exponer `GET /api/pacientes`, `POST /api/pacientes` y `PATCH /api/pacientes/:id` exclusivamente para los roles `profesional` y `recepcionista`, garantizando unicidad de email y documento y sincronizando el email de la cuenta vinculada cuando corresponde.
 
@@ -108,6 +113,11 @@ La API SHALL exponer `GET /api/pacientes`, `POST /api/pacientes` y `PATCH /api/p
 - **GIVEN** una sesión válida de `recepcionista` o `profesional`
 - **WHEN** envía `POST /api/pacientes` con un documento ya registrado en `pacientes`
 - **THEN** recibe `409` con `{"code":"DUPLICADO"}`
+
+#### Scenario: Dos altas simultáneas de paciente con el mismo documento
+- **GIVEN** una sesión válida de `recepcionista` o `profesional` y un documento todavía no registrado
+- **WHEN** llegan dos solicitudes simultáneas a `POST /api/pacientes` con ese mismo documento
+- **THEN** exactamente una responde `201`, la otra responde `409` con `{"code":"DUPLICADO"}` y en el repositorio queda persistido un único paciente con ese documento
 
 #### Scenario: Personal actualiza un paciente y sincroniza el email de su usuario vinculado
 - **GIVEN** una sesión válida de `recepcionista` o `profesional` y un paciente con `usuarioId` asociado

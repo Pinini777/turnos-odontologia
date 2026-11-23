@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Paciente } from '../../../shared/entidades';
 import { ReglaDeNegocioError } from '../../../shared/errores';
+import type { ConLockDeAgenda } from '../../../shared/lock';
 import type { Repositorios } from '../../../shared/repositorios';
 import type { UsuarioSesion } from '../../../shared/sesion';
 import {
@@ -37,81 +38,87 @@ export async function listarPacientes(repos: Repositorios): Promise<Paciente[]> 
 
 export async function crearPaciente(
   repos: Repositorios,
+  conLockDeAgenda: ConLockDeAgenda,
   entrada: EntradaCrearPaciente,
   generarId: () => string = randomUUID,
 ): Promise<Paciente> {
-  const [usuarios, pacientes] = await Promise.all([
-    repos.usuarios.listar(),
-    repos.pacientes.listar(),
-  ]);
+  return conLockDeAgenda(async () => {
+    const [usuarios, pacientes] = await Promise.all([
+      repos.usuarios.listar(),
+      repos.pacientes.listar(),
+    ]);
 
-  validarUnicidadPaciente({
-    email: entrada.email,
-    documento: entrada.documento,
-    usuarios,
-    pacientes,
+    validarUnicidadPaciente({
+      email: entrada.email,
+      documento: entrada.documento,
+      usuarios,
+      pacientes,
+    });
+
+    const paciente: Paciente = {
+      id: generarId(),
+      nombre: entrada.nombre.trim(),
+      apellido: entrada.apellido.trim(),
+      documento: normalizarDocumento(entrada.documento),
+      email: normalizarEmail(entrada.email),
+    };
+    if (entrada.telefono !== undefined) paciente.telefono = entrada.telefono;
+    if (entrada.obraSocial !== undefined) paciente.obraSocial = entrada.obraSocial;
+    if (entrada.plan !== undefined) paciente.plan = entrada.plan;
+    if (entrada.nroAfiliado !== undefined) paciente.nroAfiliado = entrada.nroAfiliado;
+
+    await repos.pacientes.guardar(paciente);
+    return paciente;
   });
-
-  const paciente: Paciente = {
-    id: generarId(),
-    nombre: entrada.nombre.trim(),
-    apellido: entrada.apellido.trim(),
-    documento: normalizarDocumento(entrada.documento),
-    email: normalizarEmail(entrada.email),
-  };
-  if (entrada.telefono !== undefined) paciente.telefono = entrada.telefono;
-  if (entrada.obraSocial !== undefined) paciente.obraSocial = entrada.obraSocial;
-  if (entrada.plan !== undefined) paciente.plan = entrada.plan;
-  if (entrada.nroAfiliado !== undefined) paciente.nroAfiliado = entrada.nroAfiliado;
-
-  await repos.pacientes.guardar(paciente);
-  return paciente;
 }
 
 export async function actualizarPaciente(
   repos: Repositorios,
+  conLockDeAgenda: ConLockDeAgenda,
   id: string,
   entrada: EntradaActualizarPaciente,
 ): Promise<Paciente> {
-  const existente = await repos.pacientes.buscarPorId(id);
-  if (!existente) {
-    throw new ReglaDeNegocioError('NO_ENCONTRADO');
-  }
-
-  const [usuarios, pacientes] = await Promise.all([
-    repos.usuarios.listar(),
-    repos.pacientes.listar(),
-  ]);
-
-  validarUnicidadPaciente({
-    email: entrada.email,
-    documento: entrada.documento,
-    usuarios,
-    pacientes,
-    excluir: { pacienteId: existente.id, usuarioId: existente.usuarioId },
-  });
-
-  const actualizado: Paciente = {
-    ...existente,
-    ...(entrada.nombre !== undefined ? { nombre: entrada.nombre.trim() } : {}),
-    ...(entrada.apellido !== undefined ? { apellido: entrada.apellido.trim() } : {}),
-    ...(entrada.documento !== undefined ? { documento: normalizarDocumento(entrada.documento) } : {}),
-    ...(entrada.email !== undefined ? { email: normalizarEmail(entrada.email) } : {}),
-    ...(entrada.telefono !== undefined ? { telefono: entrada.telefono } : {}),
-    ...(entrada.obraSocial !== undefined ? { obraSocial: entrada.obraSocial } : {}),
-    ...(entrada.plan !== undefined ? { plan: entrada.plan } : {}),
-    ...(entrada.nroAfiliado !== undefined ? { nroAfiliado: entrada.nroAfiliado } : {}),
-  };
-
-  if (existente.usuarioId !== undefined && actualizado.email !== existente.email) {
-    const usuario = await repos.usuarios.buscarPorId(existente.usuarioId);
-    if (usuario) {
-      await repos.usuarios.guardar({ ...usuario, email: actualizado.email });
+  return conLockDeAgenda(async () => {
+    const existente = await repos.pacientes.buscarPorId(id);
+    if (!existente) {
+      throw new ReglaDeNegocioError('NO_ENCONTRADO');
     }
-  }
 
-  await repos.pacientes.guardar(actualizado);
-  return actualizado;
+    const [usuarios, pacientes] = await Promise.all([
+      repos.usuarios.listar(),
+      repos.pacientes.listar(),
+    ]);
+
+    validarUnicidadPaciente({
+      email: entrada.email,
+      documento: entrada.documento,
+      usuarios,
+      pacientes,
+      excluir: { pacienteId: existente.id, usuarioId: existente.usuarioId },
+    });
+
+    const actualizado: Paciente = {
+      ...existente,
+      ...(entrada.nombre !== undefined ? { nombre: entrada.nombre.trim() } : {}),
+      ...(entrada.apellido !== undefined ? { apellido: entrada.apellido.trim() } : {}),
+      ...(entrada.documento !== undefined ? { documento: normalizarDocumento(entrada.documento) } : {}),
+      ...(entrada.email !== undefined ? { email: normalizarEmail(entrada.email) } : {}),
+      ...(entrada.telefono !== undefined ? { telefono: entrada.telefono } : {}),
+      ...(entrada.obraSocial !== undefined ? { obraSocial: entrada.obraSocial } : {}),
+      ...(entrada.plan !== undefined ? { plan: entrada.plan } : {}),
+      ...(entrada.nroAfiliado !== undefined ? { nroAfiliado: entrada.nroAfiliado } : {}),
+    };
+
+    if (existente.usuarioId !== undefined && actualizado.email !== existente.email) {
+      const usuario = await repos.usuarios.buscarPorId(existente.usuarioId);
+      if (usuario) {
+        await repos.usuarios.guardar({ ...usuario, email: actualizado.email });
+      }
+    }
+
+    await repos.pacientes.guardar(actualizado);
+    return actualizado;
+  });
 }
 
 export interface EntradaActualizarDatosPropios {

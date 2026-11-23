@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FixedClock } from '../../src/shared/clock';
 import { NoAutenticadoError, ReglaDeNegocioError } from '../../src/shared/errores';
+import { crearLockDeAgenda } from '../../src/shared/lock';
 import { crearRepositoriosEnMemoria } from '../../src/shared/repositorios';
 import { SEED } from '../../src/shared/seed';
 import {
@@ -79,14 +80,15 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
     const hasher = crearHasherBcrypt();
     const emisor = crearEmisorJwt(clock, { secret: SECRETO });
     const auth = crearAuth(repos, clock, { secret: SECRETO });
-    return { repos, clock, hasher, emisor, auth };
+    const conLockDeAgenda = crearLockDeAgenda();
+    return { repos, clock, hasher, emisor, auth, conLockDeAgenda };
   };
 
   it('crea un paciente nuevo + usuario con hash bcrypt, sin hashPassword en respuesta y con token válido', async () => {
-    const { repos, hasher, emisor, auth } = crearDeps();
+    const { repos, hasher, emisor, auth, conLockDeAgenda } = crearDeps();
 
     const res = await registrarPaciente(
-      { repos, hasher, emisor },
+      { repos, hasher, emisor, conLockDeAgenda },
       {
         nombre: 'Paciente',
         apellido: 'Ficticio Tres',
@@ -119,11 +121,11 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
   });
 
   it('vincula paciente preexistente sin cuenta (SEED.pacientes.dos) preservando su id y teléfono previo', async () => {
-    const { repos, hasher, emisor, auth } = crearDeps();
+    const { repos, hasher, emisor, auth, conLockDeAgenda } = crearDeps();
     await repos.pacientes.guardar({ ...SEED.pacientes.dos, telefono: '0000-000002' });
 
     const res = await registrarPaciente(
-      { repos, hasher, emisor },
+      { repos, hasher, emisor, conLockDeAgenda },
       {
         nombre: 'Paciente',
         apellido: 'Ficticio Dos',
@@ -148,12 +150,12 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
   });
 
   it('rechaza con DUPLICADO cuando el email ya pertenece a un usuario, la ficha ya está vinculada o hay colisión cruzada', async () => {
-    const { repos, hasher, emisor } = crearDeps();
+    const { repos, hasher, emisor, conLockDeAgenda } = crearDeps();
 
     // Email ya en usuarios (personal)
     await expect(
       registrarPaciente(
-        { repos, hasher, emisor },
+        { repos, hasher, emisor, conLockDeAgenda },
         {
           nombre: 'Paciente',
           apellido: 'Ficticio',
@@ -167,7 +169,7 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
     // Ficha ya vinculada (SEED.pacientes.uno)
     await expect(
       registrarPaciente(
-        { repos, hasher, emisor },
+        { repos, hasher, emisor, conLockDeAgenda },
         {
           nombre: 'Paciente',
           apellido: 'Ficticio Uno',
@@ -181,7 +183,7 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
     // Mismo documento con distinto email
     await expect(
       registrarPaciente(
-        { repos, hasher, emisor },
+        { repos, hasher, emisor, conLockDeAgenda },
         {
           nombre: 'Paciente',
           apellido: 'Ficticio',
@@ -195,7 +197,7 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
     // Mismo email con distinto documento
     await expect(
       registrarPaciente(
-        { repos, hasher, emisor },
+        { repos, hasher, emisor, conLockDeAgenda },
         {
           nombre: 'Paciente',
           apellido: 'Ficticio',
@@ -205,5 +207,50 @@ describe('Caso de uso registrarPaciente (Task 3.2)', () => {
         },
       ),
     ).rejects.toMatchObject({ code: 'DUPLICADO' });
+  });
+
+  it('calcula el hash bcrypt fuera de la sección crítica y serializa dos vinculaciones PA-10 concurrentes', async () => {
+    const { repos, emisor } = crearDeps();
+    const orden: string[] = [];
+    const lockBase = crearLockDeAgenda();
+    const conLockDeAgenda: typeof lockBase = (fn) =>
+      lockBase(async () => {
+        orden.push('lock:inicio');
+        try {
+          return await fn();
+        } finally {
+          orden.push('lock:fin');
+        }
+      });
+    const hasher = {
+      hash: async () => {
+        orden.push('hash:inicio');
+        await Promise.resolve();
+        orden.push('hash:fin');
+        return '$2b$10$hashficticio';
+      },
+      comparar: async () => true,
+    };
+
+    const entrada = {
+      nombre: 'Paciente',
+      apellido: 'Ficticio Dos',
+      documento: '00000002',
+      email: 'paciente2@example.com',
+      password: 'clave-vinculada-ficticia',
+    };
+
+    const resultados = await Promise.allSettled([
+      registrarPaciente({ repos, hasher, emisor, conLockDeAgenda }, entrada),
+      registrarPaciente({ repos, hasher, emisor, conLockDeAgenda }, entrada),
+    ]);
+
+    const exitosos = resultados.filter((r) => r.status === 'fulfilled');
+    const rechazados = resultados.filter((r) => r.status === 'rejected');
+    expect(exitosos).toHaveLength(1);
+    expect(rechazados).toHaveLength(1);
+    expect((rechazados[0] as PromiseRejectedResult).reason).toMatchObject({ code: 'DUPLICADO' });
+    expect(orden.indexOf('hash:fin')).toBeLessThan(orden.indexOf('lock:inicio'));
+    expect(await repos.usuarios.listar((u) => u.email === 'paciente2@example.com')).toHaveLength(1);
   });
 });

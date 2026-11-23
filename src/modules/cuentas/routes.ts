@@ -87,7 +87,7 @@ export default async function cuentasRoutes(app: FastifyInstance): Promise<void>
   app.post('/public/pacientes/registro', async (request, reply) => {
     const entrada = esquemaRegistroPaciente.parse(request.body);
     const resultado = await registrarPaciente(
-      { repos: app.deps.repos, hasher, emisor },
+      { repos: app.deps.repos, hasher, emisor, conLockDeAgenda: app.deps.conLockDeAgenda },
       entrada,
     );
     return reply.status(201).send(resultado);
@@ -104,7 +104,7 @@ export default async function cuentasRoutes(app: FastifyInstance): Promise<void>
     { preHandler: requireRol('profesional', 'recepcionista') },
     async (request, reply) => {
       const entrada = esquemaCrearPaciente.parse(request.body);
-      const paciente = await crearPaciente(app.deps.repos, entrada);
+      const paciente = await crearPaciente(app.deps.repos, app.deps.conLockDeAgenda, entrada);
       return reply.status(201).send(paciente);
     },
   );
@@ -115,7 +115,7 @@ export default async function cuentasRoutes(app: FastifyInstance): Promise<void>
     async (request) => {
       const { id } = esquemaIdParam.parse(request.params);
       const entrada = esquemaActualizarPaciente.parse(request.body);
-      return actualizarPaciente(app.deps.repos, id, entrada);
+      return actualizarPaciente(app.deps.repos, app.deps.conLockDeAgenda, id, entrada);
     },
   );
 
