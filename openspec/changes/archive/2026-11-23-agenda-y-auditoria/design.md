@@ -262,11 +262,11 @@ Reglas de los tests: nombres de `it` iguales al escenario del spec; `toEqual`/`t
 
 ## Open Questions
 
-Ninguna que bloquee `apply`. PA-09 queda como supuesto explícito en D10; si EP responde antes de `apply`, se ajusta D5 y el escenario de acceso correspondiente.
+Ninguna. EP aprobó el spec el 2026-11-23 (governance CRITICO) y se mantiene el supuesto PA-09 de D10: el profesional ve toda la agenda y la auditoría de cualquier turno.
 
 ## UI Mockups
 
-- Design system revision: 1
+- Design system revision: 2
 - Decision: no (no UI)
 - Approval: n/a
 - Preview: n/a
