@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ErrorApi, loginApi } from './api';
+import { CLINICA } from './clinica';
 import { AlertaErrorNegocio, Boton, Campo, IconoMarca } from './components';
 import { apiConsultorio, useSesion } from './sesion';
 import './styles.css';
@@ -20,6 +21,10 @@ export function LoginPage() {
   const [enviando, setEnviando] = useState(false);
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
   const [errorLocal, setErrorLocal] = useState<{ email?: string; password?: string }>({});
+
+  useEffect(() => {
+    document.title = `Ingresar — ${CLINICA.nombre}`;
+  }, []);
 
   async function handleSubmit(evento: FormEvent<HTMLFormElement>): Promise<void> {
     evento.preventDefault();
@@ -56,35 +61,65 @@ export function LoginPage() {
       <aside className="wb-auth-editorial">
         <div className="wb-marca">
           <IconoMarca tamano={38} />
-          <span>Consultorio Odontológico</span>
+          <span className="wb-marca__texto">
+            <span>{CLINICA.nombre}</span>
+            <span className="wb-marca__sub">{CLINICA.subtitulo}</span>
+          </span>
         </div>
 
         <div>
           <h1 className="wb-auth-editorial__titulo">
-            Agenda clínica ordenada por profesional y por box
+            Atención odontológica puntual y ordenada
           </h1>
           <p className="wb-auth-editorial__sub">
-            Turnos en bloques de 15 minutos, sin superposiciones ni sobreturnos, y reserva online
-            con confirmación para tus pacientes.
+            Reservá tu turno online en pocos pasos, recibí tu confirmación al instante y gestioná
+            tus horarios sin esperas ni superposiciones.
           </p>
+
+          <div className="wb-clinica-meta">
+            <div className="wb-clinica-meta__fila">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+              <span>{CLINICA.direccion}</span>
+            </div>
+            <div className="wb-clinica-meta__fila">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" strokeLinecap="round" />
+              </svg>
+              <span>{CLINICA.horario}</span>
+            </div>
+            <div className="wb-chips" aria-label="Especialidades">
+              {CLINICA.especialidades.map((esp) => (
+                <span key={esp} className="wb-chip-oscuro">
+                  {esp}
+                </span>
+              ))}
+            </div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255, 255, 255, 0.82)' }}>
+              Obras sociales: {CLINICA.obrasSociales.join(', ')}
+            </div>
+          </div>
         </div>
 
         <div className="wb-agenda-muestra" aria-hidden="true">
           <div className="wb-agenda-muestra__cab">
-            <span>Box 1 · Lunes 09:00 a 13:00</span>
-            <span>Intervalo [inicio, fin)</span>
+            <span>Turnos organizados · Box 1 y Box 2</span>
+            <span>Sin superposiciones</span>
           </div>
           <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--1">
-            <span>10:00 – 10:30 · Consulta · Dra. Ana Pérez</span>
+            <span>09:00 – 09:30 · Consulta · Dra. Ana Pérez</span>
             <span className="wb-agenda-muestra__chip">Confirmado</span>
           </div>
           <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--2">
-            <span>10:30 – 11:00 · Control · Dra. Ana Pérez</span>
-            <span className="wb-agenda-muestra__chip">Contiguo válido</span>
+            <span>09:30 – 10:15 · Limpieza · Dra. Ana Pérez</span>
+            <span className="wb-agenda-muestra__chip">En horario</span>
           </div>
           <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--3">
-            <span>11:00 – 11:45 · Limpieza · Box 2 libre</span>
-            <span className="wb-agenda-muestra__chip">Disponible</span>
+            <span>10:00 – 10:30 · Control · Dr. Bruno Gómez</span>
+            <span className="wb-agenda-muestra__chip">Box 2 libre</span>
           </div>
         </div>
       </aside>
@@ -93,7 +128,7 @@ export function LoginPage() {
         <div className="wb-auth-card">
           <h2 className="wb-auth-card__titulo">Ingresá a tu cuenta</h2>
           <p className="wb-auth-card__sub">
-            Accedé como paciente, recepcionista o profesional del consultorio.
+            Accedé como paciente, recepción o profesional de {CLINICA.nombre}.
           </p>
 
           <form className="wb-form" onSubmit={handleSubmit} noValidate>
@@ -111,7 +146,7 @@ export function LoginPage() {
               type="email"
               autoComplete="email"
               spellCheck={false}
-              placeholder="paciente1@example.com…"
+              placeholder="tu.nombre@example.com…"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errorLocal.email}
@@ -140,7 +175,7 @@ export function LoginPage() {
           </form>
 
           <details className="wb-detalles" style={{ marginTop: 'var(--space-5)' }}>
-            <summary>Cuentas ficticias de ejemplo para pruebas locales</summary>
+            <summary>Accesos de demostración</summary>
             <div className="wb-demo-grid">
               {CUENTAS_DEMO.map((cuenta) => (
                 <button
@@ -161,9 +196,9 @@ export function LoginPage() {
           </details>
 
           <p className="wb-auth-pie">
-            ¿Sos paciente nuevo?{' '}
+            ¿Primera vez en la clínica?{' '}
             <Link to="/registro" className="wb-link">
-              Creá tu cuenta
+              Creá tu cuenta de paciente
             </Link>
           </p>
         </div>

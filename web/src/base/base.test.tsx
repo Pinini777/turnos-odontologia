@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearClienteHttp, ErrorApi } from './api';
 import { AlertaErrorNegocio, BadgeEstadoTurno, Boton, EstadoVacio, Tabla } from './components';
 import { AppLayout } from './AppLayout';
+import { InicioPage } from './InicioPage';
 import { LoginPage } from './LoginPage';
 import { RegistroPage } from './RegistroPage';
 import { obtenerMenuPorRol } from './menu';
@@ -225,5 +226,68 @@ describe('Pantallas de Login y Registro contra C-04', () => {
       expect(screen.getByRole('alert').textContent).toMatch(/al menos 8 caracteres/i);
     });
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
+  it('Profesional ve sus métricas del día y su agenda sin jerga técnica', () => {
+    establecerSesion({
+      token: 'jwt-prof',
+      usuario: { id: 'u-p', email: 'profesional@example.com', rol: 'profesional', activo: true },
+    });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/inicio']}>
+        <InicioPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/turnos de hoy/i)).toBeTruthy();
+    expect(screen.getByText(/próximo paciente/i)).toBeTruthy();
+    expect(screen.getByText(/box asignado/i)).toBeTruthy();
+    expect(screen.getByText(/tu agenda de hoy/i)).toBeTruthy();
+    expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base|datos ficticios/i);
+  });
+
+  it('Recepcionista ve estado de boxes, pendientes y botón + Nuevo turno sin precios ni ganancias', () => {
+    establecerSesion({
+      token: 'jwt-recep',
+      usuario: { id: 'u-r', email: 'recepcion@example.com', rol: 'recepcionista', activo: true },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/inicio']}>
+        <InicioPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/estado · box 1/i)).toBeTruthy();
+    expect(screen.getByText(/estado · box 2/i)).toBeTruthy();
+    expect(screen.getByText(/pendientes de confirmar/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /\+ nuevo turno/i })).toBeTruthy();
+    expect(screen.queryByText(/mis ganancias/i)).toBeNull();
+  });
+
+  it('Paciente ve su próximo turno + info de la clínica y NUNCA turnos de otros pacientes', () => {
+    establecerSesion({
+      token: 'jwt-pac',
+      usuario: { id: 'u-pac', email: 'paciente1@example.com', rol: 'paciente', activo: true },
+    });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/inicio']}>
+        <InicioPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/tu próximo turno/i)).toBeTruthy();
+    expect(screen.getByText(/información de la clínica/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /reprogramar turno/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeTruthy();
+    // RN-RE-03: jamás expone turnos de otros pacientes
+    expect(container.textContent).not.toContain('Martín Quiroga');
+    expect(container.textContent).not.toContain('Sofía Morales');
+    expect(container.textContent).not.toContain('Tomás Benítez');
+    expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base/i);
   });
 });

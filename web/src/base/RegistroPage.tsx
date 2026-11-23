@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ErrorApi, registrarPacienteApi, type EntradaRegistroPaciente } from './api';
+import { CLINICA } from './clinica';
 import { AlertaErrorNegocio, Boton, Campo, IconoMarca } from './components';
 import { apiConsultorio, useSesion } from './sesion';
 import './styles.css';
@@ -33,6 +34,10 @@ export function RegistroPage() {
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
   const [errores, setErrores] = useState<ErroresRegistro>({});
 
+  useEffect(() => {
+    document.title = `Crear cuenta — ${CLINICA.nombre}`;
+  }, []);
+
   function validar(): ErroresRegistro {
     const e: ErroresRegistro = {};
     if (!nombre.trim()) e.nombre = 'Ingresá tu nombre.';
@@ -42,7 +47,7 @@ export function RegistroPage() {
     if (password.length < 8) {
       e.password = 'La contraseña debe tener al menos 8 caracteres.';
     } else if (textEncoder.encode(password).length > 72) {
-      e.password = 'La contraseña no puede superar los 72 bytes en UTF-8.';
+      e.password = 'La contraseña es demasiado larga (máximo 72 bytes).';
     }
     return e;
   }
@@ -88,15 +93,27 @@ export function RegistroPage() {
       <aside className="wb-auth-editorial">
         <div className="wb-marca">
           <IconoMarca tamano={38} />
-          <span>Consultorio Odontológico</span>
+          <span className="wb-marca__texto">
+            <span>{CLINICA.nombre}</span>
+            <span className="wb-marca__sub">{CLINICA.subtitulo}</span>
+          </span>
         </div>
 
         <div>
           <h1 className="wb-auth-editorial__titulo">Reservá tu turno online en pocos pasos</h1>
           <p className="wb-auth-editorial__sub">
-            Con tu cuenta podés elegir horario libre, recibir confirmación por correo con Google
-            Calendar y cancelar o reprogramar hasta 24 horas antes.
+            Elegí el horario disponible que mejor se adapte a tu semana, recibí tu confirmación por
+            correo y sumala directo a tu calendario.
           </p>
+
+          <div className="wb-clinica-meta">
+            <div className="wb-clinica-meta__fila">
+              <span>{CLINICA.direccion}</span>
+            </div>
+            <div className="wb-clinica-meta__fila">
+              <span>{CLINICA.horario}</span>
+            </div>
+          </div>
         </div>
 
         <div className="wb-agenda-muestra" aria-hidden="true">
@@ -105,11 +122,11 @@ export function RegistroPage() {
             <span>Sin llamadas</span>
           </div>
           <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--1">
-            <span>Confirmación por email + archivo .ics</span>
+            <span>Confirmación por correo + Google Calendar</span>
             <span className="wb-agenda-muestra__chip">Incluido</span>
           </div>
           <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--2">
-            <span>Cancelación o cambio hasta 24 h antes</span>
+            <span>Reprogramación o cancelación hasta 24 h antes</span>
             <span className="wb-agenda-muestra__chip">Online</span>
           </div>
         </div>
@@ -119,13 +136,13 @@ export function RegistroPage() {
         <div className="wb-auth-card wb-auth-card--ancho">
           <h2 className="wb-auth-card__titulo">Creá tu cuenta de paciente</h2>
           <p className="wb-auth-card__sub">
-            Completá tus datos para empezar a gestionar tus turnos.
+            Completá tus datos personales para reservar y gestionar tus turnos.
           </p>
 
           <form className="wb-form" onSubmit={handleSubmit} noValidate>
             <div className="wb-nota-clinica">
-              Si la recepción ya cargó tu ficha antes, ingresá el mismo documento y correo
-              electrónico para vincular tu historial automáticamente.
+              Si ya te atendiste en la clínica, usá el mismo DNI y correo electrónico que registraste
+              en recepción para vincular tu ficha automáticamente.
             </div>
 
             {errorApi ? (
@@ -141,7 +158,7 @@ export function RegistroPage() {
                 etiqueta="Nombre"
                 name="nombre"
                 autoComplete="given-name"
-                placeholder="Paciente…"
+                placeholder="Lucía…"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 error={errores.nombre}
@@ -150,7 +167,7 @@ export function RegistroPage() {
                 etiqueta="Apellido"
                 name="apellido"
                 autoComplete="family-name"
-                placeholder="Ficticio Tres…"
+                placeholder="Fernández…"
                 value={apellido}
                 onChange={(e) => setApellido(e.target.value)}
                 error={errores.apellido}
@@ -174,7 +191,7 @@ export function RegistroPage() {
                 type="email"
                 autoComplete="email"
                 spellCheck={false}
-                placeholder="paciente3@example.com…"
+                placeholder="lucia.fernandez@example.com…"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 error={errores.email}
@@ -187,14 +204,14 @@ export function RegistroPage() {
               type="password"
               autoComplete="new-password"
               placeholder="Mínimo 8 caracteres…"
-              ayuda="Debe tener al menos 8 caracteres y hasta 72 bytes UTF-8."
+              ayuda="Elegí una contraseña segura de al menos 8 caracteres."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={errores.password}
             />
 
             <details className="wb-detalles">
-              <summary>Contacto y obra social (opcional, solo informativo)</summary>
+              <summary>Contacto y obra social (opcional)</summary>
               <div className="wb-detalles__cuerpo">
                 <div className="wb-form-grid2">
                   <Campo
@@ -202,7 +219,7 @@ export function RegistroPage() {
                     name="telefono"
                     type="tel"
                     autoComplete="tel"
-                    placeholder="0000-000003…"
+                    placeholder="(0261) 000-0101…"
                     value={telefono}
                     onChange={(e) => setTelefono(e.target.value)}
                   />
@@ -210,7 +227,7 @@ export function RegistroPage() {
                     etiqueta="Obra social"
                     name="obraSocial"
                     autoComplete="off"
-                    placeholder="Obra Social Ficticia…"
+                    placeholder="OSDE, OSEP, Swiss Medical…"
                     value={obraSocial}
                     onChange={(e) => setObraSocial(e.target.value)}
                   />
@@ -220,7 +237,7 @@ export function RegistroPage() {
                     etiqueta="Plan"
                     name="plan"
                     autoComplete="off"
-                    placeholder="Plan Básico…"
+                    placeholder="Plan 210…"
                     value={plan}
                     onChange={(e) => setPlan(e.target.value)}
                   />

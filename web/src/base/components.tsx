@@ -1,4 +1,10 @@
-import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  useId,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { describirCodigoNegocio, type DetalleErrorCampo } from './errores';
 import './styles.css';
 
@@ -300,8 +306,11 @@ export function Tabla<T>({
           </tr>
         </thead>
         <tbody>
-          {filas.map((fila) => (
-            <tr key={claveFila(fila)}>
+          {filas.map((fila, idx) => (
+            <tr
+              key={claveFila(fila)}
+              style={{ '--stagger-i': idx } as CSSProperties}
+            >
               {columnas.map((col) => (
                 <td key={col.encabezado}>{col.render(fila)}</td>
               ))}

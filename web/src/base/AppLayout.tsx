@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { CLINICA } from './clinica';
 import { Boton, IconoMarca } from './components';
 import { destinoDeItem, ETIQUETA_ROL, obtenerMenuPorRol, type ItemMenu } from './menu';
 import { useSesion } from './sesion';
@@ -41,6 +42,10 @@ export function AppLayout({
   const rutaCompleta = `${location.pathname}${location.search}`;
   const claveTransicion = claveVista ?? rutaCompleta;
 
+  useEffect(() => {
+    document.title = `${titulo} — ${CLINICA.nombre}`;
+  }, [titulo]);
+
   useLayoutEffect(() => {
     const actualizar = () => {
       const el = activoRef.current;
@@ -75,10 +80,13 @@ export function AppLayout({
         Ir al contenido principal
       </a>
 
-      <aside className="wb-sidebar" aria-label="Navegación del consultorio">
+      <aside className="wb-sidebar" aria-label="Navegación de la clínica">
         <Link to="/inicio" className="wb-marca">
           <IconoMarca tamano={34} />
-          <span>Consultorio Odontológico</span>
+          <span className="wb-marca__texto">
+            <span>{CLINICA.nombre}</span>
+            <span className="wb-marca__sub">{CLINICA.subtitulo}</span>
+          </span>
         </Link>
 
         {sesion ? (
@@ -113,7 +121,9 @@ export function AppLayout({
 
           {items.map((item) => {
             const destino = destinoDeItem(item);
-            const activo = rutaCompleta === destino || (item.ruta === '/inicio' && location.pathname === '/inicio' && location.search === '');
+            const activo =
+              rutaCompleta === destino ||
+              (item.ruta === '/inicio' && location.pathname === '/inicio' && location.search === '');
             return (
               <Link
                 key={item.ruta}
@@ -125,7 +135,6 @@ export function AppLayout({
                 aria-current={activo ? 'page' : undefined}
               >
                 <span>{item.etiqueta}</span>
-                {item.proximamente ? <span className="wb-nav__tag">Próx.</span> : null}
               </Link>
             );
           })}

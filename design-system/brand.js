@@ -1,6 +1,6 @@
-// Nombre visible del producto para los mockups HTML y el catálogo del design system.
-const BRAND_NAME = "Consultorio Odontológico";
-const BRAND_PROVISIONAL = true;
+// Nombre visible de la clínica para los mockups HTML y el catálogo del design system.
+const BRAND_NAME = "Clínica Dental Alvear";
+const BRAND_PROVISIONAL = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-brand-name]").forEach((el) => {
