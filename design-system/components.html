@@ -1,377 +1,148 @@
 <!doctype html>
 <html lang="es-AR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{brand} · Design system · Revisión 1</title>
-  <link rel="stylesheet" href="tokens.css">
-  <script src="brand.js" defer></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--color-bg); color: var(--color-text);
-      font-family: var(--font-sans); font-size: var(--text-base); line-height: var(--leading-normal);
-      -webkit-font-smoothing: antialiased;
-    }
-    .num { font-variant-numeric: tabular-nums; }
-    .container { max-width: var(--content-max); margin: 0 auto; padding: var(--space-6) var(--gutter) var(--space-12); }
-    h1, h2, h3 { line-height: var(--leading-tight); margin: 0; }
-    h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); }
-    h2 { font-size: var(--text-xl); font-weight: var(--weight-bold); margin-bottom: var(--space-4); }
-    h3 { font-size: var(--text-base); font-weight: var(--weight-bold); margin-bottom: var(--space-2); }
-    p { margin: 0 0 var(--space-3); }
-    .muted { color: var(--color-text-muted); }
-    .section { margin-top: var(--space-10); }
-    .section-intro { color: var(--color-text-muted); font-size: var(--text-sm); margin: calc(var(--space-2) * -1) 0 var(--space-4); max-width: 60ch; }
-    .grid-2 { display: grid; gap: var(--space-6); grid-template-columns: 1fr; }
-    @media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
-    .card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--space-6);
-    }
-    .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
-
-    /* ---------- Encabezado ---------- */
-    .topbar { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-    .topbar-inner { max-width: var(--content-max); margin: 0 auto; padding: var(--space-3) var(--gutter) 0;
-      display: flex; align-items: center; gap: var(--space-2) var(--space-4); flex-wrap: wrap; }
-    .brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); font-size: var(--text-lg); white-space: nowrap; }
-    .brand img { height: 28px; width: auto; }
-    .pill { font-size: var(--text-xs); font-weight: var(--weight-medium); padding: 1px var(--space-2);
-      border-radius: var(--radius-full); background: var(--color-warning-soft); color: var(--color-warning); white-space: nowrap; }
-    .user-chip { margin-left: auto; font-size: var(--text-xs); color: var(--color-text-muted); border: 1px solid var(--color-border);
-      border-radius: var(--radius-full); padding: 2px var(--space-3); white-space: nowrap; }
-    .nav { order: 3; width: 100%; display: flex; gap: var(--space-1); overflow-x: auto; padding-bottom: var(--space-2); }
-    .nav a { color: var(--color-text-muted); text-decoration: none; padding: var(--space-2) var(--space-3); white-space: nowrap;
-      border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--weight-medium); }
-    .nav a[aria-current="page"] { background: var(--color-primary-soft); color: var(--color-primary-hover); }
-    .nav a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-    @media (min-width: 900px) {
-      .topbar-inner { padding-bottom: var(--space-3); flex-wrap: nowrap; }
-      .nav { order: 0; width: auto; margin-left: auto; padding-bottom: 0; }
-      .user-chip { margin-left: 0; }
-    }
-    @media (max-width: 420px) { .brand .logo-text { display: none; } }
-
-    /* ---------- Botones ---------- */
-    .btn { font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1;
-      display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px;
-      padding: 0 var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
-      transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
-    .btn { text-decoration: none; }
-    .btn:active { transform: translateY(1px); }
-    .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-    .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
-    .btn-primary:hover { background: var(--color-primary-hover); }
-    .btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); }
-    .btn-secondary:hover { background: var(--color-surface-sunken); }
-    .btn-ghost { background: transparent; color: var(--color-primary-hover); }
-    .btn-ghost:hover { background: var(--color-primary-soft); }
-    .btn-danger { background: var(--color-danger); color: var(--color-text-inverse); }
-    .btn-danger:focus-visible { box-shadow: var(--focus-ring-danger); }
-    .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn.is-focus { box-shadow: var(--focus-ring); }
-
-    /* ---------- Formularios ---------- */
-    .field { display: grid; gap: var(--space-1); }
-    .field label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
-    .field .hint { font-size: var(--text-xs); color: var(--color-text-muted); }
-    .input, .select { font: inherit; font-size: var(--text-sm); min-height: 40px; width: 100%;
-      padding: 0 var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
-      background: var(--color-surface); color: var(--color-text); }
-    .input:focus, .select:focus { outline: none; border-color: var(--color-primary); box-shadow: var(--focus-ring); }
-    .field.has-error .input, .field.has-error .select { border-color: var(--color-danger); }
-    .field.has-error .hint { color: var(--color-danger); font-weight: var(--weight-medium); }
-    .form-grid { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
-    @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
-    .slots { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    .slot { font: inherit; font-size: var(--text-sm); font-variant-numeric: tabular-nums; min-height: 36px;
-      padding: 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--color-border-strong);
-      background: var(--color-surface); cursor: pointer; }
-    .slot[aria-pressed="true"] { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
-    .slot[disabled] { background: var(--color-surface-sunken); color: var(--color-text-muted); text-decoration: line-through; cursor: not-allowed; }
-    .slot:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-
-    /* ---------- Estados del turno ---------- */
-    .badge { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs);
-      font-weight: var(--weight-medium); padding: 2px var(--space-2); border-radius: var(--radius-full); }
-    .badge { justify-self: start; width: fit-content; }
-    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .badge-reservado { background: var(--turno-reservado-soft); color: var(--turno-reservado); }
-    .badge-confirmado { background: var(--turno-confirmado-soft); color: var(--turno-confirmado); }
-    .badge-atendido { background: var(--turno-atendido-soft); color: var(--turno-atendido); }
-    .badge-ausente { background: var(--turno-ausente-soft); color: var(--turno-ausente); }
-    .badge-cancelado { background: var(--turno-cancelado-soft); color: var(--turno-cancelado); text-decoration: line-through; }
-
-    /* ---------- Alertas ---------- */
-    .alert { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
-      border: 1px solid; font-size: var(--text-sm); }
-    .alert strong { font-weight: var(--weight-bold); }
-    .alert code { font-family: var(--font-mono); font-size: var(--text-xs); opacity: 0.8; }
-    .alert-danger { background: var(--color-danger-soft); border-color: oklch(0.85 0.07 25); color: oklch(0.38 0.14 25); }
-    .alert-success { background: var(--color-success-soft); border-color: oklch(0.85 0.06 155); color: oklch(0.36 0.09 155); }
-    .alert-info { background: var(--color-info-soft); border-color: oklch(0.86 0.05 250); color: oklch(0.38 0.1 250); }
-    .stack { display: grid; gap: var(--space-3); }
-
-    /* ---------- Agenda ---------- */
-    .agenda-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
-    .agenda { display: grid; grid-template-columns: 3.25rem repeat(2, minmax(8.5rem, 1fr));
-      grid-template-rows: auto repeat(10, var(--agenda-slot-height)); position: relative; }
-    @media (min-width: 900px) { .agenda { grid-template-columns: 4rem repeat(2, minmax(11rem, 1fr)); } }
-    .agenda .head { grid-row: 1; padding: var(--space-3); font-size: var(--text-sm); font-weight: var(--weight-bold);
-      border-bottom: 1px solid var(--color-border); background: var(--color-surface-sunken); }
-    .agenda .time { grid-column: 1; font-size: var(--text-xs); color: var(--color-text-muted); padding: 0 var(--space-2);
-      font-variant-numeric: tabular-nums; border-top: 1px solid var(--color-border); display: flex; align-items: flex-start; }
-    .agenda .time.half { border-top-style: dashed; color: transparent; }
-    .agenda .lane { grid-row: 2 / span 10; border-left: 1px solid var(--color-border);
-      background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--agenda-slot-height) - 1px), var(--color-border) calc(var(--agenda-slot-height) - 1px), var(--color-border) var(--agenda-slot-height)); }
-    .turno { margin: 1px var(--space-1); border-radius: var(--radius-sm); padding: 2px var(--space-2); font-size: var(--text-xs);
-      line-height: 1.3; overflow: hidden; border-left: 3px solid; display: grid; align-content: start; min-width: 0; }
-    .turno > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .turno b { font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
-    .turno .sub { color: var(--color-text-muted); }
-    .t-reservado { background: var(--turno-reservado-soft); border-color: var(--turno-reservado); }
-    .t-confirmado { background: var(--turno-confirmado-soft); border-color: var(--turno-confirmado); }
-    .t-atendido { background: var(--turno-atendido-soft); border-color: var(--turno-atendido); }
-    .t-cancelado { background: var(--turno-cancelado-soft); border-color: var(--turno-cancelado); color: var(--turno-cancelado); text-decoration: line-through; border-left-style: dashed; }
-    .t-bloqueo { background: repeating-linear-gradient(135deg, var(--agenda-bloqueo) 0 6px, var(--color-surface) 6px 12px);
-      border-color: var(--color-border-strong); color: var(--color-text-muted); }
-    .edge-note { font-size: var(--text-xs); color: var(--color-success); font-weight: var(--weight-medium); }
-    .legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
-
-    /* ---------- Turno del paciente ---------- */
-    .turno-card { display: grid; gap: var(--space-3); }
-    .turno-card .when { font-size: var(--text-2xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
-    .meta { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-4); font-size: var(--text-sm); }
-    .meta dt { color: var(--color-text-muted); }
-    .meta dd { margin: 0; font-weight: var(--weight-medium); }
-
-    /* ---------- Ganancias ---------- */
-    .stat { display: grid; gap: var(--space-1); }
-    .stat .value { font-size: var(--text-3xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
-    .stat .delta { font-size: var(--text-sm); color: var(--color-text-muted); }
-    .tag-only { font-size: var(--text-xs); color: var(--color-text-muted); border: 1px dashed var(--color-border-strong);
-      border-radius: var(--radius-full); padding: 1px var(--space-2); }
-
-    /* ---------- Tabla ---------- */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-    th, td { text-align: left; padding: var(--space-3); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
-    th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); font-weight: var(--weight-medium); }
-
-    /* ---------- Toast y vacío ---------- */
-    .toast { display: inline-flex; align-items: center; gap: var(--space-3); background: var(--color-text); color: var(--color-text-inverse);
-      padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); font-size: var(--text-sm); }
-    .toast .btn-ghost { color: oklch(0.85 0.06 195); }
-    .empty { text-align: center; padding: var(--space-8) var(--space-4); border: 1px dashed var(--color-border-strong);
-      border-radius: var(--radius-lg); color: var(--color-text-muted); }
-    .swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
-    .swatch { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; font-size: var(--text-xs); background: var(--color-surface); }
-    .swatch span { display: block; height: 2.5rem; }
-    .swatch div { padding: var(--space-2); }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <img src="assets/logo.svg" alt="Logo provisional">
-        <span data-brand-name>Agenda Odonto</span>
-        <span class="pill" data-brand-provisional>provisional</span>
-      </div>
-      <nav class="nav" aria-label="Principal">
-        <a href="#agenda" aria-current="page">Agenda</a>
-        <a href="#turno">Nuevo turno</a>
-        <a href="#pacientes">Pacientes</a>
-        <a href="#ganancias">Ganancias</a>
-      </nav>
-      <span class="user-chip">Recepción · Usuario ficticio</span>
-    </div>
-  </header>
-
-  <main class="container">
-    <h1>Design system · Revisión 1</h1>
-    <p class="muted">Componentes de referencia para los mockups y la app web. Aprobación pendiente. Todos los datos son ficticios.</p>
-
-    <section class="section" aria-labelledby="s-color">
-      <h2 id="s-color">Color</h2>
-      <p class="section-intro">Verde azulado como color principal; ámbar solo para acentos. Cada estado del turno tiene color propio y siempre va con texto.</p>
-      <div class="swatches">
-        <div class="swatch"><span style="background:var(--color-primary)"></span><div>primary</div></div>
-        <div class="swatch"><span style="background:var(--color-primary-soft)"></span><div>primary-soft</div></div>
-        <div class="swatch"><span style="background:var(--color-accent)"></span><div>accent</div></div>
-        <div class="swatch"><span style="background:var(--color-text)"></span><div>text</div></div>
-        <div class="swatch"><span style="background:var(--color-bg)"></span><div>bg</div></div>
-        <div class="swatch"><span style="background:var(--color-danger)"></span><div>danger</div></div>
-        <div class="swatch"><span style="background:var(--color-success)"></span><div>success</div></div>
-        <div class="swatch"><span style="background:var(--color-warning)"></span><div>warning</div></div>
-      </div>
-    </section>
-
-    <section class="section" id="agenda" aria-labelledby="s-agenda">
-      <h2 id="s-agenda">Agenda del día por box</h2>
-      <p class="section-intro">Bloques de 15 minutos (RN-AG-05). En el Box 1, el turno de las 10:30 empieza justo cuando termina el de las 10:00: es válido (RN-AG-04) y se ve pegado, sin marca de error.</p>
-      <div class="agenda-wrap" role="region" aria-label="Agenda del martes 2 de diciembre" tabindex="0">
-        <div class="agenda">
-          <div class="head" style="grid-column:1"></div>
-          <div class="head" style="grid-column:2">Box 1</div>
-          <div class="head" style="grid-column:3">Box 2</div>
-
-          <div class="time" style="grid-row:2">09:00</div><div class="time half" style="grid-row:3">09:15</div>
-          <div class="time" style="grid-row:4">09:30</div><div class="time half" style="grid-row:5">09:45</div>
-          <div class="time" style="grid-row:6">10:00</div><div class="time half" style="grid-row:7">10:15</div>
-          <div class="time" style="grid-row:8">10:30</div><div class="time half" style="grid-row:9">10:45</div>
-          <div class="time" style="grid-row:10">11:00</div><div class="time half" style="grid-row:11">11:15</div>
-
-          <div class="lane" style="grid-column:2"></div>
-          <div class="lane" style="grid-column:3"></div>
-
-          <div class="turno t-atendido" style="grid-column:2; grid-row:2 / span 2"><span><b>09:00–09:30</b> · Atendido</span><span>Paciente Ficticio Dos</span><span class="sub">Control · Dr. Bruno Gómez</span></div>
-          <div class="turno t-confirmado" style="grid-column:2; grid-row:6 / span 2"><span><b>10:00–10:30</b> · Confirmado</span><span>Paciente Ficticio Uno</span><span class="sub">Consulta · Dra. Ana Pérez</span></div>
-          <div class="turno t-reservado" style="grid-column:2; grid-row:8 / span 2"><span><b>10:30–11:00</b> · Reservado</span><span class="edge-note">✓ Contiguo: válido</span><span>Paciente Ficticio Tres</span></div>
-
-          <div class="turno t-reservado" style="grid-column:3; grid-row:4 / span 3"><span><b>09:30–10:15</b> · Reservado</span><span>Paciente Ficticio Cuatro</span><span class="sub">Limpieza · Dr. Bruno Gómez</span></div>
-          <div class="turno t-cancelado" style="grid-column:3; grid-row:7 / span 1"><span><b>10:15–10:30</b> Cancelado · libre</span></div>
-          <div class="turno t-bloqueo" style="grid-column:3; grid-row:10 / span 2"><span><b>11:00–11:30</b> Bloqueo</span><span>Mantenimiento del box</span></div>
-        </div>
-      </div>
-      <div class="legend" aria-label="Estados del turno">
-        <span class="badge badge-reservado">Reservado</span>
-        <span class="badge badge-confirmado">Confirmado</span>
-        <span class="badge badge-atendido">Atendido</span>
-        <span class="badge badge-ausente">Ausente</span>
-        <span class="badge badge-cancelado">Cancelado</span>
-      </div>
-    </section>
-
-    <section class="section" id="turno" aria-labelledby="s-form">
-      <h2 id="s-form">Nuevo turno y mensajes de negocio</h2>
-      <div class="grid-2">
-        <form class="card stack" onsubmit="return false">
-          <h3>Nuevo turno</h3>
-          <div class="form-grid">
-            <div class="field">
-              <label for="f-pac">Paciente</label>
-              <select id="f-pac" class="select"><option>Paciente Ficticio Uno · DNI 00000001</option></select>
-            </div>
-            <div class="field">
-              <label for="f-pre">Prestación</label>
-              <select id="f-pre" class="select"><option>Consulta · 30 min</option></select>
-              <span class="hint">La duración define el fin del turno.</span>
-            </div>
-            <div class="field">
-              <label for="f-pro">Profesional</label>
-              <select id="f-pro" class="select"><option>Dra. Ana Pérez</option></select>
-            </div>
-            <div class="field has-error">
-              <label for="f-box">Box</label>
-              <select id="f-box" class="select" aria-invalid="true" aria-describedby="f-box-err"><option>Box 1</option></select>
-              <span class="hint" id="f-box-err">El Box 1 está ocupado de 10:00 a 10:30.</span>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catálogo visual — {brand}</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <script src="./brand.js" defer></script>
+    <style>
+      .shell { max-width: var(--content-max); margin: 0 auto; padding: var(--space-8) var(--space-4) var(--space-12); }
+      .header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-6); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; }
+      .brand { display: flex; align-items: center; gap: var(--space-3); }
+      .brand h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
+      .brand p { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+      section { margin-top: var(--space-8); }
+      section h2 { margin: 0 0 var(--space-4); font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); }
+      .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-xs); }
+      .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); }
+      .swatch { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+      .swatch-color { height: 56px; }
+      .swatch-meta { padding: var(--space-3); font-size: var(--text-xs); }
+      .swatch-meta strong { display: block; font-size: var(--text-sm); color: var(--color-text); }
+      .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-5); border-radius: var(--radius-md); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-semibold); cursor: pointer; border: 1px solid transparent; transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
+      .btn:active { transform: scale(0.98); }
+      .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+      .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+      .btn-primary:hover { background: var(--color-primary-hover); }
+      .btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); }
+      .btn-danger { background: var(--color-danger); color: var(--color-text-inverse); }
+      .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+      .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+      .b-reservado { background: var(--turno-reservado-soft); color: var(--turno-reservado); }
+      .b-confirmado { background: var(--turno-confirmado-soft); color: var(--turno-confirmado); }
+      .b-atendido { background: var(--turno-atendido-soft); color: var(--turno-atendido); }
+      .b-ausente { background: var(--turno-ausente-soft); color: var(--turno-ausente); }
+      .b-cancelado { background: var(--turno-cancelado-soft); color: var(--turno-cancelado); }
+      .alert { border-radius: var(--radius-md); padding: var(--space-4); border: 1px solid var(--color-danger-border); background: var(--color-danger-soft); color: var(--color-danger); font-size: var(--text-sm); }
+      .alert strong { display: block; margin-bottom: 2px; }
+      .field { display: flex; flex-direction: column; gap: 6px; max-width: 340px; }
+      .field label { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+      .field input { min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border-strong); font: inherit; background: var(--color-surface); color: var(--color-text); }
+      .field input:focus-visible { outline: none; border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+      .table-wrap { overflow-x: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+      table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+      th, td { padding: var(--space-3) var(--space-4); text-align: left; border-bottom: 1px solid var(--color-border); }
+      th { background: var(--color-surface-subtle); font-weight: var(--weight-semibold); color: var(--color-text-muted); }
+      tr:last-child td { border-bottom: none; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="header">
+        <div class="brand">
+          <img src="./assets/logo.svg" alt="" width="40" height="40" />
+          <div>
+            <h1 data-brand-name>Clínica Dental Alvear</h1>
+            <p>Sistema de diseño · Centro de salud bucal</p>
           </div>
-          <div class="field">
-            <span id="f-hora" style="font-size:var(--text-sm);font-weight:var(--weight-medium)">Horario · martes 2/12</span>
-            <div class="slots" role="group" aria-labelledby="f-hora">
-              <button class="slot" type="button">09:30</button>
-              <button class="slot" type="button" disabled aria-label="10:00, ocupado">10:00</button>
-              <button class="slot" type="button" disabled aria-label="10:15, ocupado">10:15</button>
-              <button class="slot" type="button" aria-pressed="true">10:30</button>
-              <button class="slot" type="button">11:00</button>
-            </div>
+        </div>
+      </header>
+
+      <section>
+        <h2>Paleta clínica</h2>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch-color" style="background: var(--color-primary);"></div><div class="swatch-meta"><strong>Teal clínico</strong>#0E7490 · Primario</div></div>
+          <div class="swatch"><div class="swatch-color" style="background: var(--color-accent);"></div><div class="swatch-meta"><strong>Esmeralda salud</strong>#059669 · Confirmado</div></div>
+          <div class="swatch"><div class="swatch-color" style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);"></div><div class="swatch-meta"><strong>Porcelana</strong>#F4F8F9 · Fondo</div></div>
+          <div class="swatch"><div class="swatch-color" style="background: var(--color-text);"></div><div class="swatch-meta"><strong>Pizarra</strong>#0F2937 · Tinta</div></div>
+          <div class="swatch"><div class="swatch-color" style="background: var(--color-danger);"></div><div class="swatch-meta"><strong>Alerta</strong>#B91C1C · Solapamiento</div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Botones y estados del turno</h2>
+        <div class="card">
+          <div class="row" style="margin-bottom: var(--space-4);">
+            <button type="button" class="btn btn-primary">Confirmar turno</button>
+            <button type="button" class="btn btn-secondary">Reprogramar</button>
+            <button type="button" class="btn btn-danger">Cancelar turno</button>
           </div>
           <div class="row">
-            <button class="btn btn-primary" type="submit">Reservar turno</button>
-            <button class="btn btn-secondary" type="button">Cancelar</button>
+            <span class="badge b-reservado">Reservado</span>
+            <span class="badge b-confirmado">Confirmado</span>
+            <span class="badge b-atendido">Atendido</span>
+            <span class="badge b-ausente">Ausente</span>
+            <span class="badge b-cancelado">Cancelado</span>
           </div>
-        </form>
+        </div>
+      </section>
 
-        <div class="stack">
-          <div class="alert alert-danger" role="alert">
-            <strong>No se puede reservar: la Dra. Ana Pérez ya tiene un turno de 10:00 a 10:30.</strong>
-            <span>Elegí otro horario u otro profesional.</span>
-            <code>SOLAPAMIENTO_PROFESIONAL</code>
-          </div>
-          <div class="alert alert-danger" role="alert">
-            <strong>No se puede reservar: el Box 1 está ocupado de 10:00 a 10:30.</strong>
-            <span>Probá con el Box 2 o en otro horario.</span>
-            <code>SOLAPAMIENTO_BOX</code>
-          </div>
-          <div class="alert alert-success" role="status">
-            <strong>Turno reservado: martes 2/12, 10:30 a 11:00 · Box 1.</strong>
-            <span>Le enviamos la confirmación por email al paciente.</span>
-          </div>
-          <div class="alert alert-info">
-            <strong>Podés cancelar o cambiar tu turno hasta 24 h antes.</strong>
-            <span>Después, comunicate con el consultorio.</span>
+      <section>
+        <h2>Campo y error de negocio (409)</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="field">
+              <label for="demo-email">Correo electrónico</label>
+              <input id="demo-email" type="email" value="paciente1@example.com" />
+            </div>
           </div>
           <div class="card">
-            <h3>Botones</h3>
-            <div class="row">
-              <button class="btn btn-primary">Primario</button>
-              <button class="btn btn-secondary">Secundario</button>
-              <button class="btn btn-ghost">Fantasma</button>
-              <button class="btn btn-danger">Cancelar turno</button>
-              <button class="btn btn-primary is-focus">Con foco</button>
-              <button class="btn btn-primary" disabled>Deshabilitado</button>
+            <div class="alert" role="alert">
+              <strong>SOLAPAMIENTO_BOX</strong>
+              El box elegido ya está ocupado en ese horario. Elegí otro box o un turno contiguo libre.
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="section" aria-labelledby="s-paciente">
-      <h2 id="s-paciente">Vista del paciente y del profesional</h2>
-      <div class="grid-2">
-        <article class="card turno-card" aria-label="Tu próximo turno">
-          <span class="badge badge-confirmado">Confirmado</span>
-          <div class="when">Mar 2/12 · 10:30</div>
-          <dl class="meta">
-            <dt>Prestación</dt><dd>Consulta · 30 min</dd>
-            <dt>Profesional</dt><dd>Dra. Ana Pérez</dd>
-            <dt>Box</dt><dd>Box 1</dd>
-          </dl>
-          <div class="row">
-            <a class="btn btn-primary" href="#" role="button">Agregar a Google Calendar</a>
-            <button class="btn btn-secondary">Reprogramar</button>
-            <button class="btn btn-ghost">Cancelar turno</button>
-          </div>
-        </article>
-
-        <article class="card stack" id="ganancias" aria-label="Ganancias">
-          <div class="row" style="justify-content:space-between">
-            <h3 style="margin:0">Mis ganancias · noviembre</h3>
-            <span class="tag-only">Solo el profesional</span>
-          </div>
-          <div class="stat">
-            <span class="value">$ 412.500</span>
-            <span class="delta">17 turnos atendidos · precio al reservar</span>
-          </div>
-          <div class="toast" role="status">Turno marcado como atendido <button class="btn btn-ghost">Deshacer</button></div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section" id="pacientes" aria-labelledby="s-tabla">
-      <h2 id="s-tabla">Tabla y estado vacío</h2>
-      <div class="grid-2">
-        <div class="card table-wrap">
+      <section>
+        <h2>Agenda del día</h2>
+        <div class="table-wrap">
           <table>
-            <thead><tr><th>Hora</th><th>Paciente</th><th>Box</th><th>Estado</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Horario</th>
+                <th>Box</th>
+                <th>Profesional</th>
+                <th>Prestación</th>
+                <th>Paciente</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr><td class="num">09:00</td><td>Paciente Ficticio Dos</td><td>Box 1</td><td><span class="badge badge-atendido">Atendido</span></td></tr>
-              <tr><td class="num">09:30</td><td>Paciente Ficticio Cuatro</td><td>Box 2</td><td><span class="badge badge-reservado">Reservado</span></td></tr>
-              <tr><td class="num">10:00</td><td>Paciente Ficticio Uno</td><td>Box 1</td><td><span class="badge badge-confirmado">Confirmado</span></td></tr>
-              <tr><td class="num">10:15</td><td>Paciente Ficticio Cinco</td><td>Box 2</td><td><span class="badge badge-ausente">Ausente</span></td></tr>
+              <tr>
+                <td>09:00 – 09:30</td>
+                <td>Box 1</td>
+                <td>Dra. Ana Pérez</td>
+                <td>Consulta odontológica (30 min)</td>
+                <td>Lucía Fernández</td>
+                <td><span class="badge b-confirmado">Confirmado</span></td>
+              </tr>
+              <tr>
+                <td>09:30 – 10:15</td>
+                <td>Box 1</td>
+                <td>Dra. Ana Pérez</td>
+                <td>Limpieza dental (45 min)</td>
+                <td>Martín Quiroga</td>
+                <td><span class="badge b-reservado">Reservado</span></td>
+              </tr>
             </tbody>
           </table>
         </div>
-        <div class="empty">
-          <h3>No hay turnos para este día</h3>
-          <p>Cuando reserves uno, aparece acá.</p>
-          <button class="btn btn-primary">Nuevo turno</button>
-        </div>
-      </div>
-    </section>
-  </main>
-</body>
+      </section>
+    </div>
+  </body>
 </html>

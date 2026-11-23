@@ -272,7 +272,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-08, §DD-11
 
 ### [C-04] `cuentas-y-pacientes`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Facundo · **Capability**: `cuentas` · **Prioridad**: P1 · US-004, US-022, US-060
 - **Scope**:
   - `POST /api/public/login` (los tres roles): `bcryptjs` + JWT de corta duración con `jose`, firmado con `JWT_SECRET`. Reemplaza el stub `cuentas/adapter.ts` por la verificación real, que produce `UsuarioSesion` con `profesionalId` o `pacienteId`.
@@ -346,7 +346,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 > Dependen solo de C-01, pero cada persona los toma después de mergear su primer change, para no tener dos PR abiertos a la vez.
 
 ### [C-08] `ganancias-profesional`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: Agustin · **Capability**: `ganancias` · **Prioridad**: P1 · US-040
 - **Scope**:
   - `GET /api/profesionales/:id/ganancias?desde&hasta` → suma de `precioAlReservar` de los turnos `atendido` del período (RN-GA-01). Se calcula en cada consulta, sin totales guardados (RN-GA-03).

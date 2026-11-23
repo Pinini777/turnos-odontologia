@@ -24,6 +24,30 @@
       "sessions": 1,
       "memories": 37,
       "prompts": 0
+    },
+    {
+      "id": "4d64b6bf",
+      "created_by": "Facu",
+      "created_at": "2026-11-23T02:27:50Z",
+      "sessions": 0,
+      "memories": 1,
+      "prompts": 0
+    },
+    {
+      "id": "d83965b4",
+      "created_by": "chana",
+      "created_at": "2026-11-23T13:02:40.075628Z",
+      "sessions": 1,
+      "memories": 4,
+      "prompts": 0
+    },
+    {
+      "id": "ea9760c3",
+      "created_by": "Facu",
+      "created_at": "2026-11-23T14:17:21Z",
+      "sessions": 0,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }

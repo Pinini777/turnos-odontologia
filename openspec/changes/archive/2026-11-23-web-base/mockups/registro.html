@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Registro de Paciente — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-4); }
+      .card { width: 100%; max-width: 560px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-8); box-shadow: var(--shadow-md); }
+      .brand-top { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); font-weight: var(--weight-bold); }
+      h1 { margin: 0 0 var(--space-2); font-size: var(--text-2xl); }
+      .lead { margin: 0 0 var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
+      .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+      .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-4); }
+      .field label { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+      .field input { min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border-strong); font: inherit; }
+      .hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+      .note { background: var(--color-primary-soft); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-size: var(--text-xs); color: var(--color-primary-deep); margin-bottom: var(--space-5); }
+      .btn { width: 100%; min-height: 46px; border: none; border-radius: var(--radius-md); background: var(--color-primary); color: #fff; font: inherit; font-weight: var(--weight-semibold); cursor: pointer; }
+      @media (max-width: 600px) { .row2 { grid-template-columns: 1fr; } .card { padding: var(--space-6); } }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="card">
+        <div class="brand-top">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="34" height="34" />
+          <span data-brand-name>Clínica Dental Alvear</span>
+        </div>
+        <h1>Creá tu cuenta de paciente</h1>
+        <p class="lead">Reservá turnos online y administrá tus horarios hasta 24 h antes.</p>
+        <div class="note">Si ya te atendiste en la clínica, usá el mismo DNI y correo electrónico para vincular tu ficha automáticamente.</div>
+        <div class="row2">
+          <div class="field"><label>Nombre</label><input value="Lucía" /></div>
+          <div class="field"><label>Apellido</label><input value="Fernández" /></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Documento (DNI)</label><input value="00000003" /></div>
+          <div class="field"><label>Teléfono (opcional)</label><input value="(0261) 000-0101" /></div>
+        </div>
+        <div class="field"><label>Correo electrónico</label><input type="email" value="lucia.fernandez@example.com" /></div>
+        <div class="field"><label>Contraseña</label><input type="password" value="••••••••••" /><span class="hint">Elegí una contraseña segura de al menos 8 caracteres.</span></div>
+        <button type="button" class="btn">Crear cuenta y entrar</button>
+      </div>
+    </main>
+  </body>
+</html>
