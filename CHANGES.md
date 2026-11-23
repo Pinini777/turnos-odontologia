@@ -235,7 +235,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 > Todos dependen solo de C-01. Ninguno toca la carpeta de otro. C-02 es el change evaluado y tiene prioridad de revisión.
 
 ### [C-02] `crear-turno-sin-solapamientos` ⭐
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: EP · **Capability**: `turnos-alta` · **Prioridad**: P0 · **Change evaluado de la etapa 6 (US-010)**
 - **Scope**:
   - Dominio puro en `turnos-alta/dominio/agenda.ts`: `seSuperponen(a, b)` con intervalos `[inicio, fin)`; `conflictos(turnos, nuevo)`, que ignora los cancelados y devuelve qué recurso choca (profesional, box o ambos); y `validarGrilla(inicio)`.
@@ -253,7 +253,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-02, §DD-03, §DD-05
 
 ### [C-03] `configuracion-consultorio`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: Renzo · **Capability**: `configuracion` · **Prioridad**: P1 · Épica 1 completa (US-001, US-002, US-003)
 - **Scope**:
   - `GET/POST /api/profesionales`, `PATCH /api/profesionales/:id` (alta y desactivación); lo mismo para `/api/boxes` y `/api/prestaciones`. Matrícula y nombre de box únicos.
@@ -291,7 +291,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-10
 
 ### [C-05] `cancelar-y-cambiar-estado`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: Lautaro · **Capability**: `turnos-estados` · **Prioridad**: P1 · US-011, US-013
 - **Scope**:
   - Máquina de estados en `turnos-estados/dominio/estados.ts`: `reservado → confirmado → atendido | ausente` y `reservado | confirmado → cancelado`; son finales `atendido`, `ausente` y `cancelado` (RN-TU-01).
