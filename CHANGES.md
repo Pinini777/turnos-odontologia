@@ -346,7 +346,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 > Dependen solo de C-01, pero cada persona los toma después de mergear su primer change, para no tener dos PR abiertos a la vez.
 
 ### [C-08] `ganancias-profesional`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-22)
 - **Responsable**: Agustin · **Capability**: `ganancias` · **Prioridad**: P1 · US-040
 - **Scope**:
   - `GET /api/profesionales/:id/ganancias?desde&hasta` → suma de `precioAlReservar` de los turnos `atendido` del período (RN-GA-01). Se calcula en cada consulta, sin totales guardados (RN-GA-03).
