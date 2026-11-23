@@ -40,6 +40,14 @@
       "sessions": 1,
       "memories": 4,
       "prompts": 0
+    },
+    {
+      "id": "ea9760c3",
+      "created_by": "Facu",
+      "created_at": "2026-11-23T14:17:21Z",
+      "sessions": 0,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
