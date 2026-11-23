@@ -8,6 +8,30 @@
       "sessions": 1,
       "memories": 5,
       "prompts": 0
+    },
+    {
+      "id": "e12bdc9e",
+      "created_by": "agust",
+      "created_at": "2026-11-23T01:10:08.1137329Z",
+      "sessions": 1,
+      "memories": 3,
+      "prompts": 0
+    },
+    {
+      "id": "30e22318",
+      "created_by": "pino",
+      "created_at": "2026-11-23T01:41:50.8718702Z",
+      "sessions": 1,
+      "memories": 37,
+      "prompts": 0
+    },
+    {
+      "id": "4d64b6bf",
+      "created_by": "Facu",
+      "created_at": "2026-11-23T02:27:50Z",
+      "sessions": 0,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
