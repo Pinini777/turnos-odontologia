@@ -1,0 +1,706 @@
+/* Estilos locales del área profesional (C-15).
+   Usa exclusivamente tokens de design-system/tokens.css y evita scroll horizontal en 1440x900 y 390x844. */
+
+.prof-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.prof-guardia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 40rem;
+}
+
+.prof-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+}
+
+.prof-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.prof-card__titulo {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+}
+
+.prof-card__sub {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.prof-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.prof-grid-clinica {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.prof-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+}
+
+.prof-tab {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.prof-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.prof-tab--activa {
+  background: var(--color-surface);
+  color: var(--color-primary-deep);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+.prof-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.prof-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.prof-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.prof-field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.prof-select,
+.prof-textarea {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.prof-select {
+  min-height: 44px;
+}
+
+.prof-select:disabled {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.prof-textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.prof-select:focus-visible,
+.prof-textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.prof-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.prof-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.prof-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.prof-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.prof-badge-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.prof-badge-estado--activo {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.prof-badge-estado--inactivo {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}
+
+.prof-banner-exito {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.prof-banner-privacidad {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  border: 1px solid var(--color-border-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.prof-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.prof-kpi {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.prof-kpi--destacado {
+  background: var(--color-primary-soft);
+  border-color: var(--color-border-strong);
+}
+
+.prof-kpi__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.prof-kpi__valor {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.prof-kpi--destacado .prof-kpi__valor {
+  color: var(--color-primary-deep);
+}
+
+.prof-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+
+/* ---------- Tabla fluida sin scroll horizontal ---------- */
+.prof-tabla-wrap {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.prof-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.prof-tabla th,
+.prof-tabla td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.prof-tabla th {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-xs);
+}
+
+.prof-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.prof-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- Franjas horarias ---------- */
+.prof-franja-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.prof-radio-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.prof-radio-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.prof-radio-card--activo {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+}
+
+/* ---------- Odontograma SVG FDI fluido ---------- */
+.prof-patient-bar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.prof-patient-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.prof-patient-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.prof-patient-chip {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.prof-odo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.prof-odo-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--weight-medium);
+}
+
+.prof-odo-board {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.prof-odo-arch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.prof-odo-quad-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.prof-odo-quad-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.prof-odo-quad-label--right {
+  text-align: right;
+}
+
+.prof-odo-quad {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+
+.prof-odo-quad--temp {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 62.5%;
+}
+
+.prof-odo-quad--temp-left {
+  margin-left: auto;
+}
+
+.prof-odo-quad--temp-right {
+  margin-right: auto;
+}
+
+.prof-odo-midline-v {
+  width: 2px;
+  height: 100%;
+  background: var(--color-border-strong);
+  border-radius: 2px;
+}
+
+.prof-odo-midline-h {
+  border: none;
+  border-top: 2px dashed var(--color-border-strong);
+  margin: 2px 0;
+}
+
+.prof-odo-temp-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary-deep);
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.prof-tooth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  min-width: 0;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+}
+
+.prof-tooth--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.prof-tooth__num {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.prof-tooth--selected .prof-tooth__num {
+  color: var(--color-primary-deep);
+}
+
+.prof-tooth__svg {
+  width: 100%;
+  max-width: 42px;
+  height: auto;
+  aspect-ratio: 1;
+  display: block;
+}
+
+.prof-face-zone {
+  cursor: pointer;
+  stroke: var(--color-border-strong);
+  stroke-width: 1.2;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.prof-face-zone:hover {
+  stroke: var(--color-primary-deep);
+  stroke-width: 1.7;
+}
+
+.prof-face-zone:focus-visible {
+  outline: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.2;
+}
+
+.prof-face-zone--selected {
+  stroke: var(--color-primary-deep);
+  stroke-width: 2.1;
+}
+
+.prof-editor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+/* ---------- Historia clínica y auditoría append-only ---------- */
+.prof-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.prof-entry {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.prof-entry--correccion {
+  border-left: 3px solid var(--color-warning);
+}
+
+.prof-entry__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.prof-entry__badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-weight: var(--weight-semibold);
+}
+
+.prof-entry__texto {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.prof-auditoria-detalle {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1120px) {
+  .prof-grid-2,
+  .prof-grid-clinica {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .prof-odo-arch {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .prof-odo-midline-v {
+    display: none;
+  }
+
+  .prof-odo-quad-label--right {
+    text-align: left;
+  }
+
+  .prof-odo-quad {
+    gap: 2px;
+  }
+
+  .prof-odo-quad--temp {
+    width: 100%;
+    margin: 0;
+    gap: 4px;
+  }
+
+  .prof-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .prof-form-row,
+  .prof-radio-group,
+  .prof-franja-row {
+    grid-template-columns: 1fr;
+  }
+
+  .prof-tabla thead {
+    display: none;
+  }
+
+  .prof-tabla,
+  .prof-tabla tbody,
+  .prof-tabla tr,
+  .prof-tabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .prof-tabla tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .prof-tabla tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-bg);
+  }
+
+  .prof-tabla td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+    text-align: right;
+  }
+
+  .prof-tabla td:last-child {
+    border-bottom: none;
+  }
+
+  .prof-tabla td::before {
+    content: attr(data-label);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-muted);
+    text-align: left;
+    flex-shrink: 0;
+  }
+}
