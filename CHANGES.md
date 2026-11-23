@@ -421,6 +421,8 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 ## FASE 4 — Interfaz web (gate de design system y mockups)
 
 > **Gate obligatorio** (política `system-and-mockups`, DD-09): ningún change de esta fase arranca `apply` hasta que (1) EP apruebe `design-system/` revisión 1 (hoy `Approval: pending`, con la fase `visual-design` en `deferred`) y (2) EP apruebe el mockup HTML del change en `openspec/changes/<change>/mockups/`, renderizado a 390×844 y 1440×900. **Corte: si el design system no está aprobado el lunes 23 a las 12:00, esta fase queda fuera de la entrega.**
+>
+> **Actualización 23/11 (EP):** el design system se rehízo y EP aprobó la **revisión 2** (`design-system/README.md`: `Approval: approved (2026-11-23, by EP)`) después del corte de las 12:00. EP decidió mantener la fase 4 en la entrega: C-12 ya está en `main` y C-13, C-14 y C-15 siguen con el gate de mockup aprobado por change.
 
 ### [C-12] `web-base`
 - **Estado**: `[x]` mergeado en `main` (2026-11-23)
