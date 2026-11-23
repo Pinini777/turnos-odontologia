@@ -17,6 +17,13 @@ C-01 dejó congelados los contratos que este change usa sin modificarlos (ver `e
 
 ## Decisions
 
+### Ajuste de Propose (2026-11-22)
+
+- Se quitó del spec la aceptación de un inicio igual al instante actual y su escenario: RN-AG-10 solo establece el rechazo de turnos en el pasado.
+- Se quitó del spec el requisito sobre el orden de las validaciones y su escenario; el orden permanece como decisión de implementación en D-3.
+- Se agregó al spec el escenario de F-01 en el que un turno a las 10:15 se superpone con uno de 10:00 a 10:30 y se rechaza con `SOLAPAMIENTO_PROFESIONAL`.
+- Se actualizaron las tareas 2.3 y 2.6 para reflejar estos cambios. La revisión del spec no implica su aprobación.
+
 ### D-1. Estructura del módulo (DD-13, hexagonal)
 ```
 src/modules/turnos-alta/

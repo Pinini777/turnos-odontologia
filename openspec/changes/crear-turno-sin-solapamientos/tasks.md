@@ -12,10 +12,10 @@
 
 - [ ] 2.1 `routes.ts` con `POST /turnos`, Zod y `requireRol('profesional', 'recepcionista')`; verificar los escenarios "Inicio inválido" (400), "Sin sesión" (401) y "Un paciente intenta usar el alta del personal" (403)
 - [ ] 2.2 `crearTurno` con el camino feliz: calcula `fin`, congela el precio, define `origen` y `creadoPor`, guarda y responde 201; verificar "La recepcionista crea un turno en un hueco libre" (sin precio en la respuesta) y "El profesional ve el precio congelado"
-- [ ] 2.3 Validaciones de grilla, pasado y orden; verificar "Inicio fuera de la grilla", "Inicio con segundos", "Inicio anterior a ahora", "Inicio igual a ahora" y "Fuera de la grilla y solapado"
+- [ ] 2.3 Validaciones de grilla y pasado; verificar "Inicio fuera de la grilla", "Inicio con segundos" e "Inicio anterior a ahora"
 - [ ] 2.4 Recursos existentes y activos; verificar "Paciente inexistente" (404) y "Box inactivo" (409 `RECURSO_INACTIVO`)
 - [ ] 2.5 Disponibilidad por el puerto; verificar "Fuera del horario de atención" y "Dentro de un bloqueo" con un puerto inyectado
-- [ ] 2.6 Solapamientos dentro de `conLockDeAgenda`, con prioridad de profesional; verificar "El profesional ya está ocupado en otro box" (sin turno, auditoría ni email nuevos), "El box ya está ocupado por otro profesional", "Profesional y box ocupados en el mismo intervalo", los dos escenarios de intervalos semiabiertos, "Se reserva el hueco de un turno cancelado" y "El profesional intenta forzar un sobreturno"
+- [ ] 2.6 Solapamientos dentro de `conLockDeAgenda`, con prioridad de profesional; verificar "El profesional ya está ocupado en otro box" (sin turno, auditoría ni email nuevos), "El box ya está ocupado por otro profesional", "Profesional y box ocupados en el mismo intervalo", los tres escenarios de intervalos semiabiertos, incluido "Turno que empieza antes de que termine otro", "Se reserva el hueco de un turno cancelado" y "El profesional intenta forzar un sobreturno"
 - [ ] 2.7 Atomicidad; verificar "Dos altas al mismo hueco a la vez" (un 201, un 409 y un solo turno guardado)
 
 ## 3. Auditoría y aviso

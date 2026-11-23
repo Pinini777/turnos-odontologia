@@ -61,6 +61,11 @@ Los turnos SHALL ocupar el intervalo semiabierto `[inicio, fin)`: un turno que e
 - **WHEN** la recepcionista crea una "Consulta" con la Dra. Pérez en el Box 1 a las 09:30
 - **THEN** la API responde `201` con un turno de 09:30 a 10:00
 
+#### Scenario: Turno que empieza antes de que termine otro
+- **GIVEN** la Dra. Pérez tiene un turno de 10:00 a 10:30 en el Box 1
+- **WHEN** la recepcionista crea una "Consulta" con la Dra. Pérez en el Box 1 a las 10:15
+- **THEN** la API responde `409` con `{"code":"SOLAPAMIENTO_PROFESIONAL"}`
+
 ### Requirement: Un turno cancelado libera el horario
 Los turnos en estado `cancelado` MUST NOT contar para los solapamientos de profesional ni de box.
 
@@ -89,17 +94,12 @@ El `inicio` SHALL caer en la grilla de 15 minutos de la zona del consultorio: mi
 - **THEN** la API responde `409` con `{"code":"FUERA_DE_GRILLA"}`
 
 ### Requirement: Turnos en el pasado
-Un turno con `inicio` anterior al instante actual del reloj del sistema MUST ser rechazado con `409 EN_EL_PASADO`. Un `inicio` igual al instante actual se acepta.
+Un turno con `inicio` anterior al instante actual del reloj del sistema MUST ser rechazado con `409 EN_EL_PASADO`.
 
 #### Scenario: Inicio anterior a ahora
 - **GIVEN** ahora es el lunes 23/11/2026 a las 08:00
 - **WHEN** la recepcionista crea un turno el viernes 20/11/2026 a las 10:00
 - **THEN** la API responde `409` con `{"code":"EN_EL_PASADO"}`
-
-#### Scenario: Inicio igual a ahora
-- **GIVEN** ahora es el martes 24/11/2026 a las 10:00
-- **WHEN** la recepcionista crea un turno el martes 24/11/2026 a las 10:00 en un hueco libre
-- **THEN** la API responde `201`
 
 ### Requirement: Recursos existentes y activos
 El profesional, el box, la prestación y el paciente MUST existir; si alguno no existe, la API responde `404 NO_ENCONTRADO`. El profesional, el box y la prestación MUST estar activos; si alguno está inactivo, responde `409 RECURSO_INACTIVO`.
@@ -125,14 +125,6 @@ El alta SHALL consultar la disponibilidad (horario de atención y bloqueos) del 
 - **GIVEN** la disponibilidad informa que el Box 1 está bloqueado en el intervalo
 - **WHEN** la recepcionista crea un turno en el Box 1 en ese intervalo
 - **THEN** la API responde `409` con `{"code":"EN_BLOQUEO"}`
-
-### Requirement: Orden de las validaciones
-Cuando un alta viola varias reglas, la API SHALL responder con el código de la primera que falla, en este orden: grilla, pasado, recursos (existencia y actividad), disponibilidad y solapamientos.
-
-#### Scenario: Fuera de la grilla y solapado
-- **GIVEN** la Dra. Pérez tiene un turno de 10:00 a 10:30 en el Box 1
-- **WHEN** la recepcionista crea un turno con la Dra. Pérez en el Box 1 a las 10:10
-- **THEN** la API responde `409` con `{"code":"FUERA_DE_GRILLA"}`
 
 ### Requirement: Formato de la solicitud
 Un cuerpo sin alguno de los cinco campos, con un identificador vacío o con un `inicio` que no es una fecha ISO 8601 con zona horaria SHALL responder `400` con `code` `FORMATO_INVALIDO`.
