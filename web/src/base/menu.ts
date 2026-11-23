@@ -14,14 +14,14 @@ export interface ItemMenu {
 const MENU_BASE: readonly ItemMenu[] = [
   { etiqueta: 'Inicio', ruta: '/inicio', icono: 'inicio', roles: ['profesional', 'recepcionista', 'paciente'] },
   // Recepción (RN-RO-01: nunca precios ni ganancias)
-  { etiqueta: 'Agenda del día', ruta: '/recepcion/agenda', vistaPreview: 'agenda', icono: 'agenda', roles: ['recepcionista'], proximamente: true },
-  { etiqueta: 'Pacientes', ruta: '/recepcion/pacientes', vistaPreview: 'pacientes', icono: 'pacientes', roles: ['recepcionista'], proximamente: true },
+  { etiqueta: 'Agenda del día', ruta: '/recepcion/agenda', icono: 'agenda', roles: ['recepcionista'] },
+  { etiqueta: 'Pacientes', ruta: '/recepcion/pacientes', icono: 'pacientes', roles: ['recepcionista'] },
   // Profesional (único que ve precios, ganancias e historia clínica)
-  { etiqueta: 'Agenda', ruta: '/profesional/agenda', vistaPreview: 'agenda', icono: 'agenda', roles: ['profesional'], proximamente: true },
-  { etiqueta: 'Catálogo y prestaciones', ruta: '/profesional/catalogo', vistaPreview: 'catalogo', icono: 'catalogo', roles: ['profesional'], proximamente: true },
-  { etiqueta: 'Mis horarios y bloqueos', ruta: '/profesional/horarios', vistaPreview: 'horarios', icono: 'horarios', roles: ['profesional'], proximamente: true },
-  { etiqueta: 'Mis ganancias', ruta: '/profesional/ganancias', vistaPreview: 'ganancias', icono: 'ganancias', roles: ['profesional'], proximamente: true },
-  { etiqueta: 'Historia clínica', ruta: '/profesional/clinica', vistaPreview: 'clinica', icono: 'clinica', roles: ['profesional'], proximamente: true },
+  { etiqueta: 'Agenda', ruta: '/profesional/agenda', icono: 'agenda', roles: ['profesional'] },
+  { etiqueta: 'Catálogo y prestaciones', ruta: '/profesional/catalogo', icono: 'catalogo', roles: ['profesional'] },
+  { etiqueta: 'Mis horarios y bloqueos', ruta: '/profesional/horarios', icono: 'horarios', roles: ['profesional'] },
+  { etiqueta: 'Mis ganancias', ruta: '/profesional/ganancias', icono: 'ganancias', roles: ['profesional'] },
+  { etiqueta: 'Historia clínica', ruta: '/profesional/clinica', icono: 'clinica', roles: ['profesional'] },
   // Paciente (reserva online y autogestión)
   { etiqueta: 'Reservar turno', ruta: '/paciente/reservar', vistaPreview: 'reservar', icono: 'reservar', roles: ['paciente'], proximamente: true },
   { etiqueta: 'Mis turnos', ruta: '/paciente/turnos', vistaPreview: 'turnos', icono: 'turnos', roles: ['paciente'], proximamente: true },

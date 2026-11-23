@@ -441,7 +441,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/03_actores_y_roles.md` §RBAC
 
 ### [C-13] `web-recepcion`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Lautaro · **Capability**: `web-recepcion` · **Prioridad**: P2
 - **Scope**:
   - `web/src/pages/recepcion/`: agenda diaria y semanal por profesional y por box; alta de paciente; formulario de nuevo turno con los mensajes `SOLAPAMIENTO_PROFESIONAL` y `SOLAPAMIENTO_BOX`; acciones para cancelar, reprogramar y cambiar el estado. Sin precios.
@@ -469,7 +469,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `design-system/components.html` (tarjeta del turno del paciente)
 
 ### [C-15] `web-profesional`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Facundo · **Capability**: `web-profesional` · **Prioridad**: P2
 - **Scope**:
   - `web/src/pages/profesional/`: catálogo (profesionales, boxes y prestaciones con precio), mis horarios y bloqueos, mis ganancias por período, historia clínica y odontograma del paciente, y auditoría de un turno.
