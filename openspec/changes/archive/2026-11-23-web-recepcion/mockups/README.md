@@ -32,7 +32,7 @@ Las rutas a `design-system/` son relativas, así que hay que servir la raíz del
 python -m http.server 8766 --bind 127.0.0.1
 ```
 
-y abrir `http://127.0.0.1:8766/openspec/changes/web-recepcion/mockups/agenda.html`.
+y abrir `http://127.0.0.1:8766/openspec/changes/archive/2026-11-23-web-recepcion/mockups/agenda.html`.
 
 ## Fuera del mockup
 
