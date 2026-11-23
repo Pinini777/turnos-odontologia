@@ -1,6 +1,6 @@
 # Design — `C-15 web-profesional`
 
-> **Estado**: Diseño y mockups **propuestos, pendientes de aprobación explícita de EP antes de iniciar `apply`** (política `system-and-mockups`).
+> **Estado**: Diseño y mockups **aprobados por EP el 2026-11-23** (política `system-and-mockups`); habilitado para `apply`.
 
 ## Context
 
@@ -32,7 +32,7 @@ web/src/pages/profesional/
 ├── apiProfesional.ts          # Cliente tipado sobre apiConsultorio (C-03, C-04, C-07, C-08, C-09)
 ├── formatos.ts                # Moneda ARS, fechas/horas APP_TZ, grilla 15 min (:00/:15/:30/:45)
 ├── odontogramaFdi.ts          # Helper puro FDI: cuadrantes, nombres anatómicos y orientación de caras
-├── OdontogramaFdi.tsx         # Componente SVG interactivo de 5 caras + overlays + accesibilidad
+├── OdontogramaFdiSvg.tsx      # Componente SVG interactivo de 5 caras + overlays + accesibilidad (nombre distinto para evitar colisión case-insensitive en Windows/macOS)
 ├── profesional.css            # Estilos locales del área usando tokens de design-system/tokens.css
 ├── CatalogoPage.tsx           # /profesional/catalogo (Prestaciones con ARS, Boxes, Profesionales)
 ├── HorariosPage.tsx           # /profesional/horarios (Franjas 15 min + Bloqueos XOR)
@@ -146,11 +146,12 @@ web/src/pages/profesional/
 
 - Design system revision: 2 (`design-system/tokens.css`, `design-system/brand.js`, `design-system/assets/logo.svg`)
 - Decision: yes (4 mockups HTML responsive 390×844 y 1440×900: `prestaciones.html`, `horarios.html`, `ganancias.html`, `odontograma.html` en `openspec/changes/web-profesional/mockups/`)
-- Approval: pending (EP)
+- Preview: rendered (2026-11-23, revisión de EP en 1440×900 y 390×844)
+- Approval: approved (2026-11-23, by EP)
 - Date: 2026-11-23
 
-> Nota de gobernanza visual: este diseño y los 4 mockups HTML se encuentran **propuestos, pendientes de aprobación de EP antes de iniciar `apply`**.
+> Nota de gobernanza visual: este diseño y los 4 mockups HTML fueron **aprobados por EP el 2026-11-23** tras incorporar DNIs ficticios (`00000001`/`00000002`) en `odontograma.html`, habilitando el inicio de `apply`.
 
 ## Open Questions
 
-Ninguna pendiente para la fase de diseño; el único gate previo a `apply` es la aprobación explícita de EP sobre los 4 mockups HTML.
+Ninguna pendiente; el gate previo a `apply` fue aprobado por EP el 2026-11-23.
