@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Agenda del día — {brand}</title>
+    <link rel="stylesheet" href="../../../../../design-system/tokens.css" />
+    <link rel="stylesheet" href="recepcion.css" />
+    <script src="../../../../../design-system/brand.js" defer></script>
+    <style>
+      .agenda { display: grid; grid-template-columns: 4.5rem repeat(2, minmax(0, 1fr)); grid-template-rows: 2.75rem repeat(16, var(--agenda-slot-height)); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); overflow: visible; position: relative; }
+      .col-head { grid-row: 1; display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-4); font-size: var(--text-sm); font-weight: var(--weight-semibold); border-bottom: 1px solid var(--color-border); background: var(--color-surface-subtle); }
+      .col-head:first-child { border-top-left-radius: var(--radius-lg); }
+      .col-head:last-of-type { border-top-right-radius: var(--radius-lg); }
+      .col-head small { color: var(--color-text-muted); font-weight: var(--weight-medium); }
+      .hour { grid-column: 1; padding: 4px var(--space-3) 0; font-size: var(--text-xs); color: var(--color-text-muted); font-variant-numeric: tabular-nums; border-top: 1px solid var(--color-border); }
+      .line { grid-column: 2 / 4; border-top: 1px dashed var(--color-border); pointer-events: none; }
+      .line.full { border-top-style: solid; }
+      .lane-sep { grid-column: 3; grid-row: 1 / 18; border-left: 1px solid var(--color-border); pointer-events: none; }
+      .turno { position: relative; margin: 2px 6px; padding: 6px 10px; border-radius: var(--radius-md); border-left: 3px solid currentColor; font-size: var(--text-xs); line-height: 1.35; overflow: hidden; display: flex; flex-direction: column; gap: 1px; box-shadow: var(--shadow-xs); }
+      .turno .t-head { display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+      .turno .t-time { font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+      .turno .t-who { color: var(--color-text); font-weight: var(--weight-semibold); }
+      .turno .t-what { color: var(--color-text-muted); }
+      .turno.reservado { background: var(--turno-reservado-soft); color: var(--turno-reservado); }
+      .turno.confirmado { background: var(--turno-confirmado-soft); color: var(--turno-confirmado); }
+      .turno.atendido { background: var(--turno-atendido-soft); color: var(--turno-atendido); }
+      .turno.ausente { background: var(--turno-ausente-soft); color: var(--turno-ausente); }
+      .turno.cancelado { background: repeating-linear-gradient(135deg, var(--turno-cancelado-soft) 0 8px, var(--color-surface) 8px 16px); color: var(--turno-cancelado); border-left-style: dashed; box-shadow: none; }
+      .turno.cancelado .t-who { text-decoration: line-through; color: var(--turno-cancelado); }
+      .turno.selected { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+      .t-state { font-size: 11px; font-weight: var(--weight-semibold); }
+      .menu { position: relative; z-index: 2; align-self: start; justify-self: end; margin: 6px 14px 0 0; width: 13.5rem; padding: var(--space-2); border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 2px; }
+      .menu-title { padding: 6px 10px 8px; font-size: var(--text-xs); color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); margin-bottom: 4px; }
+      .menu button { text-align: left; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; font-size: var(--text-sm); color: var(--color-text); }
+      .menu button:first-of-type { background: var(--color-primary-soft); color: var(--color-primary-deep); font-weight: var(--weight-semibold); }
+      .menu .danger { color: var(--color-danger); }
+      .legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); align-items: center; font-size: var(--text-xs); color: var(--color-text-muted); }
+      .mobile-list { display: none; }
+      .m-item { display: grid; grid-template-columns: 3.6rem 1fr; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
+      .m-item:first-child { border-top: 0; }
+      .m-time { font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
+      .m-time small { display: block; color: var(--color-text-muted); font-weight: var(--weight-medium); }
+      .m-body { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-sm); min-width: 0; }
+      .m-body .t-what { color: var(--color-text-muted); font-size: var(--text-xs); }
+      .m-body .m-row { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+      .m-body .contiguo { color: var(--color-text-muted); font-size: var(--text-xs); }
+      .m-item.cancelado .m-who { text-decoration: line-through; color: var(--turno-cancelado); }
+      @media (max-width: 768px) {
+        .agenda, .legend { display: none; }
+        .mobile-list { display: block; }
+        .toolbar .select { flex: 1 1 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="../../../../../design-system/assets/logo.svg" alt="" width="32" height="32" />
+          <span data-brand-name>Clínica Dental Alvear</span>
+        </div>
+        <div><span class="role-pill">Recepcionista</span></div>
+        <nav class="nav" aria-label="Menú principal">
+          <a href="#">Inicio</a>
+          <a href="#" class="active" aria-current="page">Agenda del día</a>
+          <a href="#">Pacientes</a>
+        </nav>
+        <p class="sidebar-foot">Mockup C-13 · datos ficticios <span class="fake-tag">ejemplo</span></p>
+      </aside>
+
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>Agenda del día</h1>
+            <p>Martes 24 de noviembre de 2026 · 8 turnos</p>
+          </div>
+          <a href="nuevo-turno.html" class="btn btn-primary">+ Nuevo turno</a>
+        </div>
+
+        <div class="toolbar">
+          <div class="datenav">
+            <button type="button" class="iconbtn" aria-label="Día anterior">‹</button>
+            <span>Mar 24/11</span>
+            <button type="button" class="iconbtn" aria-label="Día siguiente">›</button>
+            <button type="button" class="btn btn-ghost btn-sm">Hoy</button>
+          </div>
+          <div class="segmented" role="group" aria-label="Vista">
+            <button type="button" aria-pressed="true">Día</button>
+            <button type="button" aria-pressed="false">Semana</button>
+          </div>
+          <div class="segmented" role="group" aria-label="Agrupar por">
+            <button type="button" aria-pressed="true">Por box</button>
+            <button type="button" aria-pressed="false">Por profesional</button>
+          </div>
+          <select class="select" aria-label="Filtro">
+            <option>Todos los boxes</option>
+            <option>Box 1</option>
+            <option>Box 2</option>
+          </select>
+        </div>
+
+        <!-- Escritorio: grilla de 15 minutos por box (09:00–13:00) -->
+        <div class="agenda" aria-label="Agenda por box">
+          <div class="col-head" style="grid-column: 1;"></div>
+          <div class="col-head" style="grid-column: 2;">Box 1 <small>· 4 turnos</small></div>
+          <div class="col-head" style="grid-column: 3;">Box 2 <small>· 4 turnos</small></div>
+          <div class="lane-sep"></div>
+
+          <div class="hour" style="grid-row: 2 / 6;">09:00</div>
+          <div class="hour" style="grid-row: 6 / 10;">10:00</div>
+          <div class="hour" style="grid-row: 10 / 14;">11:00</div>
+          <div class="hour" style="grid-row: 14 / 18;">12:00</div>
+          <div class="line full" style="grid-row: 6;"></div>
+          <div class="line full" style="grid-row: 10;"></div>
+          <div class="line full" style="grid-row: 14;"></div>
+          <div class="line" style="grid-row: 4;"></div>
+          <div class="line" style="grid-row: 8;"></div>
+          <div class="line" style="grid-row: 12;"></div>
+          <div class="line" style="grid-row: 16;"></div>
+
+          <!-- Box 1 -->
+          <div class="turno atendido" style="grid-column: 2; grid-row: 2 / 3;">
+            <div class="t-head"><span class="t-time">09:00–09:15 · <span class="t-who">Paciente Ficticio Dos</span></span><span class="t-state">Atendido</span></div>
+          </div>
+          <div class="turno confirmado" style="grid-column: 2; grid-row: 6 / 8;">
+            <div class="t-head"><span class="t-time">10:00–10:30</span><span class="t-state">Confirmado</span></div>
+            <span class="t-who">Paciente Ficticio Uno</span>
+            <span class="t-what">Consulta · Dra. Ana Pérez</span>
+          </div>
+          <div class="turno reservado" style="grid-column: 2; grid-row: 8 / 10;">
+            <div class="t-head"><span class="t-time">10:30–11:00</span><span class="t-state">Reservado</span></div>
+            <span class="t-who">Paciente Ficticio Tres</span>
+            <span class="t-what">Consulta · Dra. Ana Pérez</span>
+          </div>
+          <div class="turno reservado selected" style="grid-column: 2; grid-row: 12 / 16;">
+            <div class="t-head"><span class="t-time">11:30–12:30</span><span class="t-state">Reservado</span></div>
+            <span class="t-who">Paciente Ficticio Cuatro</span>
+            <span class="t-what">Extracción simple · Dra. Ana Pérez</span>
+          </div>
+          <div class="menu" style="grid-column: 2; grid-row: 14 / 18;" role="menu" aria-label="Acciones del turno de las 11:30">
+            <div class="menu-title">11:30 · Paciente Ficticio Cuatro</div>
+            <button type="button" role="menuitem">Confirmar</button>
+            <button type="button" role="menuitem">Reprogramar</button>
+            <button type="button" role="menuitem" class="danger">Cancelar turno</button>
+          </div>
+
+          <!-- Box 2 -->
+          <div class="turno reservado" style="grid-column: 3; grid-row: 4 / 7;">
+            <div class="t-head"><span class="t-time">09:30–10:15</span><span class="t-state">Reservado</span></div>
+            <span class="t-who">Paciente Ficticio Cinco</span>
+            <span class="t-what">Limpieza · Dr. Bruno Gómez</span>
+          </div>
+          <div class="turno cancelado" style="grid-column: 3; grid-row: 7 / 9;">
+            <div class="t-head"><span class="t-time">10:15–10:45</span><span class="t-state">Cancelado · horario libre</span></div>
+            <span class="t-who">Paciente Ficticio Seis</span>
+          </div>
+          <div class="turno ausente" style="grid-column: 3; grid-row: 10 / 12;">
+            <div class="t-head"><span class="t-time">11:00–11:30</span><span class="t-state">Ausente</span></div>
+            <span class="t-who">Paciente Ficticio Siete</span>
+            <span class="t-what">Consulta · Dr. Bruno Gómez</span>
+          </div>
+          <div class="turno confirmado" style="grid-column: 3; grid-row: 14 / 17;">
+            <div class="t-head"><span class="t-time">12:00–12:45</span><span class="t-state">Confirmado</span></div>
+            <span class="t-who">Paciente Ficticio Ocho</span>
+            <span class="t-what">Limpieza · Dr. Bruno Gómez</span>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span>Estados:</span>
+          <span class="badge b-reservado">Reservado</span>
+          <span class="badge b-confirmado">Confirmado</span>
+          <span class="badge b-atendido">Atendido</span>
+          <span class="badge b-ausente">Ausente</span>
+          <span class="badge b-cancelado">Cancelado</span>
+          <span>· Los turnos de 10:00 y 10:30 del Box 1 son contiguos: válidos, sin marca de conflicto.</span>
+        </div>
+
+        <!-- Celular: lista por hora -->
+        <div class="card mobile-list" aria-label="Agenda en lista">
+          <div class="m-item"><div class="m-time">09:00<small>09:15</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Dos</span><span class="badge b-atendido">Atendido</span></div><span class="t-what">Control · Dr. Bruno Gómez · Box 1</span></div></div>
+          <div class="m-item"><div class="m-time">09:30<small>10:15</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Cinco</span><span class="badge b-reservado">Reservado</span></div><span class="t-what">Limpieza · Dr. Bruno Gómez · Box 2</span></div></div>
+          <div class="m-item"><div class="m-time">10:00<small>10:30</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Uno</span><span class="badge b-confirmado">Confirmado</span></div><span class="t-what">Consulta · Dra. Ana Pérez · Box 1</span></div></div>
+          <div class="m-item cancelado"><div class="m-time">10:15<small>10:45</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Seis</span><span class="badge b-cancelado">Cancelado</span></div><span class="t-what">Horario libre · Box 2</span></div></div>
+          <div class="m-item"><div class="m-time">10:30<small>11:00</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Tres</span><span class="badge b-reservado">Reservado</span></div><span class="t-what">Consulta · Dra. Ana Pérez · Box 1</span><span class="contiguo">Empieza cuando termina el de las 10:00 · sin conflicto</span></div></div>
+          <div class="m-item"><div class="m-time">11:00<small>11:30</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Siete</span><span class="badge b-ausente">Ausente</span></div><span class="t-what">Consulta · Dr. Bruno Gómez · Box 2</span></div></div>
+          <div class="m-item"><div class="m-time">11:30<small>12:30</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Cuatro</span><span class="badge b-reservado">Reservado</span></div><span class="t-what">Extracción simple · Dra. Ana Pérez · Box 1</span><div class="chips"><button type="button" class="btn btn-secondary btn-sm">Confirmar</button><button type="button" class="btn btn-secondary btn-sm">Reprogramar</button><button type="button" class="btn btn-ghost btn-sm" style="color: var(--color-danger);">Cancelar</button></div></div></div>
+          <div class="m-item"><div class="m-time">12:00<small>12:45</small></div><div class="m-body"><div class="m-row"><span class="m-who">Paciente Ficticio Ocho</span><span class="badge b-confirmado">Confirmado</span></div><span class="t-what">Limpieza · Dr. Bruno Gómez · Box 2</span></div></div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
