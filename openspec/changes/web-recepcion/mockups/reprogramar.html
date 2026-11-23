@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Reprogramar turno — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <link rel="stylesheet" href="recepcion.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .wrap { max-width: 52rem; }
+      .compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-4); align-items: stretch; }
+      .when { padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface-subtle); }
+      .when.new { border-color: var(--color-primary); background: var(--color-primary-soft); }
+      .when small { display: block; color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-2); }
+      .when .big { display: block; font-size: var(--text-xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; line-height: var(--leading-tight); }
+      .when.old .big { color: var(--color-text-muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+      .when .sub { font-size: var(--text-sm); color: var(--color-text-muted); }
+      .arrow { display: flex; align-items: center; color: var(--color-text-muted); font-size: var(--text-xl); }
+      .who { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
+      .avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-on-primary); display: inline-flex; align-items: center; justify-content: center; font-size: var(--text-xs); font-weight: var(--weight-bold); }
+      .who strong { display: block; }
+      .who span.meta { color: var(--color-text-muted); font-size: var(--text-sm); }
+      .who .badge { margin-left: auto; }
+      @media (max-width: 768px) {
+        .compare { grid-template-columns: 1fr; }
+        .arrow { justify-content: center; transform: rotate(90deg); }
+        .who { flex-wrap: wrap; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="32" height="32" />
+          <span data-brand-name>Clínica Dental Alvear</span>
+        </div>
+        <div><span class="role-pill">Recepcionista</span></div>
+        <nav class="nav" aria-label="Menú principal">
+          <a href="#">Inicio</a>
+          <a href="agenda.html" class="active" aria-current="page">Agenda del día</a>
+          <a href="#">Pacientes</a>
+        </nav>
+        <p class="sidebar-foot">Mockup C-13 · datos ficticios <span class="fake-tag">ejemplo</span></p>
+      </aside>
+
+      <main class="main">
+        <div class="wrap">
+          <a href="agenda.html" class="back">‹ Volver a la agenda</a>
+          <div class="page-head">
+            <div>
+              <h1>Reprogramar turno</h1>
+              <p>Elegí un hueco libre para mover el turno.</p>
+            </div>
+          </div>
+
+          <section class="card" aria-labelledby="actual">
+            <h2 id="actual" class="sr-only" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Turno actual</h2>
+            <div class="who">
+              <span class="avatar" aria-hidden="true">FU</span>
+              <div>
+                <strong>Paciente Ficticio Uno</strong>
+                <span class="meta">Consulta · 30 min</span>
+              </div>
+              <span class="badge b-confirmado">Confirmado</span>
+            </div>
+            <div class="compare">
+              <div class="when old">
+                <small>Ahora</small>
+                <span class="big">Mar 24/11 · 10:00</span>
+                <span class="sub">10:00–10:30 · Dra. Ana Pérez · Box 1</span>
+              </div>
+              <div class="arrow" aria-hidden="true">→</div>
+              <div class="when new">
+                <small>Nuevo horario</small>
+                <span class="big">Mar 24/11 · 11:00</span>
+                <span class="sub">11:00–11:30 · Dra. Ana Pérez · Box automático</span>
+              </div>
+            </div>
+            <p class="note" style="margin: var(--space-4) 0 0;">Al reprogramar, el turno vuelve a <strong>Reservado</strong> (hay que confirmarlo de nuevo) y el paciente recibe un email con el nuevo horario.</p>
+          </section>
+
+          <section class="card" aria-labelledby="hueco">
+            <h2 id="hueco">Nuevo hueco</h2>
+            <p class="hint">Huecos libres para una Consulta. Podés cambiar de profesional.</p>
+            <div class="grid-2" style="margin-bottom: var(--space-5);">
+              <div class="field"><label for="profesional">Profesional</label>
+                <select id="profesional" class="select"><option>Dra. Ana Pérez</option><option>Dr. Bruno Gómez</option></select></div>
+              <div class="field"><label for="dia">Día</label>
+                <input id="dia" class="input" type="text" value="Mar 24/11/2026" /></div>
+            </div>
+            <div class="slots-group">
+              <p class="slots-label">Mañana</p>
+              <div class="slots">
+                <button type="button" class="slot" aria-pressed="false">09:15</button>
+                <button type="button" class="slot" aria-pressed="false">09:30</button>
+                <button type="button" class="slot" aria-pressed="true">11:00</button>
+                <button type="button" class="slot" aria-pressed="false">11:30</button>
+                <button type="button" class="slot" aria-pressed="false">12:30</button>
+              </div>
+            </div>
+            <div class="slots-group">
+              <p class="slots-label">Tarde</p>
+              <div class="slots">
+                <button type="button" class="slot" aria-pressed="false">15:00</button>
+                <button type="button" class="slot" aria-pressed="false">15:30</button>
+                <button type="button" class="slot" aria-pressed="false">16:00</button>
+              </div>
+            </div>
+            <div class="field" style="margin-top: var(--space-5);">
+              <label>Box</label>
+              <div class="chips" role="group" aria-label="Box">
+                <button type="button" class="chip" aria-pressed="true">Automático</button>
+                <button type="button" class="chip" aria-pressed="false">Box 1</button>
+                <button type="button" class="chip" aria-pressed="false">Box 2</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="actions">
+            <a href="agenda.html" class="btn btn-secondary">Volver</a>
+            <button type="button" class="btn btn-primary">Reprogramar a las 11:00</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
