@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mis horarios y bloqueos — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      }
+
+      .sidebar {
+        background: var(--color-surface);
+        border-right: 1px solid var(--color-border);
+        padding: var(--space-5);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        min-width: 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        text-decoration: none;
+        color: var(--color-text);
+      }
+
+      .brand-title {
+        display: block;
+        font-weight: var(--weight-bold);
+        font-size: var(--text-sm);
+        line-height: 1.2;
+      }
+
+      .brand-sub {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .profile-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        min-width: 0;
+      }
+
+      .profile-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-width: 0;
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-full);
+        background: #e6f4f7;
+        color: #094254;
+        font-size: var(--text-xs);
+        font-weight: var(--weight-bold);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .profile-name {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        display: block;
+      }
+
+      .role-pill {
+        display: inline-flex;
+        padding: 2px 9px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+      }
+
+      .profile-email {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 42px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+      }
+
+      .nav a:hover {
+        background: var(--color-surface-subtle);
+        color: var(--color-text);
+      }
+
+      .nav a:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .nav a.active {
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-weight: var(--weight-semibold);
+        box-shadow: inset 3px 0 0 var(--color-primary);
+      }
+
+      .main {
+        padding: var(--space-6) var(--space-8);
+        max-width: var(--content-max);
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+      }
+
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+      }
+
+      .page-header h1 {
+        margin: 0;
+        font-size: var(--text-2xl);
+        line-height: var(--leading-tight);
+      }
+
+      .page-header p {
+        margin: var(--space-1) 0 0;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        min-height: 44px;
+        padding: 0 var(--space-5);
+        border-radius: var(--radius-md);
+        border: 1px solid transparent;
+        font: inherit;
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+      }
+
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .btn-primary {
+        background: var(--color-primary);
+        color: var(--color-on-primary);
+      }
+
+      .btn-primary:hover {
+        background: var(--color-primary-hover);
+      }
+
+      .btn-secondary {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border-strong);
+      }
+
+      .btn-danger-ghost {
+        background: var(--color-danger-soft);
+        color: var(--color-danger);
+        border-color: var(--color-danger-border);
+        min-height: 36px;
+        padding: 0 var(--space-3);
+        font-size: var(--text-xs);
+      }
+
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        box-shadow: var(--shadow-xs);
+        min-width: 0;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-4);
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: var(--text-lg);
+      }
+
+      .section-head p {
+        margin: 2px 0 0;
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+
+      .grid-hint {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+      }
+
+      .schedule-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .day-row {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        gap: var(--space-3);
+        align-items: center;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        min-width: 0;
+      }
+
+      .day-name {
+        font-weight: var(--weight-semibold);
+        font-size: var(--text-sm);
+      }
+
+      .slots-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        align-items: center;
+        min-width: 0;
+      }
+
+      .slot-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border-strong);
+        font-variant-numeric: tabular-nums;
+        max-width: 100%;
+      }
+
+      .slot-pill select {
+        min-height: 34px;
+        padding: 0 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--color-border);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+      }
+
+      .slot-pill select:focus-visible {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+      }
+
+      .slot-sep {
+        color: var(--color-text-muted);
+        font-size: var(--text-xs);
+      }
+
+      .schedule-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        margin-top: var(--space-5);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+      }
+
+      .status-ok {
+        font-size: var(--text-sm);
+        color: var(--color-success);
+        font-weight: var(--weight-medium);
+      }
+
+      .bloqueos-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+        gap: var(--space-5);
+        align-items: start;
+      }
+
+      .table-wrap {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--text-sm);
+        font-variant-numeric: tabular-nums;
+      }
+
+      th,
+      td {
+        padding: var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: middle;
+      }
+
+      th {
+        background: var(--color-surface-subtle);
+        color: var(--color-text-muted);
+        font-weight: var(--weight-semibold);
+        font-size: var(--text-xs);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .scope-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+      }
+
+      .scope-prof {
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+      }
+
+      .scope-box {
+        background: var(--color-warning-soft);
+        color: var(--color-warning);
+      }
+
+      .range-tag {
+        display: inline-block;
+        margin-top: 2px;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+
+      .xor-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-2);
+        border: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .xor-group legend {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        margin-bottom: var(--space-2);
+      }
+
+      .xor-option {
+        position: relative;
+      }
+
+      .xor-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .xor-option label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 44px;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-surface);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        color: var(--color-text-muted);
+        cursor: pointer;
+      }
+
+      .xor-option input:checked + label {
+        background: var(--color-primary-soft);
+        border-color: var(--color-primary);
+        color: var(--color-primary-deep);
+      }
+
+      .xor-option input:focus-visible + label {
+        box-shadow: var(--focus-ring);
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .field label {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+      }
+
+      .field input,
+      .field select {
+        min-height: 44px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
+        font-size: var(--text-sm);
+        width: 100%;
+        min-width: 0;
+      }
+
+      .field input:focus-visible,
+      .field select:focus-visible {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+      }
+
+      .field select:disabled {
+        background: var(--color-surface-sunken);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+      }
+
+      .form-row-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
+      }
+
+      .form-row-2[hidden] {
+        display: none;
+      }
+
+      .checkbox-card {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2);
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        cursor: pointer;
+      }
+
+      .checkbox-card input {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: var(--color-primary);
+        flex-shrink: 0;
+      }
+
+      .checkbox-title {
+        display: block;
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+      }
+
+      .checkbox-sub {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .xor-note,
+      .range-preview {
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        overflow-wrap: anywhere;
+      }
+
+      .range-preview {
+        background: var(--color-primary-soft);
+        border-color: var(--color-border-strong);
+        color: var(--color-primary-deep);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .range-preview code {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--color-text);
+        overflow-wrap: anywhere;
+      }
+
+      .range-error {
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-danger-soft);
+        border: 1px solid var(--color-danger-border);
+        color: var(--color-danger);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+      }
+
+      .range-error[hidden] {
+        display: none;
+      }
+
+      @media (max-width: 1120px) {
+        .bloqueos-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--color-border);
+          padding: var(--space-4);
+          gap: var(--space-3);
+        }
+
+        .nav {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 6px;
+        }
+
+        .nav a {
+          justify-content: center;
+          text-align: center;
+          padding: 6px 8px;
+          min-height: 40px;
+          font-size: var(--text-xs);
+          line-height: 1.25;
+        }
+
+        .nav a.active {
+          box-shadow: inset 0 -3px 0 var(--color-primary);
+        }
+
+        .main {
+          padding: var(--space-4) var(--space-3);
+        }
+
+        .card {
+          padding: var(--space-4) var(--space-3);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .responsive-table thead {
+          display: none;
+        }
+
+        .responsive-table,
+        .responsive-table tbody,
+        .responsive-table tr,
+        .responsive-table td {
+          display: block;
+          width: 100%;
+        }
+
+        .responsive-table tbody {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+          padding: var(--space-3);
+        }
+
+        .responsive-table tr {
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          padding: var(--space-3);
+          background: var(--color-bg);
+        }
+
+        .responsive-table td {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--space-3);
+          padding: 6px 0;
+          border-bottom: 1px solid var(--color-border);
+          text-align: right;
+        }
+
+        .responsive-table td:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .responsive-table td::before {
+          content: attr(data-label);
+          font-size: var(--text-xs);
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-muted);
+          text-align: left;
+          flex-shrink: 0;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .day-row {
+          grid-template-columns: 1fr;
+          align-items: start;
+          padding: var(--space-3);
+        }
+
+        .form-row-2,
+        .xor-group {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" aria-label="Navegación profesional">
+        <a href="./prestaciones.html" class="brand">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="34" height="34" />
+          <span>
+            <span class="brand-title" data-brand-name>Clínica Dental Alvear</span>
+            <span class="brand-sub">Odontología integral</span>
+          </span>
+        </a>
+
+        <div class="profile-box">
+          <div class="profile-row">
+            <span class="avatar" aria-hidden="true">AP</span>
+            <div>
+              <span class="profile-name">Dra. Ana Pérez</span>
+              <span class="role-pill">Profesional</span>
+            </div>
+          </div>
+          <span class="profile-email">profesional@example.com</span>
+        </div>
+
+        <nav class="nav" aria-label="Menú principal">
+          <a href="./prestaciones.html">Catálogo y prestaciones</a>
+          <a href="./horarios.html" class="active" aria-current="page">Mis horarios y bloqueos</a>
+          <a href="./ganancias.html">Mis ganancias</a>
+          <a href="./odontograma.html">Historia clínica</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="page-header">
+          <div>
+            <h1>Mis horarios y bloqueos</h1>
+            <p>Configurá tus franjas semanales de atención y registrá bloqueos propios o de un box.</p>
+          </div>
+        </header>
+
+        <!-- HORARIOS SEMANALES -->
+        <section class="card" aria-labelledby="titulo-horarios">
+          <div class="section-head">
+            <div>
+              <h2 id="titulo-horarios">Mis horarios semanales — Dra. Ana Pérez</h2>
+              <p>Las franjas determinan qué horarios quedan disponibles para agendar turnos.</p>
+            </div>
+            <span class="grid-hint">Grilla de 15 min (:00 · :15 · :30 · :45)</span>
+          </div>
+
+          <div class="schedule-list" id="schedule-list"></div>
+
+          <div class="schedule-footer">
+            <span class="status-ok" role="status" aria-live="polite" id="status-horarios">
+              Horarios vigentes · Lunes a viernes (09:00–13:00 y 15:00–19:00)
+            </span>
+            <button type="button" class="btn btn-primary" id="btn-guardar-horarios">Guardar horarios</button>
+          </div>
+        </section>
+
+        <!-- BLOQUEOS -->
+        <section aria-labelledby="titulo-bloqueos">
+          <div class="section-head">
+            <div>
+              <h2 id="titulo-bloqueos">Bloqueos de agenda</h2>
+              <p>Bloqueá días completos, rangos de varios días o franjas horarias específicas de tu agenda o de un box.</p>
+            </div>
+          </div>
+
+          <div class="bloqueos-grid">
+            <div class="table-wrap">
+              <table class="responsive-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Alcance</th>
+                    <th scope="col">Período bloqueado</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-bloqueos">
+                  <tr>
+                    <td data-label="Alcance"><span class="scope-badge scope-prof">Dra. Ana Pérez</span></td>
+                    <td data-label="Período bloqueado">
+                      <strong>27/11/2026 al 28/11/2026</strong><br />
+                      <span class="range-tag">Días completos</span>
+                    </td>
+                    <td data-label="Motivo">Congreso anual de odontología</td>
+                    <td data-label="Acción"><button type="button" class="btn btn-danger-ghost" data-eliminar>Eliminar</button></td>
+                  </tr>
+                  <tr>
+                    <td data-label="Alcance"><span class="scope-badge scope-box">Box 2</span></td>
+                    <td data-label="Período bloqueado">
+                      <strong>30/11/2026</strong><br />
+                      <span class="range-tag">08:00 a 09:00</span>
+                    </td>
+                    <td data-label="Motivo">Mantenimiento preventivo del box</td>
+                    <td data-label="Acción"><button type="button" class="btn btn-danger-ghost" data-eliminar>Eliminar</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <aside class="card" aria-labelledby="titulo-nuevo-bloqueo">
+              <h3 style="margin: 0 0 var(--space-3); font-size: var(--text-base);" id="titulo-nuevo-bloqueo">Nuevo bloqueo</h3>
+              <form class="form-stack" id="form-bloqueo">
+                <fieldset class="xor-group">
+                  <legend>Aplica exclusivamente a:</legend>
+                  <div class="xor-option">
+                    <input type="radio" name="alcance" id="alcance-prof" value="profesional" checked />
+                    <label for="alcance-prof">Mi agenda (Dra. Ana Pérez)</label>
+                  </div>
+                  <div class="xor-option">
+                    <input type="radio" name="alcance" id="alcance-box" value="box" />
+                    <label for="alcance-box">Un box del consultorio</label>
+                  </div>
+                </fieldset>
+
+                <div class="xor-note" id="nota-prof">
+                  El bloqueo se registrará únicamente sobre la agenda de <strong>Dra. Ana Pérez</strong> (sin bloquear un box específico).
+                </div>
+
+                <div class="field" id="campo-box" hidden>
+                  <label for="sel-box">Box a bloquear</label>
+                  <select id="sel-box">
+                    <option value="box-1">Box 1</option>
+                    <option value="box-2">Box 2</option>
+                  </select>
+                </div>
+
+                <div class="form-row-2">
+                  <div class="field">
+                    <label for="b-dia-desde">Día desde</label>
+                    <input id="b-dia-desde" type="date" value="2026-12-04" required />
+                  </div>
+                  <div class="field">
+                    <label for="b-dia-hasta">Día hasta</label>
+                    <input id="b-dia-hasta" type="date" value="2026-12-04" required />
+                  </div>
+                </div>
+
+                <label class="checkbox-card" for="b-todo-el-dia">
+                  <input type="checkbox" id="b-todo-el-dia" checked />
+                  <span>
+                    <span class="checkbox-title">Bloquear día completo</span>
+                    <span class="checkbox-sub">Desmarcá esta opción si solo querés bloquear un rango horario puntual.</span>
+                  </span>
+                </label>
+
+                <div class="form-row-2" id="bloqueo-horas" hidden>
+                  <div class="field">
+                    <label for="b-hora-desde">Hora desde (opcional)</label>
+                    <select id="b-hora-desde" disabled></select>
+                  </div>
+                  <div class="field">
+                    <label for="b-hora-hasta">Hora hasta (opcional)</label>
+                    <select id="b-hora-hasta" disabled></select>
+                  </div>
+                </div>
+
+                <div class="range-preview" id="preview-bloqueo" aria-live="polite">
+                  <strong id="preview-humano">04/12/2026 · Día completo</strong>
+                  <code id="preview-iso">POST /api/bloqueos → inicio: 2026-12-04T00:00:00-03:00 · fin: 2026-12-05T00:00:00-03:00</code>
+                </div>
+
+                <div class="range-error" id="error-rango" role="alert" hidden>
+                  La fecha y hora de fin debe ser posterior al inicio del bloqueo.
+                </div>
+
+                <div class="field">
+                  <label for="b-motivo">Motivo</label>
+                  <input id="b-motivo" type="text" placeholder="Ej. Feriado, congreso o mantenimiento del box" value="Capacitación clínica" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Registrar bloqueo</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const horas15 = [];
+      for (let h = 8; h <= 20; h++) {
+        for (const m of ['00', '15', '30', '45']) {
+          if (h === 20 && m !== '00') continue;
+          horas15.push(`${String(h).padStart(2, '0')}:${m}`);
+        }
+      }
+
+      function poblarSelect(select, seleccionado) {
+        select.innerHTML = horas15
+          .map((h) => `<option value="${h}" ${h === seleccionado ? 'selected' : ''}>${h}</option>`)
+          .join('');
+      }
+
+      function diaSiguiente(isoDate) {
+        const [y, m, d] = isoDate.split('-').map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d + 1));
+        const yy = dt.getUTCFullYear();
+        const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(dt.getUTCDate()).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
+      }
+
+      function formatearFecha(isoDate) {
+        return isoDate.split('-').reverse().join('/');
+      }
+
+      const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+      const scheduleList = document.getElementById('schedule-list');
+      dias.forEach((dia) => {
+        const row = document.createElement('div');
+        row.className = 'day-row';
+        row.innerHTML = `
+          <span class="day-name">${dia}</span>
+          <div class="slots-wrap">
+            <div class="slot-pill">
+              <select aria-label="${dia} mañana desde"></select>
+              <span class="slot-sep">a</span>
+              <select aria-label="${dia} mañana hasta"></select>
+            </div>
+            <div class="slot-pill">
+              <select aria-label="${dia} tarde desde"></select>
+              <span class="slot-sep">a</span>
+              <select aria-label="${dia} tarde hasta"></select>
+            </div>
+          </div>
+        `;
+        const sels = row.querySelectorAll('select');
+        poblarSelect(sels[0], '09:00');
+        poblarSelect(sels[1], '13:00');
+        poblarSelect(sels[2], '15:00');
+        poblarSelect(sels[3], '19:00');
+        scheduleList.appendChild(row);
+      });
+
+      const diaDesdeEl = document.getElementById('b-dia-desde');
+      const diaHastaEl = document.getElementById('b-dia-hasta');
+      const todoElDiaEl = document.getElementById('b-todo-el-dia');
+      const bloqueoHorasEl = document.getElementById('bloqueo-horas');
+      const horaDesdeEl = document.getElementById('b-hora-desde');
+      const horaHastaEl = document.getElementById('b-hora-hasta');
+      const previewHumano = document.getElementById('preview-humano');
+      const previewIso = document.getElementById('preview-iso');
+      const errorRango = document.getElementById('error-rango');
+
+      poblarSelect(horaDesdeEl, '08:00');
+      poblarSelect(horaHastaEl, '09:00');
+
+      function calcularRangoBloqueo() {
+        const dDesde = diaDesdeEl.value;
+        const dHasta = diaHastaEl.value || dDesde;
+        const todoElDia = todoElDiaEl.checked;
+        if (todoElDia) {
+          const inicio = `${dDesde}T00:00:00-03:00`;
+          const fin = `${diaSiguiente(dHasta)}T00:00:00-03:00`;
+          const mismoDia = dDesde === dHasta;
+          const titulo = mismoDia ? formatearFecha(dDesde) : `${formatearFecha(dDesde)} al ${formatearFecha(dHasta)}`;
+          const sub = mismoDia ? 'Día completo' : 'Días completos';
+          return { inicio, fin, titulo, sub, valido: new Date(inicio).getTime() < new Date(fin).getTime() };
+        }
+        const hDesde = horaDesdeEl.value;
+        const hHasta = horaHastaEl.value;
+        const inicio = `${dDesde}T${hDesde}:00-03:00`;
+        const fin = `${dHasta}T${hHasta}:00-03:00`;
+        const mismoDia = dDesde === dHasta;
+        const titulo = mismoDia ? formatearFecha(dDesde) : `${formatearFecha(dDesde)} al ${formatearFecha(dHasta)}`;
+        const sub = mismoDia ? `${hDesde} a ${hHasta}` : `${formatearFecha(dDesde)} ${hDesde} a ${formatearFecha(dHasta)} ${hHasta}`;
+        return { inicio, fin, titulo, sub, valido: new Date(inicio).getTime() < new Date(fin).getTime() };
+      }
+
+      function actualizarControlesBloqueo() {
+        if (!diaHastaEl.value || diaHastaEl.value < diaDesdeEl.value) {
+          diaHastaEl.value = diaDesdeEl.value;
+        }
+        diaHastaEl.min = diaDesdeEl.value;
+
+        const todoElDia = todoElDiaEl.checked;
+        bloqueoHorasEl.hidden = todoElDia;
+        horaDesdeEl.disabled = todoElDia;
+        horaHastaEl.disabled = todoElDia;
+
+        const rango = calcularRangoBloqueo();
+        previewHumano.textContent = `${rango.titulo} · ${rango.sub}`;
+        previewIso.textContent = `POST /api/bloqueos → inicio: ${rango.inicio} · fin: ${rango.fin}`;
+        errorRango.hidden = rango.valido;
+      }
+
+      [diaDesdeEl, diaHastaEl, todoElDiaEl, horaDesdeEl, horaHastaEl].forEach((el) => {
+        el.addEventListener('change', actualizarControlesBloqueo);
+      });
+      actualizarControlesBloqueo();
+
+      const radioProf = document.getElementById('alcance-prof');
+      const radioBox = document.getElementById('alcance-box');
+      const campoBox = document.getElementById('campo-box');
+      const notaProf = document.getElementById('nota-prof');
+      function actualizarXor() {
+        const esBox = radioBox.checked;
+        campoBox.hidden = !esBox;
+        notaProf.hidden = esBox;
+      }
+      radioProf.addEventListener('change', actualizarXor);
+      radioBox.addEventListener('change', actualizarXor);
+
+      document.getElementById('btn-guardar-horarios').addEventListener('click', () => {
+        document.getElementById('status-horarios').textContent = 'Horarios guardados correctamente.';
+      });
+
+      document.getElementById('tbody-bloqueos').addEventListener('click', (e) => {
+        if (e.target.matches('[data-eliminar]')) {
+          e.target.closest('tr').remove();
+        }
+      });
+
+      document.getElementById('form-bloqueo').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rango = calcularRangoBloqueo();
+        if (!rango.valido) {
+          errorRango.hidden = false;
+          return;
+        }
+        const esBox = radioBox.checked;
+        const alcanceTexto = esBox ? document.getElementById('sel-box').selectedOptions[0].text : 'Dra. Ana Pérez';
+        const clase = esBox ? 'scope-box' : 'scope-prof';
+        const motivo = document.getElementById('b-motivo').value.trim() || 'Bloqueo de agenda';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Alcance"><span class="scope-badge ${clase}">${alcanceTexto}</span></td>
+          <td data-label="Período bloqueado"><strong>${rango.titulo}</strong><br /><span class="range-tag">${rango.sub}</span></td>
+          <td data-label="Motivo">${motivo}</td>
+          <td data-label="Acción"><button type="button" class="btn btn-danger-ghost" data-eliminar>Eliminar</button></td>
+        `;
+        document.getElementById('tbody-bloqueos').prepend(tr);
+      });
+    </script>
+  </body>
+</html>

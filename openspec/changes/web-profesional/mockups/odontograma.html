@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historia clínica y odontograma — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      }
+
+      .sidebar {
+        background: var(--color-surface);
+        border-right: 1px solid var(--color-border);
+        padding: var(--space-5);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        min-width: 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        text-decoration: none;
+        color: var(--color-text);
+      }
+
+      .brand-title {
+        display: block;
+        font-weight: var(--weight-bold);
+        font-size: var(--text-sm);
+        line-height: 1.2;
+      }
+
+      .brand-sub {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .profile-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        min-width: 0;
+      }
+
+      .profile-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-width: 0;
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-full);
+        background: #e6f4f7;
+        color: #094254;
+        font-size: var(--text-xs);
+        font-weight: var(--weight-bold);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .profile-name {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        display: block;
+      }
+
+      .role-pill {
+        display: inline-flex;
+        padding: 2px 9px;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+      }
+
+      .profile-email {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 42px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+      }
+
+      .nav a:hover {
+        background: var(--color-surface-subtle);
+        color: var(--color-text);
+      }
+
+      .nav a:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .nav a.active {
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-weight: var(--weight-semibold);
+        box-shadow: inset 3px 0 0 var(--color-primary);
+      }
+
+      .main {
+        padding: var(--space-6) var(--space-8);
+        max-width: var(--content-max);
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+      }
+
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+      }
+
+      .page-header h1 {
+        margin: 0;
+        font-size: var(--text-2xl);
+        line-height: var(--leading-tight);
+      }
+
+      .page-header p {
+        margin: var(--space-1) 0 0;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+      }
+
+      .patient-bar {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4) var(--space-5);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        min-width: 0;
+      }
+
+      .patient-select-wrap {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        flex: 1 1 280px;
+        min-width: 0;
+      }
+
+      .patient-select-wrap label {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+      }
+
+      .patient-select-wrap select {
+        min-height: 42px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
+        font-size: var(--text-sm);
+        flex: 1 1 220px;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .patient-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .patient-meta span {
+        padding: 4px 10px;
+        border-radius: var(--radius-full);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      .odontograma-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.9fr) minmax(270px, 1fr);
+        gap: var(--space-5);
+        align-items: start;
+      }
+
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        box-shadow: var(--shadow-xs);
+        min-width: 0;
+      }
+
+      .odo-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-4);
+      }
+
+      .odo-head h2 {
+        margin: 0;
+        font-size: var(--text-lg);
+      }
+
+      .toggle-temp {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        color: var(--color-primary-deep);
+        background: var(--color-primary-soft);
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        max-width: 100%;
+      }
+
+      .toggle-temp input {
+        accent-color: var(--color-primary);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-subtle);
+        border: 1px solid var(--color-border);
+        margin-bottom: var(--space-4);
+        font-size: var(--text-xs);
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: var(--weight-medium);
+      }
+
+      .odo-board {
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+
+      .arch-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .quad-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .quad-label {
+        font-size: 11px;
+        font-weight: var(--weight-semibold);
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .quad-label--right {
+        justify-content: flex-end;
+        text-align: right;
+      }
+
+      .quadrant {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 3px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .quadrant--temp {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: 62.5%;
+      }
+
+      .quadrant--temp-left {
+        margin-left: auto;
+      }
+
+      .quadrant--temp-right {
+        margin-right: auto;
+      }
+
+      .midline-v {
+        width: 2px;
+        height: 100%;
+        background: var(--color-border-strong);
+        border-radius: 2px;
+      }
+
+      .midline-h {
+        border: none;
+        border-top: 2px dashed var(--color-border-strong);
+        margin: 2px 0;
+      }
+
+      .tooth-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 2px;
+        min-width: 0;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid transparent;
+        background: transparent;
+        transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+      }
+
+      .tooth-cell.selected {
+        border-color: var(--color-primary);
+        background: var(--color-primary-soft);
+      }
+
+      .tooth-num {
+        font-size: 10px;
+        font-weight: var(--weight-bold);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+
+      .tooth-cell.selected .tooth-num {
+        color: var(--color-primary-deep);
+      }
+
+      .tooth-svg {
+        width: 100%;
+        max-width: 42px;
+        height: auto;
+        aspect-ratio: 1;
+        display: block;
+      }
+
+      .face-zone {
+        cursor: pointer;
+        stroke: #64748b;
+        stroke-width: 1.1;
+        transition: opacity var(--duration-fast) var(--ease-out);
+      }
+
+      .face-zone:hover {
+        stroke: var(--color-primary-deep);
+        stroke-width: 1.7;
+      }
+
+      .face-zone:focus-visible {
+        outline: none;
+        stroke: var(--color-primary);
+        stroke-width: 2.2;
+      }
+
+      .face-zone.face-selected {
+        stroke: var(--color-primary-deep);
+        stroke-width: 2.1;
+      }
+
+      .temp-section[hidden] {
+        display: none;
+      }
+
+      .temp-label {
+        font-size: 11px;
+        font-weight: var(--weight-semibold);
+        color: var(--color-primary-deep);
+        text-align: center;
+        margin: 0 0 6px;
+      }
+
+      .editor-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: var(--radius-md);
+        background: var(--color-primary-soft);
+        color: var(--color-primary-deep);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-bold);
+        margin-bottom: var(--space-3);
+        max-width: 100%;
+      }
+
+      .editor-sub {
+        margin: 0 0 var(--space-4);
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .field label {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+      }
+
+      .field select,
+      .field textarea {
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
+        font-size: var(--text-sm);
+        width: 100%;
+        min-width: 0;
+      }
+
+      .field select {
+        min-height: 42px;
+      }
+
+      .field select:disabled {
+        background: var(--color-surface-sunken);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+      }
+
+      .field textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .field select:focus-visible,
+      .field textarea:focus-visible {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+      }
+
+      .field-hint {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 var(--space-4);
+        border-radius: var(--radius-md);
+        border: 1px solid transparent;
+        font: inherit;
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+      }
+
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .btn-primary {
+        background: var(--color-primary);
+        color: var(--color-on-primary);
+      }
+
+      .btn-primary:hover {
+        background: var(--color-primary-hover);
+      }
+
+      .btn-secondary {
+        background: var(--color-surface);
+        border-color: var(--color-border-strong);
+        color: var(--color-text);
+      }
+
+      .btn-xs {
+        min-height: 32px;
+        padding: 0 var(--space-3);
+        font-size: var(--text-xs);
+      }
+
+      .lower-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: var(--space-5);
+        align-items: start;
+      }
+
+      .hc-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+      }
+
+      .hc-entry {
+        padding: var(--space-4);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        background: var(--color-bg);
+      }
+
+      .hc-entry--correccion {
+        border-left: 3px solid var(--color-warning);
+      }
+
+      .hc-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-2);
+      }
+
+      .hc-badge {
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--color-warning-soft);
+        color: var(--color-warning);
+        font-weight: var(--weight-semibold);
+      }
+
+      .hc-text {
+        margin: 0 0 var(--space-3);
+        font-size: var(--text-sm);
+      }
+
+      .append-note {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-4);
+      }
+
+      .table-wrap {
+        width: 100%;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--text-xs);
+        font-variant-numeric: tabular-nums;
+      }
+
+      th,
+      td {
+        padding: var(--space-2) var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      th {
+        background: var(--color-surface-subtle);
+        color: var(--color-text-muted);
+        font-weight: var(--weight-semibold);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      @media (max-width: 1120px) {
+        .odontograma-layout,
+        .lower-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .arch-row {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .midline-v {
+          display: none;
+        }
+
+        .quad-label--right {
+          justify-content: flex-start;
+          text-align: left;
+        }
+
+        .quadrant {
+          gap: 2px;
+        }
+
+        .quadrant--temp {
+          width: 100%;
+          margin: 0;
+          gap: 4px;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--color-border);
+          padding: var(--space-4);
+          gap: var(--space-3);
+        }
+
+        .nav {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 6px;
+        }
+
+        .nav a {
+          justify-content: center;
+          text-align: center;
+          padding: 6px 8px;
+          min-height: 40px;
+          font-size: var(--text-xs);
+          line-height: 1.25;
+        }
+
+        .nav a.active {
+          box-shadow: inset 0 -3px 0 var(--color-primary);
+        }
+
+        .main {
+          padding: var(--space-4) var(--space-3);
+        }
+
+        .card {
+          padding: var(--space-4) var(--space-3);
+        }
+
+        .patient-bar {
+          padding: var(--space-4) var(--space-3);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .responsive-table thead {
+          display: none;
+        }
+
+        .responsive-table,
+        .responsive-table tbody,
+        .responsive-table tr,
+        .responsive-table td {
+          display: block;
+          width: 100%;
+        }
+
+        .responsive-table tbody {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+          padding: var(--space-2);
+        }
+
+        .responsive-table tr {
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-sm);
+          padding: var(--space-2) var(--space-3);
+          background: var(--color-bg);
+        }
+
+        .responsive-table td {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--space-2);
+          padding: 4px 0;
+          border-bottom: 1px solid var(--color-border);
+          text-align: right;
+        }
+
+        .responsive-table td:last-child {
+          border-bottom: none;
+        }
+
+        .responsive-table td::before {
+          content: attr(data-label);
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-muted);
+          text-align: left;
+          flex-shrink: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" aria-label="Navegación profesional">
+        <a href="./prestaciones.html" class="brand">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="34" height="34" />
+          <span>
+            <span class="brand-title" data-brand-name>Clínica Dental Alvear</span>
+            <span class="brand-sub">Odontología integral</span>
+          </span>
+        </a>
+
+        <div class="profile-box">
+          <div class="profile-row">
+            <span class="avatar" aria-hidden="true">AP</span>
+            <div>
+              <span class="profile-name">Dra. Ana Pérez</span>
+              <span class="role-pill">Profesional</span>
+            </div>
+          </div>
+          <span class="profile-email">profesional@example.com</span>
+        </div>
+
+        <nav class="nav" aria-label="Menú principal">
+          <a href="./prestaciones.html">Catálogo y prestaciones</a>
+          <a href="./horarios.html">Mis horarios y bloqueos</a>
+          <a href="./ganancias.html">Mis ganancias</a>
+          <a href="./odontograma.html" class="active" aria-current="page">Historia clínica</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="page-header">
+          <div>
+            <h1>Historia clínica y odontograma</h1>
+            <p>Registro clínico exclusivo del profesional con odontograma FDI de 5 caras e historial inmutable.</p>
+          </div>
+        </header>
+
+        <section class="patient-bar" aria-label="Paciente seleccionado">
+          <div class="patient-select-wrap">
+            <label for="sel-paciente">Paciente</label>
+            <select id="sel-paciente">
+              <option value="pac-1" selected>Paciente Ficticio Uno — DNI 30.111.222</option>
+              <option value="pac-2">Paciente Ficticio Dos — DNI 31.222.333</option>
+            </select>
+          </div>
+          <div class="patient-meta">
+            <span>paciente1@example.com</span>
+            <span>OSDE 210 (informativa)</span>
+            <span>Actualizado: 23/11/2026 09:40</span>
+          </div>
+        </section>
+
+        <!-- ODONTOGRAMA SVG FDI + EDITOR LATERAL -->
+        <section class="odontograma-layout" aria-label="Odontograma FDI interactivo">
+          <div class="card">
+            <div class="odo-head">
+              <h2>Odontograma FDI</h2>
+              <label class="toggle-temp">
+                <input type="checkbox" id="toggle-temporaria" />
+                <span>Mostrar dentición temporaria (51–85)</span>
+              </label>
+            </div>
+
+            <div class="legend" aria-label="Leyenda de estados dentales">
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#FFFFFF" stroke="#64748B" stroke-width="1.3"/></svg>
+                Sano
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                  <rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#FCA5A5" stroke="#B91C1C" stroke-width="1.3"/>
+                  <path d="M2 14L14 2M2 8L8 2M8 14L14 8" stroke="#B91C1C" stroke-width="1.2"/>
+                </svg>
+                Caries
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#2563EB" stroke="#1E40AF" stroke-width="1.3"/></svg>
+                Obturado
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#0E7490" stroke-width="2"/><circle cx="8" cy="8" r="3.2" fill="none" stroke="#B45309" stroke-width="1.4"/></svg>
+                Corona
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><polygon points="8,2 13,13 3,13" fill="none" stroke="#4338CA" stroke-width="1.8"/></svg>
+                Endodoncia
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3L13 13M13 3L3 13" stroke="#64748B" stroke-width="1.8" stroke-linecap="round"/></svg>
+                Ausente
+              </span>
+              <span class="legend-item">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3L13 13M13 3L3 13" stroke="#B91C1C" stroke-width="2.4" stroke-linecap="round"/></svg>
+                A extraer
+              </span>
+            </div>
+
+            <!-- Patrones SVG compartidos para WCAG 1.4.1 -->
+            <svg width="0" height="0" style="position: absolute;" aria-hidden="true">
+              <defs>
+                <pattern id="pat-caries" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="6" height="6" fill="#FEE2E2" />
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#DC2626" stroke-width="2.4" />
+                </pattern>
+              </defs>
+            </svg>
+
+            <div class="odo-board" aria-label="Grilla interactiva de piezas dentales FDI">
+              <div class="arch-row">
+                <div class="quad-block">
+                  <div class="quad-label">Cuadrante 1 · Sup. derecho (18–11)</div>
+                  <div class="quadrant" id="q1"></div>
+                </div>
+                <div class="midline-v" aria-hidden="true"></div>
+                <div class="quad-block">
+                  <div class="quad-label quad-label--right">Cuadrante 2 · Sup. izquierdo (21–28)</div>
+                  <div class="quadrant" id="q2"></div>
+                </div>
+              </div>
+
+              <div class="temp-section" id="temp-sup" hidden>
+                <div class="temp-label">Dentición temporaria superior (55–51 | 61–65)</div>
+                <div class="arch-row">
+                  <div class="quad-block">
+                    <div class="quadrant quadrant--temp quadrant--temp-left" id="q5"></div>
+                  </div>
+                  <div class="midline-v" aria-hidden="true"></div>
+                  <div class="quad-block">
+                    <div class="quadrant quadrant--temp quadrant--temp-right" id="q6"></div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="midline-h" />
+
+              <div class="temp-section" id="temp-inf" hidden>
+                <div class="temp-label">Dentición temporaria inferior (85–81 | 71–75)</div>
+                <div class="arch-row">
+                  <div class="quad-block">
+                    <div class="quadrant quadrant--temp quadrant--temp-left" id="q8"></div>
+                  </div>
+                  <div class="midline-v" aria-hidden="true"></div>
+                  <div class="quad-block">
+                    <div class="quadrant quadrant--temp quadrant--temp-right" id="q7"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="arch-row">
+                <div class="quad-block">
+                  <div class="quad-label">Cuadrante 4 · Inf. derecho (48–41)</div>
+                  <div class="quadrant" id="q4"></div>
+                </div>
+                <div class="midline-v" aria-hidden="true"></div>
+                <div class="quad-block">
+                  <div class="quad-label quad-label--right">Cuadrante 3 · Inf. izquierdo (31–38)</div>
+                  <div class="quadrant" id="q3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="card" aria-labelledby="titulo-editor-pieza">
+            <h2 style="margin: 0 0 var(--space-3); font-size: var(--text-lg);" id="titulo-editor-pieza">Editar pieza seleccionada</h2>
+            <div class="editor-badge" id="badge-pieza">Pieza 16 · Cara oclusal</div>
+            <p class="editor-sub" id="nombre-anatomico">Primer molar superior derecho (permanente)</p>
+
+            <form class="form-stack" id="form-odontograma">
+              <div class="field">
+                <label for="ed-estado">Estado clínico</label>
+                <select id="ed-estado">
+                  <option value="sano">Sano</option>
+                  <option value="caries" selected>Caries</option>
+                  <option value="obturado">Obturado</option>
+                  <option value="corona">Corona (pieza completa)</option>
+                  <option value="endodoncia">Endodoncia (pieza completa)</option>
+                  <option value="ausente">Ausente (pieza completa)</option>
+                  <option value="a_extraer">A extraer (pieza completa)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="ed-cara">Cara anatómica</label>
+                <select id="ed-cara">
+                  <option value="">Pieza completa</option>
+                  <option value="oclusal" selected>Oclusal</option>
+                  <option value="mesial">Mesial</option>
+                  <option value="distal">Distal</option>
+                  <option value="vestibular">Vestibular</option>
+                  <option value="lingual">Lingual / Palatina</option>
+                </select>
+                <span class="field-hint" id="ayuda-cara">
+                  Orientación espejada automáticamente según el cuadrante FDI.
+                </span>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Guardar en odontograma</button>
+              <span class="field-hint" role="status" aria-live="polite" id="status-odo"></span>
+            </form>
+          </aside>
+        </section>
+
+        <!-- HISTORIA CLÍNICA APPEND-ONLY + HISTORIAL DEL ODONTOGRAMA -->
+        <section class="lower-grid">
+          <div class="card" aria-labelledby="titulo-hc">
+            <h2 style="margin: 0 0 4px; font-size: var(--text-lg);" id="titulo-hc">Historia clínica</h2>
+            <p class="append-note">Registro inmutable: las entradas no se editan ni se borran; ante un error se agrega una corrección referenciada.</p>
+
+            <div class="hc-list" id="hc-list">
+              <article class="hc-entry">
+                <div class="hc-meta">
+                  <strong>Dra. Ana Pérez · 23/11/2026 09:35</strong>
+                  <span>Entrada #hc-1</span>
+                </div>
+                <p class="hc-text">Control general. Se observa caries oclusal incipiente en pieza 16 y obturación mesial en buen estado. Se indica restauración con resina.</p>
+                <button type="button" class="btn btn-secondary btn-xs" data-corregir="hc-1">Agregar corrección</button>
+              </article>
+
+              <article class="hc-entry hc-entry--correccion">
+                <div class="hc-meta">
+                  <strong>Dra. Ana Pérez · 23/11/2026 09:42</strong>
+                  <span class="hc-badge">Corrección de #hc-1</span>
+                </div>
+                <p class="hc-text">Aclaración: también se registra indicación de extracción programada en pieza 48 retenida.</p>
+                <button type="button" class="btn btn-secondary btn-xs" data-corregir="hc-2">Agregar corrección</button>
+              </article>
+            </div>
+
+            <form class="form-stack" id="form-hc">
+              <div class="field">
+                <label for="hc-texto" id="hc-label">Nueva evolución clínica</label>
+                <textarea id="hc-texto" placeholder="Describí el hallazgo, tratamiento o indicación para el paciente…"></textarea>
+              </div>
+              <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary">Registrar evolución</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-corr" hidden>Cancelar corrección</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card" aria-labelledby="titulo-hist-odo">
+            <h2 style="margin: 0 0 4px; font-size: var(--text-lg);" id="titulo-hist-odo">Historial del odontograma</h2>
+            <p class="append-note">Cada modificación queda registrada cronológicamente con autor y fecha.</p>
+            <div class="table-wrap">
+              <table class="responsive-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Pieza</th>
+                    <th scope="col">Cara</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Autor</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-hist-odo">
+                  <tr>
+                    <td data-label="Fecha">23/11 09:40</td>
+                    <td data-label="Pieza">48</td>
+                    <td data-label="Cara">Completa</td>
+                    <td data-label="Estado">A extraer</td>
+                    <td data-label="Autor">Dra. Ana Pérez</td>
+                  </tr>
+                  <tr>
+                    <td data-label="Fecha">23/11 09:38</td>
+                    <td data-label="Pieza">16</td>
+                    <td data-label="Cara">Oclusal</td>
+                    <td data-label="Estado">Caries</td>
+                    <td data-label="Autor">Dra. Ana Pérez</td>
+                  </tr>
+                  <tr>
+                    <td data-label="Fecha">18/11 15:30</td>
+                    <td data-label="Pieza">16</td>
+                    <td data-label="Cara">Mesial</td>
+                    <td data-label="Estado">Obturado</td>
+                    <td data-label="Autor">Dra. Ana Pérez</td>
+                  </tr>
+                  <tr>
+                    <td data-label="Fecha">14/11 11:45</td>
+                    <td data-label="Pieza">24</td>
+                    <td data-label="Cara">Completa</td>
+                    <td data-label="Estado">Endodoncia</td>
+                    <td data-label="Autor">Dra. Ana Pérez</td>
+                  </tr>
+                  <tr>
+                    <td data-label="Fecha">10/11 16:50</td>
+                    <td data-label="Pieza">11</td>
+                    <td data-label="Cara">Completa</td>
+                    <td data-label="Estado">Corona</td>
+                    <td data-label="Autor">Dra. Ana Pérez</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const SOLO_COMPLETA = new Set(['ausente', 'corona', 'endodoncia', 'a_extraer']);
+      const NOMBRES_POS = {
+        1: 'Incisivo central',
+        2: 'Incisivo lateral',
+        3: 'Canino',
+        4: 'Primer premolar',
+        5: 'Segundo premolar',
+        6: 'Primer molar',
+        7: 'Segundo molar',
+        8: 'Tercer molar',
+      };
+      const NOMBRES_CUAD = {
+        1: 'superior derecho',
+        2: 'superior izquierdo',
+        3: 'inferior izquierdo',
+        4: 'inferior derecho',
+        5: 'superior derecho (temporario)',
+        6: 'superior izquierdo (temporario)',
+        7: 'inferior izquierdo (temporario)',
+        8: 'inferior derecho (temporario)',
+      };
+
+      const estadoPiezas = {
+        16: { caras: { oclusal: 'caries', mesial: 'obturado' } },
+        14: { caras: { distal: 'obturado' } },
+        11: { completa: 'corona' },
+        24: { completa: 'endodoncia' },
+        26: { caras: { vestibular: 'caries' } },
+        36: { completa: 'ausente' },
+        48: { completa: 'a_extraer' },
+        46: { caras: { oclusal: 'obturado' } },
+      };
+
+      let selPieza = 16;
+      let selCara = 'oclusal';
+
+      function mapearCaras(pieza) {
+        const q = Math.floor(pieza / 10);
+        const esSup = q === 1 || q === 2 || q === 5 || q === 6;
+        const esDerPaciente = q === 1 || q === 4 || q === 5 || q === 8;
+        return {
+          top: esSup ? 'vestibular' : 'lingual',
+          bottom: esSup ? 'lingual' : 'vestibular',
+          left: esDerPaciente ? 'distal' : 'mesial',
+          right: esDerPaciente ? 'mesial' : 'distal',
+          center: 'oclusal',
+        };
+      }
+
+      function fillPorEstado(estado) {
+        if (estado === 'caries') return 'url(#pat-caries)';
+        if (estado === 'obturado') return '#2563EB';
+        return '#FFFFFF';
+      }
+
+      function renderOverlay(completa) {
+        if (completa === 'ausente') {
+          return `<rect x="3" y="3" width="38" height="38" rx="4" fill="rgba(241,245,249,0.72)"/>
+                  <path d="M8 8L36 36M36 8L8 36" stroke="#64748B" stroke-width="2.4" stroke-linecap="round"/>`;
+        }
+        if (completa === 'a_extraer') {
+          return `<rect x="3" y="3" width="38" height="38" rx="4" fill="rgba(254,242,242,0.58)"/>
+                  <path d="M7 7L37 37M37 7L7 37" stroke="#B91C1C" stroke-width="3.2" stroke-linecap="round"/>`;
+        }
+        if (completa === 'corona') {
+          return `<circle cx="22" cy="22" r="17.5" fill="none" stroke="#0E7490" stroke-width="2.6"/>
+                  <circle cx="22" cy="22" r="13.2" fill="none" stroke="#B45309" stroke-width="1.6" stroke-dasharray="3 2"/>`;
+        }
+        if (completa === 'endodoncia') {
+          return `<polygon points="22,6 34,35 10,35" fill="rgba(67,56,202,0.14)" stroke="#4338CA" stroke-width="2.2" stroke-linejoin="round"/>`;
+        }
+        return '';
+      }
+
+      function crearPiezaEl(pieza, numeroArriba) {
+        const carasMap = mapearCaras(pieza);
+        const reg = estadoPiezas[pieza] || {};
+        const caras = reg.caras || {};
+        const zonas = [
+          { cara: carasMap.top, tag: 'polygon', attrs: 'points="3,3 41,3 31,13 13,13"' },
+          { cara: carasMap.bottom, tag: 'polygon', attrs: 'points="13,31 31,31 41,41 3,41"' },
+          { cara: carasMap.left, tag: 'polygon', attrs: 'points="3,3 13,13 13,31 3,41"' },
+          { cara: carasMap.right, tag: 'polygon', attrs: 'points="31,13 41,3 41,41 31,31"' },
+          { cara: carasMap.center, tag: 'rect', attrs: 'x="13" y="13" width="18" height="18"' },
+        ];
+
+        const svgPolys = zonas
+          .map((z) => {
+            const est = caras[z.cara] || 'sano';
+            const sel = selPieza === pieza && selCara === z.cara;
+            return `<${z.tag} ${z.attrs} fill="${fillPorEstado(est)}" class="face-zone ${sel ? 'face-selected' : ''}" role="button" tabindex="0" data-pieza="${pieza}" data-cara="${z.cara}" aria-label="Pieza ${pieza}, cara ${z.cara} (${est})" aria-pressed="${sel}"/>`;
+          })
+          .join('');
+
+        const cell = document.createElement('div');
+        cell.className = `tooth-cell ${selPieza === pieza ? 'selected' : ''}`;
+        const numHtml = `<span class="tooth-num">${pieza}</span>`;
+        const svgHtml = `<svg class="tooth-svg" viewBox="0 0 44 44" aria-label="Pieza dental FDI ${pieza}">${svgPolys}${renderOverlay(reg.completa)}</svg>`;
+        cell.innerHTML = numeroArriba ? numHtml + svgHtml : svgHtml + numHtml;
+        return cell;
+      }
+
+      function renderCuadrante(id, piezas, numeroArriba) {
+        const cont = document.getElementById(id);
+        cont.innerHTML = '';
+        piezas.forEach((p) => cont.appendChild(crearPiezaEl(p, numeroArriba)));
+      }
+
+      function renderTodo() {
+        renderCuadrante('q1', [18, 17, 16, 15, 14, 13, 12, 11], true);
+        renderCuadrante('q2', [21, 22, 23, 24, 25, 26, 27, 28], true);
+        renderCuadrante('q4', [48, 47, 46, 45, 44, 43, 42, 41], false);
+        renderCuadrante('q3', [31, 32, 33, 34, 35, 36, 37, 38], false);
+        renderCuadrante('q5', [55, 54, 53, 52, 51], true);
+        renderCuadrante('q6', [61, 62, 63, 64, 65], true);
+        renderCuadrante('q8', [85, 84, 83, 82, 81], false);
+        renderCuadrante('q7', [71, 72, 73, 74, 75], false);
+        actualizarEditor();
+      }
+
+      const selEstado = document.getElementById('ed-estado');
+      const selCaraEl = document.getElementById('ed-cara');
+      const ayudaCara = document.getElementById('ayuda-cara');
+
+      function actualizarEditor() {
+        const q = Math.floor(selPieza / 10);
+        const pos = selPieza % 10;
+        const reg = estadoPiezas[selPieza] || {};
+        const estActual = reg.completa || (reg.caras && reg.caras[selCara]) || 'sano';
+        selEstado.value = estActual;
+        const soloPieza = SOLO_COMPLETA.has(estActual);
+        selCaraEl.disabled = soloPieza;
+        selCaraEl.value = soloPieza ? '' : selCara;
+        ayudaCara.textContent = soloPieza
+          ? 'Este estado aplica a la pieza completa y no admite cara específica.'
+          : 'Orientación espejada automáticamente según el cuadrante FDI.';
+        document.getElementById('badge-pieza').textContent = `Pieza ${selPieza} · ${soloPieza || !selCara ? 'Pieza completa' : 'Cara ' + selCara}`;
+        document.getElementById('nombre-anatomico').textContent = `${NOMBRES_POS[pos] || 'Pieza'} ${NOMBRES_CUAD[q] || ''}`;
+      }
+
+      function seleccionarZona(zone) {
+        if (!zone) return;
+        selPieza = Number(zone.dataset.pieza);
+        selCara = zone.dataset.cara;
+        renderTodo();
+      }
+
+      const odoBoard = document.querySelector('.odo-board');
+      odoBoard.addEventListener('click', (e) => {
+        seleccionarZona(e.target.closest('.face-zone'));
+      });
+      odoBoard.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const zone = e.target.closest('.face-zone');
+          if (!zone) return;
+          e.preventDefault();
+          seleccionarZona(zone);
+        }
+      });
+
+      selEstado.addEventListener('change', () => {
+        const soloPieza = SOLO_COMPLETA.has(selEstado.value);
+        selCaraEl.disabled = soloPieza;
+        if (soloPieza) selCaraEl.value = '';
+        ayudaCara.textContent = soloPieza
+          ? 'Este estado aplica a la pieza completa y no admite cara específica.'
+          : 'Orientación espejada automáticamente según el cuadrante FDI.';
+      });
+
+      document.getElementById('toggle-temporaria').addEventListener('change', (e) => {
+        document.getElementById('temp-sup').hidden = !e.target.checked;
+        document.getElementById('temp-inf').hidden = !e.target.checked;
+      });
+
+      document.getElementById('form-odontograma').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const est = selEstado.value;
+        const cara = selCaraEl.disabled ? '' : selCaraEl.value;
+        if (SOLO_COMPLETA.has(est) || !cara) {
+          estadoPiezas[selPieza] = est === 'sano' ? {} : { completa: est };
+        } else {
+          const prev = estadoPiezas[selPieza]?.caras || {};
+          estadoPiezas[selPieza] = { caras: { ...prev, [cara]: est } };
+        }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Fecha">Ahora</td>
+          <td data-label="Pieza">${selPieza}</td>
+          <td data-label="Cara">${cara || 'Completa'}</td>
+          <td data-label="Estado">${est}</td>
+          <td data-label="Autor">Dra. Ana Pérez</td>
+        `;
+        document.getElementById('tbody-hist-odo').prepend(tr);
+        document.getElementById('status-odo').textContent = `Cambio guardado en pieza ${selPieza}.`;
+        renderTodo();
+      });
+
+      let corrigeAId = null;
+      document.getElementById('hc-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-corregir]');
+        if (!btn) return;
+        corrigeAId = btn.dataset.corregir;
+        document.getElementById('hc-label').textContent = `Corrección sobre entrada #${corrigeAId}`;
+        document.getElementById('btn-cancelar-corr').hidden = false;
+        document.getElementById('hc-texto').focus();
+      });
+
+      document.getElementById('btn-cancelar-corr').addEventListener('click', () => {
+        corrigeAId = null;
+        document.getElementById('hc-label').textContent = 'Nueva evolución clínica';
+        document.getElementById('btn-cancelar-corr').hidden = true;
+      });
+
+      document.getElementById('form-hc').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const txt = document.getElementById('hc-texto').value.trim();
+        if (!txt) return;
+        const art = document.createElement('article');
+        art.className = `hc-entry ${corrigeAId ? 'hc-entry--correccion' : ''}`;
+        art.innerHTML = `
+          <div class="hc-meta">
+            <strong>Dra. Ana Pérez · Ahora</strong>
+            ${corrigeAId ? `<span class="hc-badge">Corrección de #${corrigeAId}</span>` : '<span>Nueva entrada</span>'}
+          </div>
+          <p class="hc-text">${txt}</p>
+        `;
+        document.getElementById('hc-list').appendChild(art);
+        document.getElementById('hc-texto').value = '';
+        corrigeAId = null;
+        document.getElementById('hc-label').textContent = 'Nueva evolución clínica';
+        document.getElementById('btn-cancelar-corr').hidden = true;
+      });
+
+      renderTodo();
+    </script>
+  </body>
+</html>
