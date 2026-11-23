@@ -2,7 +2,7 @@
 
 Mode: system-and-mockups
 Revision: 2
-Approval: pending (maqueta en revisión por Lucas y EP)
+Approval: approved (2026-11-23, by EP)
 
 ## Política visual
 

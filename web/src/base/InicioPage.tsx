@@ -354,12 +354,15 @@ export function InicioPage() {
         )}
 
         <section aria-labelledby="titulo-agenda-profesional">
-          <h2
-            id="titulo-agenda-profesional"
-            style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}
-          >
-            Tu agenda de hoy
-          </h2>
+          <div className="wb-seccion-cab">
+            <h2
+              id="titulo-agenda-profesional"
+              style={{ fontSize: 'var(--text-lg)', margin: 0 }}
+            >
+              Tu agenda de hoy
+            </h2>
+            <span className="wb-tag-ejemplo">Datos de ejemplo</span>
+          </div>
           <Tabla
             columnas={columnasProfesional}
             filas={turnosProfesional}
@@ -469,12 +472,15 @@ export function InicioPage() {
         )}
 
         <section aria-labelledby="titulo-agenda-recepcion">
-          <h2
-            id="titulo-agenda-recepcion"
-            style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}
-          >
-            Turnos de hoy por box
-          </h2>
+          <div className="wb-seccion-cab">
+            <h2
+              id="titulo-agenda-recepcion"
+              style={{ fontSize: 'var(--text-lg)', margin: 0 }}
+            >
+              Turnos de hoy por box
+            </h2>
+            <span className="wb-tag-ejemplo">Datos de ejemplo</span>
+          </div>
           <Tabla
             columnas={columnasRecepcion}
             filas={turnosRecepcion}
@@ -530,7 +536,10 @@ export function InicioPage() {
                 <p className="wb-turno-destacado__fecha">Lunes 23 de noviembre · 09:00 a 09:30</p>
               </div>
             </div>
-            <BadgeEstadoTurno estado="confirmado" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              <span className="wb-tag-ejemplo">Datos de ejemplo</span>
+              <BadgeEstadoTurno estado="confirmado" />
+            </div>
           </div>
 
           <dl className="wb-turno-destacado__detalles">

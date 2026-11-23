@@ -1378,6 +1378,28 @@
   font-weight: var(--weight-medium);
 }
 
+.wb-seccion-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.wb-tag-ejemplo {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
 /* ---------- Respeto explícito de prefers-reduced-motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .wb-auth-editorial::before,

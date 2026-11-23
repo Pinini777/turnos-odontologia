@@ -53,12 +53,12 @@ Sin migración de datos. El frontend consume la API local vía el proxy `/api` �
 ## UI Mockups
 
 - Design system revision: 2 (`design-system/tokens.css`, `design-system/components.html`)
-- Decision: yes (UI). Mockups HTML en `openspec/changes/web-base/mockups/`:
-  - `login.html`
-  - `registro.html`
-  - `layout-roles.html`
+- Decision: yes (UI)
+- Approval: approved (2026-11-23, by EP)
+- Preview: manual (2026-11-23, revisión visual con EP)
+- Mockups: `openspec/changes/archive/2026-11-23-web-base/mockups/` (`login.html`, `registro.html`, `layout-roles.html`)
 - Date: 2026-11-23
 
 ## Open Questions
 
-- Confirmar con EP la incorporación definitiva de `web/src/pages/auth/routes.tsx` como punto de montaje de `C-12` y si desea marcar `design-system/README.md` como aprobado en `main`.
+Ninguna.

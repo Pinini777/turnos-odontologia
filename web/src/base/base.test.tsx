@@ -254,6 +254,7 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
     expect(screen.getByText(/próximo paciente/i)).toBeTruthy();
     expect(screen.getByText(/box asignado/i)).toBeTruthy();
     expect(screen.getByText(/tu agenda de hoy/i)).toBeTruthy();
+    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
     expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base|datos ficticios/i);
   });
 
@@ -272,6 +273,7 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
     expect(screen.getByText(/estado · box 1/i)).toBeTruthy();
     expect(screen.getByText(/estado · box 2/i)).toBeTruthy();
     expect(screen.getByText(/pendientes de confirmar/i)).toBeTruthy();
+    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
     expect(screen.getByRole('button', { name: /\+ nuevo turno/i })).toBeTruthy();
     expect(screen.queryByText(/mis ganancias/i)).toBeNull();
   });
@@ -289,6 +291,7 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
     );
 
     expect(screen.getByText(/tu próximo turno/i)).toBeTruthy();
+    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
     expect(screen.getByText('NOV')).toBeTruthy();
     expect(screen.getByText('23')).toBeTruthy();
     expect(screen.getByText(/información de la clínica/i)).toBeTruthy();
