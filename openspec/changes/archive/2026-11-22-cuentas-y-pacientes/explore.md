@@ -61,15 +61,15 @@ En `CHANGES.md` §C-04 se establece el supuesto por defecto para PA-10: alcanza 
 | Existe `Paciente` con mismo `email` y distinto `documento` | `409 DUPLICADO` |
 | No existe ni `Usuario` ni `Paciente` coincidente | **Alta nueva**: crea `Usuario` + `Paciente` con `usuarioId`, responde `201 { token, usuario, paciente }` |
 
-## 4. Decisiones acordadas con Facundo y EP
+## 4. Decisiones propuestas (pendiente de aprobación de EP; aprobadas por EP el 2026-11-22 con ajustes)
 
 1. **Contrato JWT (`jose` + `Clock`)**:
    - Algoritmo `HS256` con lista blanca estricta `algorithms: ['HS256']` en verificación (RFC 8725).
    - Emisor `iss: 'turnos-odontologia'`.
-   - TTL por defecto: **2 horas (`7200` s)** calculado con `clock.ahora()` (`iat`, `exp`) y verificado con `currentDate: clock.ahora()`.
+   - TTL por defecto: **2 horas (`7200` s)** calculado con `clock.ahora()` (`iat`, `exp`) y verificado con `currentDate: clock.ahora()` (vigente en `T + 2h - 1s`, expirado en el instante exacto `T + 2h`).
    - Payload mínimo sin PII: `{ sub: usuario.id, rol: usuario.rol }`.
    - `AuthPort.verificar(token)` valida firma/algoritmo/emisor/expiración, verifica existencia del `Usuario` en `repos.usuarios`, `usuario.activo === true`, `usuario.rol === payload.rol` y resuelve `profesionalId` (si `rol === 'profesional'`) o `pacienteId` (si `rol === 'paciente'`). Ante cualquier falla o vínculo faltante devuelve `null` (→ `401 NO_AUTENTICADO`).
-   - `JWT_SECRET` se lee únicamente en `src/modules/cuentas/adapter.ts` (nunca en `dominio/`): fallback seguro fuera de producción para que `npm test` corra sin `.env`, error explícito si `NODE_ENV === 'production'` y falta el secreto, y opción inyectable para tests.
+   - `JWT_SECRET` se lee únicamente en `src/modules/cuentas/adapter.ts` (nunca en `dominio/`): si falta `process.env.JWT_SECRET` fuera de producción, genera una clave efímera aleatoria por proceso con `crypto.randomBytes(32)` cacheada en memoria (nunca un literal fijo en el código); error explícito si `NODE_ENV === 'production'` y falta el secreto; opción inyectable por parámetro para tests aislados.
 2. **Endpoints exactos (7 rutas, criterio YAGNI — sin `GET /api/pacientes/:id`, sin `DELETE`, sin filtros de búsqueda extra)**:
    - `POST /api/public/login` (pública, 3 roles) → `200 { token, usuario }` (sin `hashPassword`); `401 NO_AUTENTICADO` uniforme para email inexistente, usuario inactivo o contraseña incorrecta.
    - `POST /api/public/pacientes/registro` (pública) → `201 { token, usuario, paciente }` (sin `hashPassword`).
@@ -79,7 +79,7 @@ En `CHANGES.md` §C-04 se establece el supuesto por defecto para PA-10: alcanza 
    - `GET /api/paciente/datos` (`paciente`) → `200 Paciente` (estrictamente `sesion.pacienteId`).
    - `PATCH /api/paciente/datos` (`paciente`) → `200 Paciente` (estrictamente `sesion.pacienteId`); solo editables `nombre`, `apellido`, `telefono`, `obraSocial`, `plan`, `nroAfiliado` (no permite cambiar `documento`, `email`, `id` ni `usuarioId`).
 3. **Contraseñas y personal**:
-   - Contraseña de registro: `string` de 8 a 72 caracteres (límite efectivo de bcrypt), hasheada con `bcryptjs` (cost 10). `hashPassword` nunca sale en respuestas ni logs.
+   - Contraseña de registro: `string` de al menos 8 caracteres y como máximo 72 bytes UTF-8 (`Buffer.byteLength(password, 'utf8') <= 72`, límite de truncado de bcrypt), hasheada con `bcryptjs` (cost 10). `hashPassword` nunca sale en respuestas ni logs.
    - Cuentas de personal (`profesional`, `recepcionista`) provienen exclusivamente de `src/shared/seed.ts` (sin endpoint HTTP de alta de personal).
    - Login y verificación de sesión chequean solo `usuario.activo` (desacoplado de `profesional.activo` que gestiona C-03).
 4. **Límites de carpetas**:

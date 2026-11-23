@@ -36,9 +36,14 @@ Toda solicitud a una ruta protegida SHALL validar el token Bearer verificando fi
 - **WHEN** cada cliente invoca una ruta protegida permitida para su rol con `Authorization: Bearer <token>`
 - **THEN** la sesión incluye `usuarioId` y `rol`, además de `profesionalId` para el profesional y `pacienteId` para el paciente
 
-#### Scenario: Token vencido rechazado
+#### Scenario: Token vigente en el límite previo a la expiración
 - **GIVEN** un token emitido en el instante `T` con vigencia de 2 horas
-- **WHEN** el reloj del sistema avanza a `T + 2 horas + 1 segundo` y el cliente invoca una ruta protegida con ese token
+- **WHEN** el reloj del sistema avanza a `T + 2 horas - 1 segundo` y el cliente invoca una ruta protegida con ese token
+- **THEN** la sesión se resuelve correctamente y el acceso es permitido
+
+#### Scenario: Token vencido rechazado en el instante exacto de expiración
+- **GIVEN** un token emitido en el instante `T` con vigencia de 2 horas
+- **WHEN** el reloj del sistema avanza exactamente a `T + 2 horas` y el cliente invoca una ruta protegida con ese token
 - **THEN** recibe `401` con `{"code":"NO_AUTENTICADO"}`
 
 #### Scenario: Token alterado, mal formado o con algoritmo no permitido
@@ -56,7 +61,7 @@ Toda solicitud a una ruta protegida SHALL validar el token Bearer verificando fi
 - **THEN** recibe `401` con `{"code":"NO_AUTENTICADO"}`
 
 ### Requirement: Registro público de pacientes y vinculación de ficha previa
-La API SHALL exponer `POST /api/public/pacientes/registro` sin sesión previa para crear cuentas de rol `paciente` con contraseña de entre 8 y 72 caracteres, normalizando email (recortado y en minúsculas) y documento (recortado). Si ya existe una ficha de paciente sin cuenta con el mismo documento y el mismo email (PA-10), SHALL vincular esa ficha conservando su `id` y preservando los datos opcionales ya cargados que no se envíen en el registro.
+La API SHALL exponer `POST /api/public/pacientes/registro` sin sesión previa para crear cuentas de rol `paciente` con contraseña de al menos 8 caracteres y como máximo 72 bytes en UTF-8 (`Buffer.byteLength(password, 'utf8') <= 72`, límite de truncado de bcrypt), normalizando email (recortado y en minúsculas) y documento (recortado). Si ya existe una ficha de paciente sin cuenta con el mismo documento y el mismo email (PA-10), SHALL vincular esa ficha conservando su `id` y preservando los datos opcionales ya cargados que no se envíen en el registro.
 
 #### Scenario: Registro de un paciente nuevo
 - **GIVEN** un email y un documento que no existen ni en usuarios ni en pacientes
@@ -79,7 +84,7 @@ La API SHALL exponer `POST /api/public/pacientes/registro` sin sesión previa pa
 - **THEN** recibe `409` con `{"code":"DUPLICADO"}` y no vincula ni crea registros
 
 #### Scenario: Contraseña o datos con formato inválido en registro
-- **WHEN** el cliente envía `POST /api/public/pacientes/registro` con una contraseña de menos de 8 caracteres, más de 72 caracteres, o un email inválido
+- **WHEN** el cliente envía `POST /api/public/pacientes/registro` con una contraseña de menos de 8 caracteres, más de 72 bytes en UTF-8 (incluyendo caracteres multibyte que excedan 72 bytes aunque tengan menos de 72 caracteres), o un email inválido
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y los detalles de validación
 
 ### Requirement: Gestión de pacientes por el personal del consultorio
@@ -95,9 +100,14 @@ La API SHALL exponer `GET /api/pacientes`, `POST /api/pacientes` y `PATCH /api/p
 - **WHEN** envía `POST /api/pacientes` con nombre, apellido, documento y email no registrados (y opcionalmente contacto y obra social)
 - **THEN** recibe `201` con el `Paciente` creado, con `email` normalizado en minúsculas y sin `usuarioId`
 
-#### Scenario: Alta de paciente rechazada por duplicidad
+#### Scenario: Alta de paciente rechazada por email duplicado
 - **GIVEN** una sesión válida de `recepcionista` o `profesional`
-- **WHEN** envía `POST /api/pacientes` con un email ya existente o un documento ya existente
+- **WHEN** envía `POST /api/pacientes` con un email ya registrado en `pacientes` o `usuarios`
+- **THEN** recibe `409` con `{"code":"DUPLICADO"}`
+
+#### Scenario: Alta de paciente rechazada por documento duplicado
+- **GIVEN** una sesión válida de `recepcionista` o `profesional`
+- **WHEN** envía `POST /api/pacientes` con un documento ya registrado en `pacientes`
 - **THEN** recibe `409` con `{"code":"DUPLICADO"}`
 
 #### Scenario: Personal actualiza un paciente y sincroniza el email de su usuario vinculado
@@ -110,10 +120,20 @@ La API SHALL exponer `GET /api/pacientes`, `POST /api/pacientes` y `PATCH /api/p
 - **WHEN** envía `PATCH /api/pacientes/:id` reenviando el mismo `documento` y el mismo `email` junto con un nuevo `telefono`
 - **THEN** recibe `200` con el `telefono` actualizado sin disparar `409` `DUPLICADO` (la validación de unicidad excluye al propio paciente y a su usuario vinculado)
 
-#### Scenario: Actualización de paciente inexistente o con datos duplicados
+#### Scenario: Actualización de paciente inexistente
 - **GIVEN** una sesión válida de `recepcionista` o `profesional`
-- **WHEN** envía `PATCH /api/pacientes/:id` con un `id` inexistente, o con un `email` o `documento` ya perteneciente a otro registro
-- **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}` si no existe, o `409` con `{"code":"DUPLICADO"}` si colisiona con otro
+- **WHEN** envía `PATCH /api/pacientes/:id` con un `id` inexistente
+- **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}`
+
+#### Scenario: Actualización de paciente rechazada por email duplicado de otro registro
+- **GIVEN** una sesión válida de `recepcionista` o `profesional` y un paciente existente
+- **WHEN** envía `PATCH /api/pacientes/:id` con un `email` ya perteneciente a otro paciente o a otro usuario
+- **THEN** recibe `409` con `{"code":"DUPLICADO"}`
+
+#### Scenario: Actualización de paciente rechazada por documento duplicado de otro registro
+- **GIVEN** una sesión válida de `recepcionista` o `profesional` y un paciente existente
+- **WHEN** envía `PATCH /api/pacientes/:id` con un `documento` ya perteneciente a otro paciente
+- **THEN** recibe `409` con `{"code":"DUPLICADO"}`
 
 #### Scenario: Paciente no tiene permiso sobre las rutas de gestión del personal
 - **GIVEN** una sesión válida de `paciente`

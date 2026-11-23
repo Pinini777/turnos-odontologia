@@ -25,7 +25,7 @@ Existen cuatro restricciones que moldean el diseño:
 - Recuperación de contraseña, refresh tokens, verificación por email o MFA (fuera del MVP).
 - Endpoints de alta o baja de cuentas de personal (`profesional` y `recepcionista` vienen solo de `src/shared/seed.ts`).
 - Validación de `profesional.activo` en el login/sesión (responsabilidad de C-03 en la agenda; C-04 chequea solo `usuario.activo`).
-- Endpoints fuera de las 7 rutas acordadas (`GET /api/pacientes/:id`, `DELETE /api/pacientes/:id`, filtros de búsqueda o paginación).
+- Endpoints fuera de las 7 rutas propuestas en D5 (`GET /api/pacientes/:id`, `DELETE /api/pacientes/:id`, filtros de búsqueda o paginación).
 - Pantallas web (C-04 no tiene UI).
 
 ## Architecture
@@ -59,18 +59,18 @@ Estructura de archivos de C-04:
 ### D1. Contrato JWT con `jose` y reloj inyectable (`Clock`)
 - **Algoritmo**: `HS256` con lista blanca estricta `algorithms: ['HS256']` en `jwtVerify` (RFC 8725).
 - **Emisor**: `iss: 'turnos-odontologia'` verificado con `issuer: 'turnos-odontologia'`.
-- **Vigencia**: TTL por defecto de **2 horas (`7200` s)**. Al firmar se calculan `iat = Math.floor(clock.ahora().getTime() / 1000)` y `exp = iat + ttlSegundos`. Al verificar se pasa `currentDate: clock.ahora()` a `jwtVerify`.
+- **Vigencia**: TTL por defecto de **2 horas (`7200` s)**. Al firmar se calculan `iat = Math.floor(clock.ahora().getTime() / 1000)` y `exp = iat + ttlSegundos`. Al verificar se pasa `currentDate: clock.ahora()` a `jwtVerify`, de modo que un token emitido en `T` es aceptado en `T + 2h - 1s` y rechazado (`401 NO_AUTENTICADO`) en el instante exacto `T + 2h`.
 - **Payload mínimo sin PII**: `{ sub: usuario.id, rol: usuario.rol }` (no incluye email, DNI ni nombre).
 - **Validación en `AuthPort.verificar(token)`**:
   1. Verifica firma, `HS256`, `iss` y `exp` contra `clock.ahora()`.
   2. Busca `usuario` por `payload.sub` en `repos.usuarios`; exige que exista, `usuario.activo === true` y `usuario.rol === payload.rol`.
   3. Resuelve vínculo: si `rol === 'profesional'`, busca el registro en `repos.profesionales` con `usuarioId === usuario.id` (si falta → `null`); si `rol === 'paciente'`, busca en `repos.pacientes` con `usuarioId === usuario.id` (si falta → `null`).
   4. Ante cualquier error de parsing, firma, expiración o consistencia devuelve `null`, que el hook `onRoute` de `src/app.ts` traduce a `401 NO_AUTENTICADO`.
-- **Manejo de `JWT_SECRET`**: se lee únicamente en `adapter.ts` (nunca en `dominio/`). Acepta `secret` inyectado por parámetro para tests; si no se pasa, lee `process.env.JWT_SECRET`; si falta en `NODE_ENV === 'production'`, lanza error explícito al construir el adaptador; fuera de producción usa un secreto de desarrollo fijo para que `npm test` corra sin `.env`.
-- *Alternativa descartada*: `jsonwebtoken` o verificación con `Date.now()` / `vi.useFakeTimers()`. Se descarta porque `jose` ya está instalado en C-01, soporta `currentDate` nativamente y mantiene los tests 100 % deterministas con `FixedClock`.
+- **Manejo de `JWT_SECRET`**: se lee únicamente en `adapter.ts` (nunca en `dominio/`). Acepta `secret` inyectado por parámetro para tests aislados; si no se pasa, lee `process.env.JWT_SECRET`; si falta o está vacío en `NODE_ENV === 'production'`, lanza un error explícito; fuera de producción, cuando `process.env.JWT_SECRET` no está definido, genera una clave aleatoria de 32 bytes por proceso mediante `crypto.randomBytes(32)` y la cachea en memoria durante la vida del proceso para que firma (login/registro) y verificación (`crearAuth`) compartan la misma clave efímera (nunca un literal fijo en el código).
+- *Alternativa descartada*: `jsonwebtoken`, verificación con `Date.now()` / `vi.useFakeTimers()`, o un literal fijo de fallback en código. Se descartan porque `jose` ya está instalado en C-01, soporta `currentDate` nativamente para determinismo con `FixedClock`, y un secreto literal en código es un riesgo de seguridad innecesario frente a `crypto.randomBytes(32)` efímero por proceso.
 
 ### D2. Contraseñas con `bcryptjs` (cost 10) y proyección `UsuarioPublico`
-- En `POST /api/public/pacientes/registro` la contraseña exige entre `8` y `72` caracteres (límite efectivo de bcrypt) y se hashea con `bcryptjs.hash(password, 10)`.
+- En `POST /api/public/pacientes/registro` la contraseña exige al menos `8` caracteres y como máximo `72` bytes UTF-8 (`Buffer.byteLength(password, 'utf8') <= 72`, ya que bcrypt trunca silenciosamente a partir de los 72 bytes UTF-8 y caracteres multibyte como `ñ` o acentos ocupan más de 1 byte) y se hashea con `bcryptjs.hash(password, 10)`.
 - En `POST /api/public/login` se compara con `bcryptjs.compare(password, usuario.hashPassword)`. Tanto usuario inexistente, usuario inactivo como contraseña inválida lanzan el mismo `NoAutenticadoError()` (`401 NO_AUTENTICADO`) para evitar enumeración de cuentas.
 - Toda respuesta que devuelve un usuario pasa por `aUsuarioPublico(usuario)` que construye explícitamente `{ id, email, rol, activo }` — nunca destructurando sobre la entidad con riesgo de olvidar excluir `hashPassword`.
 - Las cuentas del personal (`profesional@example.com`, `profesional2@example.com`, `recepcion@example.com`) provienen únicamente de `src/shared/seed.ts`.
@@ -96,7 +96,7 @@ Matriz completa evaluada en `dominio/vinculacion.ts`:
 - Identificadores generados para nuevos `Usuario` y `Paciente`: `crypto.randomUUID()` (de `node:crypto`, disponible en Node 22) inyectable en casos de uso si se necesita en tests.
 
 ### D5. Superficie mínima de 7 endpoints (YAGNI)
-Se implementan exactamente los 7 endpoints definidos en `CHANGES.md` §C-04 y acordados con EP:
+Se implementan exactamente los 7 endpoints definidos en `CHANGES.md` §C-04 (propuesto, pendiente de aprobación de EP; aprobado por EP el 2026-11-22 con ajustes):
 - `POST /api/public/login` (pública)
 - `POST /api/public/pacientes/registro` (pública)
 - `GET /api/pacientes` (`profesional`, `recepcionista`)
@@ -114,14 +114,14 @@ El login y `AuthPort.verificar` consultan únicamente `usuario.activo`. El estad
 
 - [Consistencia entre `repos.usuarios` y `repos.pacientes` sin transacciones ACID en memoria] → En `registrarPaciente` y `actualizarPaciente` se ejecutan todas las validaciones de unicidad antes de guardar ambos registros; cuando se migre a SQLite (post-MVP) ambos `guardar` se envuelven en una transacción sin cambiar el contrato de casos de uso.
 - [Vinculación PA-10 basada solo en `documento + email` sin verificación de correo] → Supuesto aceptado para el MVP; el atacante necesitaría conocer ambos datos exactos y la ficha no tener cuenta previa. Queda documentado como extensión post-MVP (confirmación por email).
-- [Fallback de `JWT_SECRET` fuera de producción] → Permite ejecutar `npm test` y desarrollo local sin `.env` (requisito de C-01), pero en `NODE_ENV === 'production'` el arranque falla rápido si `JWT_SECRET` no está definido o está vacío.
+- [Clave efímera `crypto.randomBytes(32)` fuera de producción] → Permite ejecutar `npm test` y desarrollo local sin `.env` ni secretos literales en código; los tokens emitidos sin `JWT_SECRET` expiran al reiniciar el proceso, y en `NODE_ENV === 'production'` el arranque falla rápido si `JWT_SECRET` no está definido o está vacío.
 - [Generación de hashes bcrypt en tests] → Con cost 10 cada hash toma ~50–80 ms; los tests unitarios de dominio no llaman a bcrypt (dominio puro) y los tests de rutas usan un conjunto acotado de registros, manteniendo la suite rápida.
 
 ## Migration Plan
 
 1. EP mergeó `chore(shared)` (`15466ab`: código unificado `DUPLICADO` y `crearAuth(repos, clock)`) en `main`, ya incorporado en `dev-facundo` vía `git merge --ff-only origin/main`.
 2. Verificar línea base `npm run typecheck && npm test` en verde en `dev-facundo` (Task 0.1).
-3. Con la aprobación explícita de EP (Governance **CRITICO**), ejecutar `apply` siguiendo `tasks.md` con TDD estricto.
+3. Con la aprobación explícita de EP (Governance **CRITICO**, otorgada el 2026-11-22 con ajustes), ejecutar `apply` siguiendo `tasks.md` con TDD estricto.
 4. Rollback: al estar todo el código encapsulado en `src/modules/cuentas/` y `tests/cuentas/`, revertir el PR restaura el stub anterior sin afectar a otros módulos.
 
 ## UI Mockups
@@ -132,4 +132,4 @@ El login y `AuthPort.verificar` consultan únicamente `usuario.activo`. El estad
 
 ## Open Questions
 
-Ninguna bloqueante: **PA-10** queda resuelta con el supuesto acordado y documentado en D3 (`documento + email`).
+Ninguna bloqueante: **PA-10** queda resuelta con el supuesto propuesto en D3 (`documento + email`, aprobado por EP el 2026-11-22).
