@@ -56,6 +56,7 @@ Rutas en páginas (no modales) para que cada pantalla tenga URL propia, se pueda
 
 `SelectorHuecos` recibe prestación, profesional (opcional) y día, pide `GET /api/recepcion/disponibilidad` con el rango de ese día y muestra los huecos como botones agrupados por mañana y tarde. Al elegir uno, muestra sus boxes libres con "Automático" preseleccionado.
 *Alternativa descartada:* hora libre a mano. La recepcionista prueba a ciegas y el `409` pasa a ser el caso normal.
+*"Automático" al reprogramar (ajuste del apply):* C-10 conserva el box actual si no se manda `boxId`. Si ese box no está entre los libres del hueco elegido, la API respondería `SOLAPAMIENTO_BOX`; por eso, en ese caso, la pantalla manda el primer box libre del hueco. Si el box actual está libre, no manda `boxId` y el turno se queda en su box.
 *Límite conocido:* la disponibilidad cuenta al propio turno como ocupado, así que reprogramar no ofrece mover 15 minutos sobre su mismo horario (el backend sí lo acepta, C-10). Se anota en Riesgos.
 
 ### D4 — Crear con las rutas de recepción de C-11
@@ -94,6 +95,23 @@ Vitest + Testing Library (ya en `web/` por C-12), con `fetch` simulado por test;
 - Design system revision: 2 (`design-system/tokens.css`, `design-system/brand.js`)
 - Decision: yes — 2026-11-23
 - Mockups: `openspec/changes/web-recepcion/mockups/` (`agenda.html`, `nuevo-turno.html`, `reprogramar.html`, ver `mockups/README.md`)
-- Approval: pending
+- Approval: approved (2026-11-23, by EP)
 - Preview: rendered (2026-11-23, `mockups/previews/` a 390x844 y 1440x900)
-- Visual verify: pending
+- Visual verify: differences (2026-11-23, capturas en `mockups/verify/` a 390x844 y 1440x900)
+
+### Verificación visual (2026-11-23)
+
+App real (`npm start` + `npm run dev -w web`) con el seed ficticio y sesión de recepción. Los turnos de prueba se cargaron con la propia pantalla de nuevo turno (10:00 Paciente Ficticio Uno, confirmado desde la agenda; 10:30 Paciente Ficticio Dos, contiguo, después reprogramado a las 11:00). Consola sin errores; todos los pedidos a la API respondieron 200/201.
+
+| Pantalla | Viewport | Resultado |
+|---|---|---|
+| Agenda | 1440 y 390 | Coincide: grilla por box, contiguos sin marca de conflicto, menú de acciones; en 390 pasa a lista. |
+| Nuevo turno | 1440 y 390 | Coincide en el estado sin error: pasos 1–3, huecos de mañana/tarde, box "Automático" y resumen. El selector ya no ofrece 10:00 ni 10:15 cuando chocan con un turno existente. |
+| Reprogramar | 1440 y 390 | Coincide: ahora (tachado) → nuevo horario, aviso de "Reservado" y email, selector de huecos. El `PATCH` real movió el turno y volvió a la agenda. |
+
+Diferencias, por prioridad:
+- **Menor (corregida):** el horario "Ahora" de reprogramar no estaba tachado como en el mockup.
+- **Menor (corregida):** el subtítulo decía "1 turnos" y mostraba "0 turnos" mientras cargaba.
+- **Menor (aceptada):** la agenda no tiene la leyenda de estados que el mockup muestra debajo de la grilla; cada turno ya muestra su estado con color y texto.
+- **Menor (aceptada):** el encabezado y la barra lateral son los de `AppLayout` de C-12 (perfil, cerrar sesión), no la barra simplificada del mockup.
+- **No verificado en vivo:** el estado con alerta `SOLAPAMIENTO_*` del mockup de nuevo turno necesita que otra persona ocupe el hueco entre que se ve y se confirma. Lo cubren los tests "El hueco se ocupó mientras se cargaba el turno" y "El box ya está ocupado". La pantalla de pacientes no tiene mockup.

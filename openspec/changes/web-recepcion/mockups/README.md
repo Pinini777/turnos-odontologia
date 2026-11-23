@@ -1,7 +1,7 @@
 # Mockups de C-13 `web-recepcion`
 
 - Design system revision: 2 (`design-system/tokens.css`, `design-system/brand.js`, `design-system/assets/logo.svg`)
-- Approval: pending
+- Approval: approved (2026-11-23, by EP)
 - Todos los datos son ficticios ("Paciente Ficticio Uno" a "Ocho", DNI `00000001`, `@example.com`).
 
 ## Pantallas
