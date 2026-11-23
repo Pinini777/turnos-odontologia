@@ -91,7 +91,11 @@ Por tipado estructural de TypeScript, `C-02`, `C-10` y `C-11` pueden pasar direc
   - `crearNotificador(opciones?)`: firma compatible con `src/app.ts` (`crearNotificador()` sin argumentos).
     - Si se provee `opciones?.transporte` o `opciones?.smtp`, o si `process.env.SMTP_HOST` está definido y no vacío, instancia el adaptador SMTP usando `SMTP_HOST`, `SMTP_PORT` (default `1025`), `SMTP_USER`, `SMTP_PASS` y `MAIL_FROM` (default `'turnos@example.com'`).
     - Si no hay `SMTP_HOST` ni configuración explícita (por ejemplo durante `npm test` sin `.env`), opera como outbox en memoria. Así `tests/plataforma/shared.test.ts` sigue pasando en verde sin tocarlo.
-- **Manejo de fallos (`RN-NO-02`):** en modo SMTP, `sendMail` corre dentro de `try/catch`. Si falla, captura el error como `unknown`, extrae un mensaje seguro sin credenciales, lo agrega a `fallos[]`, invoca `onError(fallo)` (por defecto `console.error`) y **resuelve sin lanzar excepción**.
+- **Cifrado obligatorio en SMTP (revisión PR #3):**
+  - Puerto `465`: `secure: true`, `requireTLS: false` (TLS implícito desde el inicio).
+  - Cualquier otro puerto: `secure: false`, `requireTLS: true` (Nodemailer exige `STARTTLS` y falla si el servidor no lo ofrece, evitando transmisión en claro de correos o credenciales).
+  - Excepción explícita solo para pruebas locales sin TLS: `SMTP_ALLOW_INSECURE_LOCAL=true` **únicamente** cuando `SMTP_HOST` es un host loopback (`localhost`, `127.0.0.1` o `::1`). Si se define esa variable contra un host remoto, se ignora y se mantiene `requireTLS: true`.
+- **Manejo de fallos (`RN-NO-02`):** en modo SMTP, `sendMail` corre dentro de `try/catch`. Si falla, captura el error como `unknown`, extrae un mensaje seguro sin credenciales, lo agrega a `fallos[]`, invoca `await onError(fallo)` (por defecto `console.error`) dentro de su propio `try/catch` para aislar también cualquier error síncrono o asíncrono del callback, y **resuelve sin lanzar excepción**.
 
 ### D6. Uso desde `C-02`, `C-10` y `C-11` (reserva online)
 - En `C-02` (alta) y `C-11` (reserva online):

@@ -41,6 +41,7 @@ export interface ConfigSmtp {
   readonly host: string;
   readonly port: number;
   readonly secure: boolean;
+  readonly requireTLS: boolean;
   readonly auth?: {
     readonly user: string;
     readonly pass: string;
@@ -53,7 +54,7 @@ export interface OpcionesSmtp {
   readonly config?: ConfigSmtp;
   readonly crearTransporte?: (config: ConfigSmtp) => TransporteSmtp;
   readonly passParaRedaccion?: string;
-  readonly onError?: (fallo: FalloEnvio) => void;
+  readonly onError?: (fallo: FalloEnvio) => void | Promise<void>;
 }
 
 export interface OpcionesNotificador {
@@ -62,7 +63,7 @@ export interface OpcionesNotificador {
   readonly smtp?: ConfigSmtp;
   readonly transporte?: TransporteSmtp;
   readonly crearTransporte?: (config: ConfigSmtp) => TransporteSmtp;
-  readonly onError?: (fallo: FalloEnvio) => void;
+  readonly onError?: (fallo: FalloEnvio) => void | Promise<void>;
 }
 
 function mapearAdjuntos(adjuntos: Adjunto[] | undefined): AdjuntoSmtp[] | undefined {
@@ -80,19 +81,30 @@ function extraerMotivoSeguro(error: unknown, secreto?: string): string {
   return bruto.replaceAll(secreto, '[REDACTADO]');
 }
 
+const HOSTS_LOCALES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
+function esHostLocal(host: string): boolean {
+  return HOSTS_LOCALES.has(host.toLowerCase());
+}
+
 function construirConfigSmtpDesdeEnv(env: Readonly<Record<string, string | undefined>>): ConfigSmtp | null {
   const host = env.SMTP_HOST?.trim();
   if (!host) return null;
 
   const puertoBruto = env.SMTP_PORT ? Number(env.SMTP_PORT) : SMTP_PORT_POR_DEFECTO;
   const port = Number.isFinite(puertoBruto) && puertoBruto > 0 ? puertoBruto : SMTP_PORT_POR_DEFECTO;
+  const secure = port === 465;
+  // Fuera del puerto 465 se exige STARTTLS; solo un host loopback con bandera explícita puede omitirlo.
+  const permitirSinTlsLocal = env.SMTP_ALLOW_INSECURE_LOCAL === 'true' && esHostLocal(host);
+  const requireTLS = !secure && !permitirSinTlsLocal;
   const user = env.SMTP_USER?.trim();
   const pass = env.SMTP_PASS;
 
   return {
     host,
     port,
-    secure: port === 465,
+    secure,
+    requireTLS,
     ...(user && pass !== undefined ? { auth: { user, pass } } : {}),
   };
 }
@@ -102,6 +114,7 @@ function crearTransporteNodemailer(config: ConfigSmtp): TransporteSmtp {
     host: config.host,
     port: config.port,
     secure: config.secure,
+    requireTLS: config.requireTLS,
     ...(config.auth ? { auth: config.auth } : {}),
   });
 }
@@ -168,7 +181,11 @@ export function crearNotificadorSmtp(opciones: OpcionesSmtp): NotificadorConBand
           motivo: extraerMotivoSeguro(error, secreto),
         };
         fallos.push(fallo);
-        onError(fallo);
+        try {
+          await onError(fallo);
+        } catch {
+          // Un fallo del callback onError nunca debe propagarse ni revertir el turno (RN-NO-02).
+        }
       }
     },
   };

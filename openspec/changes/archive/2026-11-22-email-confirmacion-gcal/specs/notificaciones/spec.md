@@ -55,7 +55,7 @@ La función `generarIcs` SHALL producir un documento iCalendar (`VCALENDAR` 2.0)
 - **THEN** la función rechaza la entrada lanzando un `RangeError` en lugar de emitir un evento corrupto
 
 ### Requirement: Envío por SMTP y outbox en memoria tolerante a fallos
-El adaptador de `src/modules/notificaciones/adapter.ts` SHALL soportar envío real vía SMTP (`nodemailer`, usando `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`) y modo outbox en memoria para tests. Ante cualquier error del transporte SMTP, el adaptador SHALL registrar el fallo y resolver sin lanzar excepción para que el turno nunca se revierta (`RN-NO-02`, `RN-DA-02`).
+El adaptador de `src/modules/notificaciones/adapter.ts` SHALL soportar envío real vía SMTP (`nodemailer`, usando `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`) exigiendo conexión cifrada (TLS implícito en puerto `465` o `requireTLS: true` / STARTTLS obligatorio en otros puertos, salvo excepción explícita `SMTP_ALLOW_INSECURE_LOCAL=true` restringida a hosts loopback `localhost`/`127.0.0.1`/`::1`) y modo outbox en memoria para tests. Ante cualquier error del transporte SMTP —incluso si el callback `onError` también falla—, el adaptador SHALL registrar el fallo y resolver sin lanzar excepción para que el turno nunca se revierta (`RN-NO-02`, `RN-DA-02`).
 
 #### Scenario: Outbox en memoria por defecto sin configuración SMTP
 - **WHEN** se llama a `crearNotificador()` sin `SMTP_HOST` en el entorno y se invoca `enviar(mensaje)`
@@ -65,9 +65,17 @@ El adaptador de `src/modules/notificaciones/adapter.ts` SHALL soportar envío re
 - **WHEN** se configura el adaptador SMTP (con transporte inyectado o `SMTP_*`) y se invoca `enviar(mensaje)` con texto, HTML y adjunto `turno.ics`
 - **THEN** llama al transporte con `from` igual a `MAIL_FROM`, `to`, `subject`, `text`, `html` y `attachments` mapeado con `filename: 'turno.ics'` y `contentType` de calendario, y registra el mensaje en `bandeja`
 
+#### Scenario: Exigencia de cifrado TLS / STARTTLS y excepción explícita local
+- **WHEN** se configura `SMTP_HOST` en un puerto distinto de `465` sin excepción explícita (o en un host no local aun con `SMTP_ALLOW_INSECURE_LOCAL=true`)
+- **THEN** el transporte exige `requireTLS: true` (`secure: false`), en puerto `465` usa `secure: true` (`requireTLS: false`), y solo un host loopback (`localhost`, `127.0.0.1`, `::1`) con `SMTP_ALLOW_INSECURE_LOCAL=true` puede desactivar `requireTLS`
+
 #### Scenario: Fallo de SMTP no lanza excepción ni revierte el turno (`RN-NO-02`)
 - **WHEN** el transporte SMTP rechaza el envío con un error de conexión o autenticación
 - **THEN** `notificador.enviar(mensaje)` resuelve sin lanzar excepción, registra el error en `fallos` (sin exponer contraseñas) e invoca el callback `onError`
+
+#### Scenario: Doble fallo (SMTP y `onError` fallan simultáneamente)
+- **WHEN** el transporte SMTP rechaza el envío y además el callback `onError` lanza una excepción síncrona o rechaza de forma asíncrona
+- **THEN** `notificador.enviar(mensaje)` aísla el error de `onError`, resuelve sin rechazar y conserva el registro del fallo en `fallos`
 
 ### Requirement: Caso de uso de envío de confirmación para alta y reserva online
 El caso de uso `enviarConfirmacionTurno` SHALL orquestar el armado del email (inyectando la hora actual desde `Clock` y la zona del consultorio) y su despacho al `Notificador`, de forma lista para ser llamada por `C-02` (alta), `C-10` (reprogramación) y `C-11` (reserva y reprogramación online).
