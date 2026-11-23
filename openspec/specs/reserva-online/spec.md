@@ -44,6 +44,12 @@ The system SHALL expose `GET /api/public/disponibilidad` without authentication 
 - **WHEN** se invoca `GET /api/public/disponibilidad`
 - **THEN** responde `400` con `{ "code": "FORMATO_INVALIDO" }`
 
+#### Scenario: Rango máximo de 31 días en consulta de disponibilidad
+- **GIVEN** una consulta de disponibilidad con `desde=2026-11-30T09:00:00-03:00`
+- **WHEN** se consulta con `hasta` exactamente 31 días después (`2026-12-31T09:00:00-03:00`) y en otro caso con `hasta` 31 días y 15 minutos después (`2026-12-31T09:15:00-03:00`)
+- **THEN** con exactamente 31 días responde `200`
+- **AND** con más de 31 días responde `400` con `{ "code": "FORMATO_INVALIDO" }` y detalle en el campo `hasta` tanto en `/api/public/disponibilidad` como en `/api/recepcion/disponibilidad`
+
 ### Requirement: Reserva online de turno por paciente autenticado
 The system SHALL expose `POST /api/paciente/turnos` for role `paciente`, deriving `pacienteId` from the session. It MUST validate active `reservableOnline: true` prestación, schedule rules and optional `boxId` (auto-assigning a free active box atomically), create `origen: 'online'` with `actor: 'paciente'` audit, omit prices and send Google Calendar + `.ics` confirmation without reverting on SMTP error.
 

@@ -1,11 +1,19 @@
-import type { BloqueoAgenda, Box, HorarioAtencion, Profesional, Turno } from '../../../shared/entidades';
+import type {
+  BloqueoAgenda,
+  Box,
+  DiaSemana,
+  HorarioAtencion,
+  Profesional,
+  Turno,
+} from '../../../shared/entidades';
 import { ReglaDeNegocioError } from '../../../shared/errores';
-import { enZonaConsultorio } from '../../../shared/zona';
+import type { FechaEnZona } from '../../../shared/zona';
 import { estaDentroDeHorario, haySolapamientoIntervalos } from '../../configuracion/dominio/reglas';
-import { enGrilla, seSuperponen } from '../../turnos-alta/dominio/agenda';
+import { seSuperponen } from '../../turnos-alta/dominio/agenda';
 
 const MINUTO_MS = 60_000;
 const PASO_GRILLA_MS = 15 * MINUTO_MS;
+const DIAS: Record<string, DiaSemana> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
 export interface HuecoDisponible {
   inicio: Date;
@@ -46,12 +54,42 @@ function compararPorId(a: { id: string }, b: { id: string }): number {
   return 0;
 }
 
-function primerInstanteEnGrilla(desdeMs: number, tz: string): number {
+function crearConversorZona(tz: string): (instante: Date) => FechaEnZona {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    weekday: 'short',
+  });
+  return (instante: Date): FechaEnZona => {
+    const partes = formatter.formatToParts(instante);
+    const p = (tipo: Intl.DateTimeFormatPartTypes) => partes.find((x) => x.type === tipo)?.value ?? '';
+    const diaSemana = DIAS[p('weekday')];
+    if (diaSemana === undefined) throw new Error(`enZonaConsultorio: día no reconocido en ${tz}`);
+    return {
+      fecha: `${p('year')}-${p('month')}-${p('day')}`,
+      diaSemana,
+      hhmm: `${p('hour')}:${p('minute')}`,
+    };
+  };
+}
+
+function estaEnGrilla(instante: Date, zona: FechaEnZona): boolean {
+  const minutos = Number(zona.hhmm.slice(3));
+  return minutos % 15 === 0 && instante.getUTCSeconds() === 0 && instante.getUTCMilliseconds() === 0;
+}
+
+function primerInstanteEnGrilla(desdeMs: number, convertir: (instante: Date) => FechaEnZona): number {
   let candidatoMs = Math.ceil(desdeMs / MINUTO_MS) * MINUTO_MS;
-  while (!enGrilla(new Date(candidatoMs), tz)) {
+  while (true) {
+    const fecha = new Date(candidatoMs);
+    if (estaEnGrilla(fecha, convertir(fecha))) return candidatoMs;
     candidatoMs += MINUTO_MS;
   }
-  return candidatoMs;
 }
 
 function boxTieneBloqueo(
@@ -113,20 +151,44 @@ export function calcularHuecosDisponibles({
   const duracionMs = duracionMin * MINUTO_MS;
   const hastaMs = hasta.getTime();
   const inicioEfectivoMs = Math.max(desde.getTime(), ahora.getTime());
+  const convertirZona = crearConversorZona(tz);
+
+  const horariosPorProfYDia = new Map<string, HorarioAtencion[]>();
+  const diasConAtencion = new Set<DiaSemana>();
+  const idsProfActivos = new Set(profesionalesActivos.map((p) => p.id));
+  for (const h of horarios) {
+    if (!idsProfActivos.has(h.profesionalId)) continue;
+    diasConAtencion.add(h.diaSemana);
+    const clave = `${h.profesionalId}:${h.diaSemana}`;
+    const lista = horariosPorProfYDia.get(clave);
+    if (lista) lista.push(h);
+    else horariosPorProfYDia.set(clave, [h]);
+  }
+  if (diasConAtencion.size === 0) return [];
 
   const huecos: HuecoDisponible[] = [];
   for (
-    let candidatoMs = primerInstanteEnGrilla(inicioEfectivoMs, tz);
+    let candidatoMs = primerInstanteEnGrilla(inicioEfectivoMs, convertirZona);
     candidatoMs + duracionMs <= hastaMs;
     candidatoMs += PASO_GRILLA_MS
   ) {
     const inicio = new Date(candidatoMs);
-    if (!enGrilla(inicio, tz)) continue;
+    const inicioZona = convertirZona(inicio);
+    if (!estaEnGrilla(inicio, inicioZona)) continue;
+    if (!diasConAtencion.has(inicioZona.diaSemana)) continue;
 
     const finMs = candidatoMs + duracionMs;
     const fin = new Date(finMs);
-    const intervalo: Intervalo = { inicio, fin };
+    const finZona = convertirZona(fin);
 
+    const profesionalesEnHorario = profesionalesActivos.filter((profesional) => {
+      const horariosDelDia = horariosPorProfYDia.get(`${profesional.id}:${inicioZona.diaSemana}`);
+      if (!horariosDelDia) return false;
+      return estaDentroDeHorario(inicio, fin, inicioZona, finZona, horariosDelDia);
+    });
+    if (profesionalesEnHorario.length === 0) continue;
+
+    const intervalo: Intervalo = { inicio, fin };
     const boxIdsLibres = boxesActivos
       .filter(
         (box) =>
@@ -137,14 +199,7 @@ export function calcularHuecosDisponibles({
 
     if (boxIdsLibres.length === 0) continue;
 
-    const inicioZona = enZonaConsultorio(inicio, tz);
-    const finZona = enZonaConsultorio(fin, tz);
-
-    for (const profesional of profesionalesActivos) {
-      const horariosDelDia = horarios.filter(
-        (h) => h.profesionalId === profesional.id && h.diaSemana === inicioZona.diaSemana,
-      );
-      if (!estaDentroDeHorario(inicio, fin, inicioZona, finZona, horariosDelDia)) continue;
+    for (const profesional of profesionalesEnHorario) {
       if (profesionalBloqueadoOOcupado(profesional.id, intervalo, bloqueos, turnosActivos)) continue;
 
       huecos.push({

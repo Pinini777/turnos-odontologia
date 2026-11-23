@@ -15,6 +15,8 @@ import {
   type DatosPacienteInline,
 } from './aplicacion/reservar-turno';
 
+const MAX_RANGO_DISPONIBILIDAD_MS = 31 * 24 * 60 * 60 * 1000;
+
 const esquemaIdParam = z.object({
   id: z.string().trim().min(1),
 });
@@ -27,11 +29,21 @@ const esquemaDisponibilidadQuery = z
     profesionalId: z.string().trim().min(1).optional(),
   })
   .superRefine(({ desde, hasta }, ctx) => {
-    if (new Date(desde).getTime() >= new Date(hasta).getTime()) {
+    const desdeMs = new Date(desde).getTime();
+    const hastaMs = new Date(hasta).getTime();
+    if (desdeMs >= hastaMs) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['hasta'],
         message: 'desde debe ser menor que hasta',
+      });
+      return;
+    }
+    if (hastaMs - desdeMs > MAX_RANGO_DISPONIBILIDAD_MS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hasta'],
+        message: 'el rango máximo de consulta es de 31 días',
       });
     }
   });

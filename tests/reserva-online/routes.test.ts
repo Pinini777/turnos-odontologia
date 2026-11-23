@@ -245,6 +245,53 @@ describe('GET /api/public/disponibilidad', () => {
     expect(resSinOffset.statusCode).toBe(400);
     expect(resSinOffset.json()).toMatchObject({ code: 'FORMATO_INVALIDO' });
   });
+
+  it('Rango máximo de 31 días en consulta de disponibilidad', async () => {
+    const { app } = await crearApi('2026-11-30T08:00:00-03:00');
+
+    // Exactamente 31 días (30 nov -> 31 dic) -> 200
+    const resExacto31 = await app.inject({
+      method: 'GET',
+      url: `/api/public/disponibilidad?${new URLSearchParams({
+        prestacionId: SEED.prestaciones.consulta.id,
+        desde: '2026-11-30T09:00:00-03:00',
+        hasta: '2026-12-31T09:00:00-03:00',
+      })}`,
+    });
+    expect(resExacto31.statusCode).toBe(200);
+    expect(resExacto31.json<unknown[]>().length).toBeGreaterThan(0);
+
+    // 31 días y 15 minutos en ruta pública -> 400 FORMATO_INVALIDO en campo hasta
+    const resExcedidoPublico = await app.inject({
+      method: 'GET',
+      url: `/api/public/disponibilidad?${new URLSearchParams({
+        prestacionId: SEED.prestaciones.consulta.id,
+        desde: '2026-11-30T09:00:00-03:00',
+        hasta: '2026-12-31T09:15:00-03:00',
+      })}`,
+    });
+    expect(resExcedidoPublico.statusCode).toBe(400);
+    expect(resExcedidoPublico.json()).toMatchObject({
+      code: 'FORMATO_INVALIDO',
+      detalles: expect.arrayContaining([expect.objectContaining({ campo: 'hasta' })]),
+    });
+
+    // 31 días y 15 minutos también rechazado en ruta de recepción -> 400 en campo hasta
+    const resExcedidoRecepcion = await app.inject({
+      method: 'GET',
+      url: `/api/recepcion/disponibilidad?${new URLSearchParams({
+        prestacionId: SEED.prestaciones.extraccion.id,
+        desde: '2026-11-30T09:00:00-03:00',
+        hasta: '2026-12-31T09:15:00-03:00',
+      })}`,
+      headers: bearer('recep'),
+    });
+    expect(resExcedidoRecepcion.statusCode).toBe(400);
+    expect(resExcedidoRecepcion.json()).toMatchObject({
+      code: 'FORMATO_INVALIDO',
+      detalles: expect.arrayContaining([expect.objectContaining({ campo: 'hasta' })]),
+    });
+  });
 });
 
 describe('POST /api/paciente/turnos', () => {
@@ -453,7 +500,7 @@ describe('POST /api/paciente/turnos', () => {
     expect(resBox.json()).toEqual({ code: 'SOLAPAMIENTO_BOX' });
   });
 
-  it('tolera fallo SMTP sin revertir la reserva (201) y valida auth/RBAC/Zod', async () => {
+  it('Fallo de envío SMTP no revierte la reserva online', async () => {
     const { app, repos } = await crearApi('2026-11-30T08:00:00-03:00', {
       notificador: {
         async enviar(): Promise<void> {
@@ -475,33 +522,6 @@ describe('POST /api/paciente/turnos', () => {
     expect(resOk.statusCode).toBe(201);
     expect(await repos.turnos.listar()).toHaveLength(1);
 
-    const res401 = await app.inject({
-      method: 'POST',
-      url: '/api/paciente/turnos',
-      payload: {
-        profesionalId: SEED.profesionales.anaPerez.id,
-        prestacionId: SEED.prestaciones.consulta.id,
-        inicio: '2026-11-30T11:00:00-03:00',
-      },
-    });
-    expect(res401.statusCode).toBe(401);
-    expect(res401.json()).toEqual({ code: 'NO_AUTENTICADO' });
-
-    for (const rol of ['recep', 'prof', 'pacSinPacienteId'] as const) {
-      const res403 = await app.inject({
-        method: 'POST',
-        url: '/api/paciente/turnos',
-        headers: bearer(rol),
-        payload: {
-          profesionalId: SEED.profesionales.anaPerez.id,
-          prestacionId: SEED.prestaciones.consulta.id,
-          inicio: '2026-11-30T11:00:00-03:00',
-        },
-      });
-      expect(res403.statusCode).toBe(403);
-      expect(res403.json()).toEqual({ code: 'SIN_PERMISO' });
-    }
-
     const res400 = await app.inject({
       method: 'POST',
       url: '/api/paciente/turnos',
@@ -514,6 +534,34 @@ describe('POST /api/paciente/turnos', () => {
     });
     expect(res400.statusCode).toBe(400);
     expect(res400.json()).toMatchObject({ code: 'FORMATO_INVALIDO' });
+  });
+
+  it('Control de acceso en reserva online', async () => {
+    const { app } = await crearApi('2026-11-30T08:00:00-03:00');
+    const payload = {
+      profesionalId: SEED.profesionales.anaPerez.id,
+      prestacionId: SEED.prestaciones.consulta.id,
+      inicio: '2026-11-30T11:00:00-03:00',
+    };
+
+    const res401 = await app.inject({
+      method: 'POST',
+      url: '/api/paciente/turnos',
+      payload,
+    });
+    expect(res401.statusCode).toBe(401);
+    expect(res401.json()).toEqual({ code: 'NO_AUTENTICADO' });
+
+    for (const rol of ['recep', 'prof', 'pacSinPacienteId'] as const) {
+      const res403 = await app.inject({
+        method: 'POST',
+        url: '/api/paciente/turnos',
+        headers: bearer(rol),
+        payload,
+      });
+      expect(res403.statusCode).toBe(403);
+      expect(res403.json()).toEqual({ code: 'SIN_PERMISO' });
+    }
   });
 });
 
@@ -900,7 +948,7 @@ describe('GET /api/recepcion/disponibilidad y POST /api/recepcion/turnos', () =>
     expect(notificador.bandeja[0]?.adjuntos?.[0]?.nombre).toBe('turno.ics');
   });
 
-  it('recepcionista crea paciente inline atomicamente, no deja huerfano ante choque, rechaza DUPLICADO y valida XOR pacienteId/paciente', async () => {
+  it('recepcionista crea paciente inline atomicamente, no deja huerfano ante choque y rechaza DUPLICADO', async () => {
     const { app, repos, notificador } = await crearApi('2026-11-30T08:00:00-03:00');
 
     // Alta inline feliz
@@ -1014,6 +1062,10 @@ describe('GET /api/recepcion/disponibilidad y POST /api/recepcion/turnos', () =>
       origen: 'profesional',
       precioAlReservar: SEED.prestaciones.consulta.precio,
     });
+  });
+
+  it('Validación de entrada y control de acceso en registro asistido', async () => {
+    const { app } = await crearApi('2026-11-30T08:00:00-03:00');
 
     // Validacion XOR pacienteId vs paciente -> 400 FORMATO_INVALIDO
     const resAmbos = await app.inject({
