@@ -399,7 +399,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/07_flujos_principales.md` §F-02
 
 ### [C-11] `reserva-y-autogestion-paciente`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Renzo · **Capability**: `reserva-online` · **Prioridad**: P1 · US-020, US-021
 - **Scope**:
   - `GET /api/public/disponibilidad?prestacionId&desde&hasta[&profesionalId]` → huecos libres (horario − bloqueos − turnos activos, para profesional y box, en la grilla de 15 min), solo de prestaciones reservables y sin datos de otros pacientes (RN-RE-01).
