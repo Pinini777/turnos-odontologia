@@ -308,7 +308,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-04
 
 ### [C-06] `email-confirmacion-gcal`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Lucas · **Capability**: `notificaciones` · **Prioridad**: P1 · US-030
 - **Scope**:
   - Reemplaza el stub `notificaciones/adapter.ts`: arma el email con fecha, hora, profesional, box y prestación, **sin precio** (RN-NO-03).
@@ -324,7 +324,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-06
 
 ### [C-07] `agenda-y-auditoria`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Agustin · **Capability**: `agenda` · **Prioridad**: P1 · US-014, US-061
 - **Scope**:
   - `GET /api/agenda?desde&hasta&profesionalId&boxId` → turnos del rango (día o semana), con estado, paciente, profesional, box y prestación, ordenados por `inicio`. La recepcionista no recibe precios.
@@ -362,7 +362,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-05
 
 ### [C-09] `historia-clinica-y-odontograma`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Facundo · **Capability**: `clinica` · **Prioridad**: P1 · US-050, US-051
 - **Scope**:
   - `GET/POST /api/pacientes/:id/historia`: entradas append-only con autor y fecha; una corrección es una entrada nueva que referencia a la anterior (RN-CL-01).
@@ -385,7 +385,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 > Estos esperan merges de otros: C-10 necesita C-02 y C-05; C-11 necesita C-03, C-04, C-06 y C-10.
 
 ### [C-10] `reprogramar-turno`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Lautaro · **Capability**: `turnos-reprogramacion` · **Prioridad**: P1 · US-012
 - **Scope**:
   - `PATCH /api/turnos/:id/reprogramar` (nuevo inicio y, si hace falta, otro profesional o box): recalcula `fin` y reutiliza las validaciones de C-02 **excluyendo al propio turno** (RN-TU-04), dentro de `conLockDeAgenda`.
@@ -399,7 +399,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/07_flujos_principales.md` §F-02
 
 ### [C-11] `reserva-y-autogestion-paciente`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Renzo · **Capability**: `reserva-online` · **Prioridad**: P1 · US-020, US-021
 - **Scope**:
   - `GET /api/public/disponibilidad?prestacionId&desde&hasta[&profesionalId]` → huecos libres (horario − bloqueos − turnos activos, para profesional y box, en la grilla de 15 min), solo de prestaciones reservables y sin datos de otros pacientes (RN-RE-01).
@@ -421,9 +421,11 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 ## FASE 4 — Interfaz web (gate de design system y mockups)
 
 > **Gate obligatorio** (política `system-and-mockups`, DD-09): ningún change de esta fase arranca `apply` hasta que (1) EP apruebe `design-system/` revisión 1 (hoy `Approval: pending`, con la fase `visual-design` en `deferred`) y (2) EP apruebe el mockup HTML del change en `openspec/changes/<change>/mockups/`, renderizado a 390×844 y 1440×900. **Corte: si el design system no está aprobado el lunes 23 a las 12:00, esta fase queda fuera de la entrega.**
+>
+> **Actualización 23/11 (EP):** el design system se rehízo y EP aprobó la **revisión 2** (`design-system/README.md`: `Approval: approved (2026-11-23, by EP)`) después del corte de las 12:00. EP decidió mantener la fase 4 en la entrega: C-12 ya está en `main` y C-13, C-14 y C-15 siguen con el gate de mockup aprobado por change.
 
 ### [C-12] `web-base`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Lucas · **Capability**: `web-base` · **Prioridad**: P2
 - **Scope**:
   - `web/src/base/`: layout responsive, componentes compartidos tomados de `design-system/components.html` (botón, campo, tabla, badge de estado, mensaje de error de negocio, estado vacío) y cliente HTTP con el token y manejo de `401/403/409`.
