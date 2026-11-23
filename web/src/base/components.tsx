@@ -12,6 +12,8 @@ const ETIQUETA_ESTADO: Readonly<Record<EstadoTurnoUi, string>> = {
   cancelado: 'Cancelado',
 };
 
+const ESTADOS_ACTIVOS = new Set<EstadoTurnoUi>(['reservado', 'confirmado']);
+
 export function IconoMarca({ tamano = 36 }: { readonly tamano?: number }) {
   return (
     <svg
@@ -63,8 +65,31 @@ export function Boton({
     .join(' ');
 
   return (
-    <button type={type} className={clases} disabled={disabled || cargando} {...resto}>
-      {cargando ? textoCargando : children}
+    <button
+      type={type}
+      className={clases}
+      disabled={disabled || cargando}
+      aria-busy={cargando ? true : undefined}
+      {...resto}
+    >
+      {cargando ? (
+        <>
+          <svg
+            className="wb-spinner"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" opacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+          </svg>
+          <span>{textoCargando}</span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }
@@ -145,7 +170,69 @@ export function AlertaErrorNegocio({ code, mensaje, detalles = [] }: PropsAlerta
 }
 
 export function BadgeEstadoTurno({ estado }: { readonly estado: EstadoTurnoUi }) {
-  return <span className={`wb-badge wb-badge--${estado}`}>{ETIQUETA_ESTADO[estado]}</span>;
+  const esActivo = ESTADOS_ACTIVOS.has(estado);
+  const clases = [
+    'wb-badge',
+    `wb-badge--${estado}`,
+    esActivo ? 'wb-badge--activo' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <span className={clases} data-estado-activo={esActivo ? 'true' : 'false'}>
+      <span className="wb-badge__dot" aria-hidden="true" />
+      <span>{ETIQUETA_ESTADO[estado]}</span>
+    </span>
+  );
+}
+
+export interface PropsSkeleton {
+  readonly ancho?: string;
+  readonly alto?: string;
+  readonly radio?: string;
+}
+
+export function Skeleton({ ancho = '100%', alto = '1rem', radio }: PropsSkeleton) {
+  return (
+    <div
+      className="wb-skeleton"
+      aria-hidden="true"
+      style={{ width: ancho, height: alto, ...(radio ? { borderRadius: radio } : {}) }}
+    />
+  );
+}
+
+export function SkeletonTabla({ filas = 4 }: { readonly filas?: number }) {
+  return (
+    <div className="wb-skeleton-tabla" role="status" aria-busy="true" aria-label="Cargando tabla…">
+      <Skeleton ancho="100%" alto="34px" radio="var(--radius-sm)" />
+      {Array.from({ length: filas }, (_, idx) => (
+        <div key={idx} className="wb-skeleton-fila">
+          <Skeleton alto="18px" />
+          <Skeleton alto="18px" />
+          <Skeleton alto="18px" />
+          <Skeleton alto="18px" />
+          <Skeleton alto="18px" />
+          <Skeleton ancho="82px" alto="24px" radio="var(--radius-full)" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SkeletonTarjetas({ cantidad = 3 }: { readonly cantidad?: number }) {
+  return (
+    <div className="wb-cards-grid" role="status" aria-busy="true" aria-label="Cargando tarjetas…">
+      {Array.from({ length: cantidad }, (_, idx) => (
+        <div key={idx} className="wb-card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <Skeleton ancho="58%" alto="20px" />
+          <Skeleton ancho="100%" alto="14px" />
+          <Skeleton ancho="85%" alto="14px" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export interface PropsEstadoVacio {
@@ -177,6 +264,8 @@ export interface PropsTabla<T> {
   readonly columnas: readonly ColumnaTabla<T>[];
   readonly filas: readonly T[];
   readonly claveFila: (fila: T) => string;
+  readonly cargando?: boolean;
+  readonly filasSkeleton?: number;
   readonly vacioTitulo?: string;
   readonly vacioDescripcion?: string;
 }
@@ -185,9 +274,15 @@ export function Tabla<T>({
   columnas,
   filas,
   claveFila,
+  cargando = false,
+  filasSkeleton = 4,
   vacioTitulo = 'Sin registros todavía',
   vacioDescripcion = 'Cuando haya información disponible aparecerá en esta tabla.',
 }: PropsTabla<T>) {
+  if (cargando) {
+    return <SkeletonTabla filas={filasSkeleton} />;
+  }
+
   if (filas.length === 0) {
     return <EstadoVacio titulo={vacioTitulo} descripcion={vacioDescripcion} />;
   }

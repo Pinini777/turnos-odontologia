@@ -74,13 +74,17 @@ export function LoginPage() {
             <span>Box 1 · Lunes 09:00 a 13:00</span>
             <span>Intervalo [inicio, fin)</span>
           </div>
-          <div className="wb-agenda-muestra__slot">
+          <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--1">
             <span>10:00 – 10:30 · Consulta · Dra. Ana Pérez</span>
             <span className="wb-agenda-muestra__chip">Confirmado</span>
           </div>
-          <div className="wb-agenda-muestra__slot">
+          <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--2">
             <span>10:30 – 11:00 · Control · Dra. Ana Pérez</span>
             <span className="wb-agenda-muestra__chip">Contiguo válido</span>
+          </div>
+          <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--3">
+            <span>11:00 – 11:45 · Limpieza · Box 2 libre</span>
+            <span className="wb-agenda-muestra__chip">Disponible</span>
           </div>
         </div>
       </aside>

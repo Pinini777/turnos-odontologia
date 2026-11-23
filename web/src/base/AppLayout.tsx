@@ -1,15 +1,23 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Boton, IconoMarca } from './components';
-import { ETIQUETA_ROL, obtenerMenuPorRol, type ItemMenu } from './menu';
+import { destinoDeItem, ETIQUETA_ROL, obtenerMenuPorRol, type ItemMenu } from './menu';
 import { useSesion } from './sesion';
 import './styles.css';
+
+interface GeometriaIndicador {
+  readonly x: number;
+  readonly y: number;
+  readonly ancho: number;
+  readonly alto: number;
+}
 
 export interface PropsAppLayout {
   readonly titulo: string;
   readonly subtitulo?: string;
   readonly acciones?: ReactNode;
   readonly itemsExtra?: readonly ItemMenu[];
+  readonly claveVista?: string;
   readonly children: ReactNode;
 }
 
@@ -18,13 +26,43 @@ export function AppLayout({
   subtitulo,
   acciones,
   itemsExtra = [],
+  claveVista,
   children,
 }: PropsAppLayout) {
   const { sesion, cerrar } = useSesion();
   const location = useLocation();
   const navigate = useNavigate();
 
+  const navRef = useRef<HTMLElement | null>(null);
+  const activoRef = useRef<HTMLAnchorElement | null>(null);
+  const [indicador, setIndicador] = useState<GeometriaIndicador | null>(null);
+
   const items = sesion ? obtenerMenuPorRol(sesion.usuario.rol, itemsExtra) : [];
+  const rutaCompleta = `${location.pathname}${location.search}`;
+  const claveTransicion = claveVista ?? rutaCompleta;
+
+  useLayoutEffect(() => {
+    const actualizar = () => {
+      const el = activoRef.current;
+      if (!el || (el.offsetWidth === 0 && el.offsetHeight === 0)) {
+        setIndicador(null);
+        return;
+      }
+      setIndicador({
+        x: el.offsetLeft,
+        y: el.offsetTop,
+        ancho: el.offsetWidth,
+        alto: el.offsetHeight,
+      });
+    };
+
+    actualizar();
+
+    if (typeof ResizeObserver === 'undefined' || !navRef.current) return;
+    const observer = new ResizeObserver(actualizar);
+    observer.observe(navRef.current);
+    return () => observer.disconnect();
+  }, [rutaCompleta, sesion?.usuario.rol, items.length]);
 
   function handleCerrarSesion(): void {
     cerrar();
@@ -52,13 +90,35 @@ export function AppLayout({
           </div>
         ) : null}
 
-        <nav className="wb-nav" aria-label="Menú principal">
+        <nav
+          ref={navRef}
+          className={['wb-nav', indicador ? '' : 'wb-nav--sin-indicador'].filter(Boolean).join(' ')}
+          aria-label="Menú principal"
+        >
+          <span
+            className="wb-nav__indicador"
+            data-indicador-activo="true"
+            aria-hidden="true"
+            style={
+              indicador
+                ? {
+                    opacity: 1,
+                    width: `${indicador.ancho}px`,
+                    height: `${indicador.alto}px`,
+                    transform: `translate3d(${indicador.x}px, ${indicador.y}px, 0)`,
+                  }
+                : { opacity: 0, width: 0, height: 0 }
+            }
+          />
+
           {items.map((item) => {
-            const activo = location.pathname === item.ruta;
+            const destino = destinoDeItem(item);
+            const activo = rutaCompleta === destino || (item.ruta === '/inicio' && location.pathname === '/inicio' && location.search === '');
             return (
               <Link
                 key={item.ruta}
-                to={item.proximamente ? '/inicio' : item.ruta}
+                ref={activo ? activoRef : undefined}
+                to={destino}
                 className={['wb-nav__item', activo ? 'wb-nav__item--activo' : '']
                   .filter(Boolean)
                   .join(' ')}
@@ -79,14 +139,16 @@ export function AppLayout({
       </aside>
 
       <main id="contenido-principal" className="wb-main">
-        <header className="wb-main__header">
-          <div>
-            <h1 className="wb-main__titulo">{titulo}</h1>
-            {subtitulo ? <p className="wb-main__sub">{subtitulo}</p> : null}
-          </div>
-          {acciones ? <div>{acciones}</div> : null}
-        </header>
-        {children}
+        <div key={claveTransicion} className="wb-vista-enter">
+          <header className="wb-main__header">
+            <div>
+              <h1 className="wb-main__titulo">{titulo}</h1>
+              {subtitulo ? <p className="wb-main__sub">{subtitulo}</p> : null}
+            </div>
+            {acciones ? <div>{acciones}</div> : null}
+          </header>
+          {children}
+        </div>
       </main>
     </div>
   );

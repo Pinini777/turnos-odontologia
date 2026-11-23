@@ -104,11 +104,11 @@ export function RegistroPage() {
             <span>Autogestión del paciente</span>
             <span>Sin llamadas</span>
           </div>
-          <div className="wb-agenda-muestra__slot">
+          <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--1">
             <span>Confirmación por email + archivo .ics</span>
             <span className="wb-agenda-muestra__chip">Incluido</span>
           </div>
-          <div className="wb-agenda-muestra__slot">
+          <div className="wb-agenda-muestra__slot wb-agenda-muestra__slot--2">
             <span>Cancelación o cambio hasta 24 h antes</span>
             <span className="wb-agenda-muestra__chip">Online</span>
           </div>

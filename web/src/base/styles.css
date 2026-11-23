@@ -1,5 +1,67 @@
 /* Estilos compartidos de C-12 web-base (todos los valores salen de design-system/tokens.css) */
 
+/* ---------- Keyframes 60fps (solo transform y opacity) ---------- */
+@keyframes wb-ambiente {
+  0% {
+    transform: translate3d(-4%, -3%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(5%, 4%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-2%, 5%, 0) scale(1.02);
+  }
+}
+
+@keyframes wb-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes wb-vista-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes wb-pulso {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  75%,
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+@keyframes wb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wb-shimmer {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
 .wb-skip-link {
   position: absolute;
   left: -9999px;
@@ -19,7 +81,7 @@
   box-shadow: var(--focus-ring);
 }
 
-/* ---------- Botones ---------- */
+/* ---------- Botones y feedback táctil ---------- */
 .wb-btn {
   display: inline-flex;
   align-items: center;
@@ -35,14 +97,16 @@
   cursor: pointer;
   touch-action: manipulation;
   text-decoration: none;
+  transform-origin: center;
   transition: background-color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out),
     opacity var(--duration-fast) var(--ease-out);
 }
 
 .wb-btn:active:not(:disabled) {
-  transform: scale(0.985);
+  transform: scale(0.975);
 }
 
 .wb-btn:focus-visible {
@@ -51,7 +115,7 @@
 }
 
 .wb-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
@@ -62,20 +126,13 @@
 .wb-btn--primario {
   background: var(--color-primary);
   color: var(--color-on-primary);
-}
-
-.wb-btn--primario:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+  box-shadow: 0 1px 2px rgba(9, 66, 84, 0.16);
 }
 
 .wb-btn--secundario {
   background: var(--color-surface);
   color: var(--color-text);
   border-color: var(--color-border-strong);
-}
-
-.wb-btn--secundario:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
 }
 
 .wb-btn--peligro {
@@ -92,9 +149,35 @@
   color: var(--color-text-muted);
 }
 
-.wb-btn--fantasma:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+@media (hover: hover) {
+  .wb-btn--primario:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.24);
+  }
+
+  .wb-btn--secundario:hover:not(:disabled) {
+    background: var(--color-surface-subtle);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+
+  .wb-btn--peligro:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(185, 28, 28, 0.22);
+  }
+
+  .wb-btn--fantasma:hover:not(:disabled) {
+    background: var(--color-surface-subtle);
+    color: var(--color-text);
+  }
+}
+
+.wb-spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  animation: wb-spin 700ms linear infinite;
 }
 
 /* ---------- Campos de formulario ---------- */
@@ -120,7 +203,8 @@
   font: inherit;
   font-size: var(--text-base);
   transition: border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    box-shadow var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .wb-campo__input::placeholder {
@@ -151,6 +235,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   color: var(--color-danger);
+  animation: wb-fade-up var(--duration-fast) var(--ease-out) both;
 }
 
 /* ---------- Alerta de error de negocio ---------- */
@@ -164,6 +249,7 @@
   background: var(--color-danger-soft);
   color: var(--color-danger);
   font-size: var(--text-sm);
+  animation: wb-fade-up var(--duration-base) var(--ease-out) both;
 }
 
 .wb-alerta__encabezado {
@@ -188,11 +274,11 @@
   font-size: var(--text-xs);
 }
 
-/* ---------- Badges de estado del turno ---------- */
+/* ---------- Badges de estado del turno + pulso en activos ---------- */
 .wb-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
@@ -200,12 +286,22 @@
   white-space: nowrap;
 }
 
-.wb-badge::before {
-  content: '';
+.wb-badge__dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: currentColor;
+  flex-shrink: 0;
+}
+
+.wb-badge--activo .wb-badge__dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: wb-pulso 2.4s var(--ease-out) infinite;
 }
 
 .wb-badge--reservado {
@@ -231,6 +327,44 @@
 .wb-badge--cancelado {
   background: var(--turno-cancelado-soft);
   color: var(--turno-cancelado);
+}
+
+/* ---------- Skeleton loaders (shimmer 60fps con transform) ---------- */
+.wb-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+}
+
+.wb-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: wb-shimmer 1.35s ease-in-out infinite;
+}
+
+.wb-skeleton-tabla {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.wb-skeleton-fila {
+  display: grid;
+  grid-template-columns: 1.1fr 0.7fr 1.2fr 1.1fr 1.2fr 0.8fr;
+  gap: var(--space-3);
+  align-items: center;
 }
 
 /* ---------- Tabla y Estado vacío ---------- */
@@ -264,6 +398,18 @@
   white-space: nowrap;
 }
 
+.wb-tabla tbody tr {
+  transition: background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .wb-tabla tbody tr:hover {
+    background-color: rgba(14, 116, 144, 0.055);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+}
+
 .wb-tabla tbody tr:last-child td {
   border-bottom: none;
 }
@@ -293,7 +439,7 @@
   color: var(--color-text-muted);
 }
 
-/* ---------- Autenticación: split clínico ---------- */
+/* ---------- Autenticación: split clínico + degradado ambiental + stagger ---------- */
 .wb-auth-split {
   min-height: 100vh;
   display: grid;
@@ -301,6 +447,8 @@
 }
 
 .wb-auth-editorial {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(155deg, var(--color-primary-deep) 0%, var(--color-primary) 100%);
   color: var(--color-on-primary);
   padding: var(--space-10);
@@ -308,6 +456,23 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--space-8);
+}
+
+.wb-auth-editorial::before {
+  content: '';
+  position: absolute;
+  inset: -32%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 22% 24%, rgba(56, 189, 248, 0.24) 0%, rgba(56, 189, 248, 0) 48%),
+    radial-gradient(circle at 78% 76%, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 50%);
+  animation: wb-ambiente 18s ease-in-out alternate infinite;
+  will-change: transform;
+}
+
+.wb-auth-editorial > * {
+  position: relative;
+  z-index: 1;
 }
 
 .wb-marca {
@@ -335,20 +500,22 @@
 }
 
 .wb-agenda-muestra {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  backdrop-filter: blur(6px);
+  animation: wb-fade-up var(--duration-slow) var(--ease-out) 60ms both;
 }
 
 .wb-agenda-muestra__cab {
   display: flex;
   justify-content: space-between;
   font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .wb-agenda-muestra__slot {
@@ -361,13 +528,26 @@
   background: rgba(255, 255, 255, 0.14);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+  animation: wb-fade-up var(--duration-slow) var(--ease-out) both;
+}
+
+.wb-agenda-muestra__slot--1 {
+  animation-delay: 140ms;
+}
+
+.wb-agenda-muestra__slot--2 {
+  animation-delay: 220ms;
+}
+
+.wb-agenda-muestra__slot--3 {
+  animation-delay: 290ms;
 }
 
 .wb-agenda-muestra__chip {
   font-size: var(--text-xs);
   padding: 2px 8px;
   border-radius: var(--radius-full);
-  background: rgba(5, 150, 105, 0.35);
+  background: rgba(5, 150, 105, 0.42);
   color: #ffffff;
   font-weight: var(--weight-semibold);
 }
@@ -387,6 +567,7 @@
   border-radius: var(--radius-xl);
   padding: var(--space-8);
   box-shadow: var(--shadow-md);
+  animation: wb-fade-up var(--duration-base) var(--ease-out) both;
 }
 
 .wb-auth-card--ancho {
@@ -467,11 +648,20 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
-.wb-demo-btn:hover {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
+.wb-demo-btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .wb-demo-btn:hover {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
 }
 
 .wb-auth-pie {
@@ -491,7 +681,7 @@
   text-decoration: underline;
 }
 
-/* ---------- Layout autenticado (AppLayout) ---------- */
+/* ---------- Layout autenticado (AppLayout + indicador deslizante) ---------- */
 .wb-shell {
   min-height: 100vh;
   display: grid;
@@ -536,13 +726,32 @@
 }
 
 .wb-nav {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex: 1;
 }
 
+.wb-nav__indicador {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+  pointer-events: none;
+  transition: transform var(--duration-base) var(--ease-out),
+    width var(--duration-base) var(--ease-out),
+    height var(--duration-base) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  will-change: transform;
+}
+
 .wb-nav__item {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -558,15 +767,26 @@
     color var(--duration-fast) var(--ease-out);
 }
 
-.wb-nav__item:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+@media (hover: hover) {
+  .wb-nav__item:hover:not(.wb-nav__item--activo) {
+    background: var(--color-surface-subtle);
+    color: var(--color-text);
+  }
+}
+
+.wb-nav__item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .wb-nav__item--activo {
-  background: var(--color-primary-soft);
   color: var(--color-primary-deep);
   font-weight: var(--weight-semibold);
+}
+
+.wb-nav--sin-indicador .wb-nav__item--activo {
+  background: var(--color-primary-soft);
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .wb-nav__tag {
@@ -581,6 +801,10 @@
   padding: var(--space-8);
   max-width: var(--content-max);
   width: 100%;
+}
+
+.wb-vista-enter {
+  animation: wb-vista-in var(--duration-base) var(--ease-out) both;
 }
 
 .wb-main__header {
@@ -618,6 +842,17 @@
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-xs);
+  transition: transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .wb-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(14, 116, 144, 0.36);
+    box-shadow: var(--shadow-card-hover);
+  }
 }
 
 .wb-card__titulo {
@@ -665,7 +900,11 @@
   .wb-nav {
     flex-direction: row;
     overflow-x: auto;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
+  }
+
+  .wb-nav__indicador {
+    box-shadow: inset 0 -3px 0 var(--color-primary);
   }
 
   .wb-nav__item {
@@ -674,6 +913,10 @@
 
   .wb-main {
     padding: var(--space-5) var(--space-4);
+  }
+
+  .wb-skeleton-fila {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 
@@ -688,5 +931,31 @@
 
   .wb-demo-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Respeto explícito de prefers-reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .wb-auth-editorial::before,
+  .wb-agenda-muestra,
+  .wb-agenda-muestra__slot,
+  .wb-auth-card,
+  .wb-alerta,
+  .wb-campo__error,
+  .wb-vista-enter,
+  .wb-badge--activo .wb-badge__dot::after,
+  .wb-skeleton::after,
+  .wb-spinner {
+    animation: none !important;
+  }
+
+  .wb-badge--activo .wb-badge__dot::after {
+    display: none;
+  }
+
+  .wb-btn:hover,
+  .wb-btn:active,
+  .wb-card:hover {
+    transform: none !important;
   }
 }

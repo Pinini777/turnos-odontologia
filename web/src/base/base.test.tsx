@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearClienteHttp, ErrorApi } from './api';
-import { AlertaErrorNegocio, BadgeEstadoTurno, EstadoVacio } from './components';
+import { AlertaErrorNegocio, BadgeEstadoTurno, Boton, EstadoVacio, Tabla } from './components';
 import { AppLayout } from './AppLayout';
 import { LoginPage } from './LoginPage';
 import { RegistroPage } from './RegistroPage';
@@ -93,15 +93,44 @@ describe('Componentes base y errores de negocio', () => {
     expect(alerta.textContent?.toLowerCase()).toContain('documento');
   });
 
-  it('BadgeEstadoTurno y EstadoVacio renderizan texto explícito accesible', () => {
-    render(
+  it('BadgeEstadoTurno activa pulso solo en turnos activos (reservado/confirmado) y EstadoVacio renderiza texto', () => {
+    const { container } = render(
       <div>
         <BadgeEstadoTurno estado="confirmado" />
+        <BadgeEstadoTurno estado="atendido" />
         <EstadoVacio titulo="Sin turnos hoy" descripcion="Elegí un horario libre para empezar." />
       </div>,
     );
     expect(screen.getByText('Confirmado')).toBeTruthy();
+    expect(screen.getByText('Atendido')).toBeTruthy();
     expect(screen.getByText('Sin turnos hoy')).toBeTruthy();
+
+    const badges = container.querySelectorAll('[data-estado-activo]');
+    expect(badges[0]?.getAttribute('data-estado-activo')).toBe('true');
+    expect(badges[1]?.getAttribute('data-estado-activo')).toBe('false');
+  });
+
+  it('Tabla en estado cargando muestra skeleton loader accesible y Boton cargando muestra spinner', () => {
+    render(
+      <div>
+        <Boton cargando textoCargando="Guardando…">
+          Guardar
+        </Boton>
+        <Tabla
+          columnas={[{ encabezado: 'Horario', render: (x: { id: string }) => x.id }]}
+          filas={[]}
+          claveFila={(x) => x.id}
+          cargando
+        />
+      </div>,
+    );
+
+    const boton = screen.getByRole('button', { name: /guardando/i });
+    expect((boton as HTMLButtonElement).disabled).toBe(true);
+    expect(boton.getAttribute('aria-busy')).toBe('true');
+
+    const skeleton = screen.getByRole('status');
+    expect(skeleton.getAttribute('aria-busy')).toBe('true');
   });
 });
 
@@ -124,13 +153,13 @@ describe('Menú y Layout dinámico por rol', () => {
     expect(menuPac).not.toContain('Mis ganancias');
   });
 
-  it('AppLayout renderiza el menú correspondiente al rol autenticado', () => {
+  it('AppLayout renderiza el menú del rol y el indicador activo deslizante del sidebar', () => {
     establecerSesion({
       token: 'jwt-recep',
       usuario: { id: 'u-1', email: 'recepcion@example.com', rol: 'recepcionista', activo: true },
     });
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={['/inicio']}>
         <AppLayout titulo="Panel principal">
           <p>Contenido de prueba</p>
@@ -141,6 +170,7 @@ describe('Menú y Layout dinámico por rol', () => {
     expect(screen.getByText('Recepcionista')).toBeTruthy();
     expect(screen.getByText('Agenda del día')).toBeTruthy();
     expect(screen.queryByText('Mis ganancias')).toBeNull();
+    expect(container.querySelector('[data-indicador-activo="true"]')).toBeTruthy();
   });
 });
 
