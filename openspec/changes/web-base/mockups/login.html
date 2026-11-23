@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Login — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .split { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 1fr); }
+      .panel-editorial { background: linear-gradient(155deg, var(--color-primary-deep) 0%, var(--color-primary) 100%); color: #fff; padding: var(--space-10); display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-8); }
+      .brand-row { display: flex; align-items: center; gap: var(--space-3); font-weight: var(--weight-bold); font-size: var(--text-lg); }
+      .editorial-copy h1 { margin: 0 0 var(--space-3); font-size: var(--text-3xl); line-height: var(--leading-tight); text-wrap: balance; }
+      .editorial-copy p { margin: 0; color: rgba(255, 255, 255, 0.86); max-width: 44ch; }
+      .agenda-preview { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: var(--radius-lg); padding: var(--space-4); }
+      .agenda-slot { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.14); margin-top: var(--space-2); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+      .panel-form { display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-5); }
+      .form-card { width: 100%; max-width: 420px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-8); box-shadow: var(--shadow-md); }
+      .form-card h2 { margin: 0 0 var(--space-1); font-size: var(--text-2xl); }
+      .form-card .sub { margin: 0 0 var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
+      .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-4); }
+      .field label { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+      .field input { min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border-strong); font: inherit; }
+      .btn-primary { width: 100%; min-height: 46px; border: none; border-radius: var(--radius-md); background: var(--color-primary); color: #fff; font: inherit; font-weight: var(--weight-semibold); cursor: pointer; }
+      .footer-link { margin-top: var(--space-5); text-align: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+      .footer-link a { color: var(--color-primary); font-weight: var(--weight-semibold); text-decoration: none; }
+      @media (max-width: 860px) { .split { grid-template-columns: 1fr; } .panel-editorial { padding: var(--space-6); } .agenda-preview { display: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="split">
+      <aside class="panel-editorial">
+        <div class="brand-row">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="36" height="36" />
+          <span data-brand-name>Consultorio Odontológico</span>
+        </div>
+        <div class="editorial-copy">
+          <h1>Agenda clínica ordenada por profesional y por box</h1>
+          <p>Turnos en bloques de 15 minutos, sin superposiciones y con reserva online para tus pacientes.</p>
+        </div>
+        <div class="agenda-preview" aria-hidden="true">
+          <div style="font-size: var(--text-xs); opacity: 0.85;">Vista previa · Box 1 · Bloques contiguos válidos</div>
+          <div class="agenda-slot"><span>10:00 – 10:30 · Consulta</span><span>Dra. Ana Pérez</span></div>
+          <div class="agenda-slot"><span>10:30 – 11:00 · Control</span><span>Dra. Ana Pérez</span></div>
+        </div>
+      </aside>
+      <main class="panel-form">
+        <div class="form-card">
+          <h2>Ingresá a tu cuenta</h2>
+          <p class="sub">Usá tu correo y contraseña para acceder según tu rol.</p>
+          <div class="field"><label for="m-email">Correo electrónico</label><input id="m-email" type="email" value="paciente1@example.com" /></div>
+          <div class="field"><label for="m-pass">Contraseña</label><input id="m-pass" type="password" value="••••••••••••" /></div>
+          <button type="button" class="btn-primary">Ingresar</button>
+          <p class="footer-link">¿Sos paciente nuevo? <a href="./registro.html">Creá tu cuenta</a></p>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

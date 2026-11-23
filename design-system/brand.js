@@ -1,6 +1,5 @@
-// Nombre visible del producto. Cambiarlo acá actualiza todas las previews y mockups.
-// (TBD) El nombre definitivo no está decidido: mientras BRAND_PROVISIONAL sea true, se muestra la etiqueta "provisional".
-const BRAND_NAME = "Agenda Odonto";
+// Nombre visible del producto para los mockups HTML y el catálogo del design system.
+const BRAND_NAME = "Consultorio Odontológico";
 const BRAND_PROVISIONAL = true;
 
 document.addEventListener("DOMContentLoaded", () => {

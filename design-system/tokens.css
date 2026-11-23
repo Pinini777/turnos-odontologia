@@ -1,64 +1,75 @@
-/* Design tokens — turnos-odontologia · Revision 1 (pendiente de aprobación)
-   Única fuente de verdad visual: los mockups y la app web importan este archivo. */
+/* Design tokens — Consultorio Odontológico · Revisión 2
+   Única fuente de verdad visual: los mockups y la app web (web/src/main.tsx) importan este archivo. */
 
 :root {
-  /* ---------- Color: base ---------- */
-  --color-bg: oklch(0.982 0.005 200);
-  --color-surface: oklch(1 0 0);
-  --color-surface-sunken: oklch(0.962 0.008 200);
-  --color-border: oklch(0.9 0.012 210);
-  --color-border-strong: oklch(0.8 0.016 210);
-  --color-text: oklch(0.26 0.02 235);
-  --color-text-muted: oklch(0.47 0.02 235);
-  --color-text-inverse: oklch(0.99 0 0);
+  /* ---------- Color: superficies y tinta ---------- */
+  --color-bg: #f4f8f9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #edf4f6;
+  --color-surface-sunken: #e4eef1;
+  --color-border: #d4e2e7;
+  --color-border-strong: #aec5ce;
 
-  /* ---------- Color: marca ---------- */
-  --color-primary: oklch(0.5 0.09 195);        /* verde azulado clínico */
-  --color-primary-hover: oklch(0.44 0.09 195);
-  --color-primary-soft: oklch(0.95 0.03 195);
-  --color-on-primary: oklch(0.99 0 0);
-  --color-accent: oklch(0.72 0.13 60);          /* ámbar cálido, solo acentos */
+  --color-text: #0f2937;
+  --color-text-muted: #4b6370;
+  --color-text-inverse: #ffffff;
+
+  /* ---------- Color: marca clínica ---------- */
+  --color-primary: #0e7490;       /* teal clínico profundo (contraste >= 5.3:1 con blanco) */
+  --color-primary-hover: #0b5d74;
+  --color-primary-deep: #094254;
+  --color-primary-soft: #e6f4f7;
+  --color-on-primary: #ffffff;
+
+  --color-accent: #059669;        /* esmeralda salud: disponibilidad y confirmación */
+  --color-accent-soft: #e6f7f1;
+  --color-on-accent: #ffffff;
 
   /* ---------- Color: semánticos ---------- */
-  --color-danger: oklch(0.52 0.17 25);
-  --color-danger-soft: oklch(0.95 0.035 25);
-  --color-success: oklch(0.5 0.11 155);
-  --color-success-soft: oklch(0.95 0.035 155);
-  --color-warning: oklch(0.55 0.12 70);
-  --color-warning-soft: oklch(0.96 0.04 80);
-  --color-info: oklch(0.5 0.12 250);
-  --color-info-soft: oklch(0.95 0.03 250);
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-success: #047857;
+  --color-success-soft: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-warning: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-info: #1d4ed8;
+  --color-info-soft: #eff6ff;
+  --color-info-border: #bfdbfe;
 
   /* ---------- Color: estados del turno (RN-TU-01) ---------- */
   --turno-reservado: var(--color-info);
   --turno-reservado-soft: var(--color-info-soft);
   --turno-confirmado: var(--color-success);
   --turno-confirmado-soft: var(--color-success-soft);
-  --turno-atendido: oklch(0.42 0.02 235);
-  --turno-atendido-soft: oklch(0.94 0.006 235);
+  --turno-atendido: #334155;
+  --turno-atendido-soft: #f1f5f9;
   --turno-ausente: var(--color-warning);
   --turno-ausente-soft: var(--color-warning-soft);
-  --turno-cancelado: oklch(0.55 0.01 235);
-  --turno-cancelado-soft: oklch(0.97 0.003 235);
-  --agenda-bloqueo: oklch(0.93 0.008 235);
+  --turno-cancelado: #64748b;
+  --turno-cancelado-soft: #f8fafc;
+  --agenda-bloqueo: #e2e8f0;
 
-  /* ---------- Tipografía (sin fuentes remotas) ---------- */
-  --font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* ---------- Tipografía ---------- */
+  --font-sans: "Plus Jakarta Sans", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", monospace;
-  --text-xs: 0.75rem;    /* 12 */
-  --text-sm: 0.875rem;   /* 14 */
-  --text-base: 1rem;     /* 16 */
-  --text-lg: 1.125rem;   /* 18 */
-  --text-xl: 1.375rem;   /* 22 */
-  --text-2xl: 1.75rem;   /* 28 */
-  --text-3xl: 2.25rem;   /* 36 */
-  --leading-tight: 1.2;
-  --leading-normal: 1.5;
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.375rem;     /* 22px */
+  --text-2xl: 1.75rem;     /* 28px */
+  --text-3xl: 2.125rem;    /* 34px */
+  --leading-tight: 1.22;
+  --leading-normal: 1.55;
   --weight-regular: 400;
-  --weight-medium: 550;
-  --weight-bold: 680;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
 
-  /* ---------- Espaciado (escala de 4 px) ---------- */
+  /* ---------- Espaciado (escala de 4px) ---------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -69,28 +80,48 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
 
-  /* ---------- Forma ---------- */
+  /* ---------- Forma y elevación ---------- */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-full: 999px;
-  --shadow-sm: 0 1px 2px oklch(0.26 0.02 235 / 0.06), 0 1px 1px oklch(0.26 0.02 235 / 0.04);
-  --shadow-md: 0 4px 12px oklch(0.26 0.02 235 / 0.08), 0 1px 3px oklch(0.26 0.02 235 / 0.06);
-  --shadow-lg: 0 12px 32px oklch(0.26 0.02 235 / 0.12);
+  --shadow-xs: 0 1px 2px rgba(15, 41, 55, 0.05);
+  --shadow-sm: 0 2px 6px rgba(15, 41, 55, 0.06), 0 1px 2px rgba(15, 41, 55, 0.04);
+  --shadow-md: 0 10px 24px rgba(15, 41, 55, 0.08), 0 2px 6px rgba(15, 41, 55, 0.05);
 
-  /* ---------- Foco (accesibilidad) ---------- */
-  --focus-ring: 0 0 0 3px oklch(0.5 0.09 195 / 0.45);
-  --focus-ring-danger: 0 0 0 3px oklch(0.52 0.17 25 / 0.4);
+  /* ---------- Foco accesible (WCAG) ---------- */
+  --focus-ring: 0 0 0 3px rgba(14, 116, 144, 0.35);
+  --focus-ring-danger: 0 0 0 3px rgba(185, 28, 28, 0.32);
 
-  /* ---------- Movimiento ---------- */
-  --duration-fast: 120ms;
-  --duration-base: 200ms;
+  /* ---------- Movimiento sutil (solo transform y opacity) ---------- */
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ---------- Layout ---------- */
-  --content-max: 72rem;
-  --gutter: 1rem;
-  --agenda-slot-height: 2rem;   /* un bloque de 15 minutos (RN-AG-05) */
+  --content-max: 74rem;
+  --sidebar-width: 16.5rem;
+  --agenda-slot-height: 2.25rem; /* bloque de 15 minutos (RN-AG-05) */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -98,8 +129,12 @@
     --duration-fast: 0ms;
     --duration-base: 0ms;
   }
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0ms !important;
     transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
   }
 }

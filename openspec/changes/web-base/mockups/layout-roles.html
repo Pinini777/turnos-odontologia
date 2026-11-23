@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Layout por Rol — {brand}</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <script src="../../../../design-system/brand.js" defer></script>
+    <style>
+      .app { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar-width) 1fr; }
+      .sidebar { background: var(--color-surface); border-right: 1px solid var(--color-border); padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+      .brand { display: flex; align-items: center; gap: var(--space-3); font-weight: var(--weight-bold); font-size: var(--text-sm); }
+      .role-pill { display: inline-flex; padding: 3px 10px; border-radius: var(--radius-full); background: var(--color-primary-soft); color: var(--color-primary-deep); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+      nav { display: flex; flex-direction: column; gap: 4px; }
+      nav a { padding: 10px 12px; border-radius: var(--radius-md); text-decoration: none; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+      nav a.active { background: var(--color-primary-soft); color: var(--color-primary-deep); font-weight: var(--weight-semibold); }
+      .main { padding: var(--space-8); }
+      .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); max-width: 720px; }
+      @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid var(--color-border); } nav { flex-direction: row; overflow-x: auto; } }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="../../../../design-system/assets/logo.svg" alt="" width="32" height="32" />
+          <span data-brand-name>Consultorio Odontológico</span>
+        </div>
+        <div><span class="role-pill">Profesional</span></div>
+        <nav aria-label="Menú principal">
+          <a href="#" class="active">Inicio</a>
+          <a href="#">Agenda</a>
+          <a href="#">Catálogo y prestaciones</a>
+          <a href="#">Mis horarios y bloqueos</a>
+          <a href="#">Mis ganancias</a>
+          <a href="#">Historia clínica</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <div class="card">
+          <h1 style="margin-top: 0; font-size: var(--text-2xl);">Panel de profesional</h1>
+          <p style="color: var(--color-text-muted);">El menú lateral se adapta automáticamente según el rol autenticado (`profesional`, `recepcionista` sin precios/ganancias, o `paciente`).</p>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
