@@ -1,13 +1,12 @@
-# Spec Delta
+# clinica Specification
 
 ## Purpose
-
 Gestiona el registro clínico del consultorio de forma exclusiva para profesionales: historia clínica append-only con autor, fecha, vinculación opcional a turnos y correcciones referenciadas (`RN-CL-01`), y odontograma por paciente en notación FDI con proyección del estado vigente e historial completo append-only (`RN-CL-02`), bajo control de acceso estricto (`RN-RO-03`) y datos 100 % ficticios (`RN-DA-01`).
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Consulta cronológica de la historia clínica
-La API SHALL exponer `GET /api/pacientes/:id/historia` exclusivamente para el rol `profesional`, devolviendo `200` con el arreglo completo de `EntradaHistoriaClinica` del paciente indicado ordenado cronológicamente de forma ascendente según `fecha`, preservando el orden de inserción ante empates de marca temporal. Si el paciente no existe, SHALL responder `404 NO_ENCONTRADO`.
+La API SHALL exponer `GET /api/pacientes/:id/historia` solo para `profesional`, devolviendo `200` con las `EntradaHistoriaClinica` del paciente ordenadas por `fecha` ascendente (orden de inserción ante empates), o `404 NO_ENCONTRADO` si el paciente no existe.
 
 #### Scenario: Profesional consulta la historia clínica con múltiples entradas ordenadas cronológicamente
 - **GIVEN** una sesión válida de `profesional` y el paciente ficticio `Paciente Ficticio Uno` con tres entradas de historia clínica registradas en fechas distintas
@@ -30,7 +29,7 @@ La API SHALL exponer `GET /api/pacientes/:id/historia` exclusivamente para el ro
 - **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}`
 
 ### Requirement: Registro append-only de entradas de historia clínica
-La API SHALL exponer `POST /api/pacientes/:id/historia` exclusivamente para el rol `profesional` para agregar una nueva `EntradaHistoriaClinica` con `texto` no vacío (recortado), estampando `profesionalId` desde la sesión autenticada y `fecha` desde el reloj del sistema. SHALL aceptar opcionalmente `turnoId` y `corrigeAId` validando que existan y pertenezcan al mismo `pacienteId` (respondiendo `404 NO_ENCONTRADO` en caso contrario), y SHALL rechazar con `400 FORMATO_INVALIDO` cualquier campo no permitido o controlado por el servidor (`id`, `profesionalId`, `pacienteId`, `fecha`).
+La API SHALL exponer `POST /api/pacientes/:id/historia` solo para `profesional`, agregando una `EntradaHistoriaClinica` con `texto` recortado de 1 a 5000 caracteres, `profesionalId` de la sesión y `fecha` del reloj. SHALL validar `turnoId` y `corrigeAId` del mismo paciente (`404`) y rechazar campos extra (`400 FORMATO_INVALIDO`).
 
 #### Scenario: Profesional registra una evolución clínica básica
 - **GIVEN** una sesión válida de `Dra. Ana Pérez` (`profesional`) y un reloj fijo en `2026-11-23T10:00:00.000Z`
@@ -77,13 +76,18 @@ La API SHALL exponer `POST /api/pacientes/:id/historia` exclusivamente para el r
 - **WHEN** envía `POST /api/pacientes/:id/historia` con `{"texto":"   "}`
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y los detalles de validación, sin persistir entradas
 
+#### Scenario: Aceptación de texto de 5000 caracteres y rechazo al superar 5000 caracteres
+- **GIVEN** una sesión válida de `profesional` y el paciente existente `Paciente Ficticio Uno`
+- **WHEN** envía `POST /api/pacientes/:id/historia` con un `texto` recortado de exactamente `5000` caracteres y luego otro de `5001` caracteres
+- **THEN** el de `5000` caracteres responde `201` y persiste la entrada, mientras el de `5001` caracteres responde `400` con `code` `FORMATO_INVALIDO` sin persistir ninguna entrada
+
 #### Scenario: Rechazo de campos controlados por el servidor en el alta de historia clínica
 - **GIVEN** una sesión válida de `profesional` y el paciente existente `Paciente Ficticio Uno`
 - **WHEN** envía `POST /api/pacientes/:id/historia` incluyendo `profesionalId`, `fecha`, `id` o `pacienteId` en el cuerpo JSON
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ninguna entrada
 
 ### Requirement: Inmutabilidad append-only de la historia clínica y ausencia de borrado en odontograma
-La API SHALL garantizar que las entradas de historia clínica no puedan modificarse ni borrarse y que el odontograma no exponga rutas `PATCH` ni `DELETE`; cualquier solicitud a esos métodos o rutas inexistentes SHALL responder `404 NO_ENCONTRADO` preservando intactos los datos persistidos.
+La API SHALL impedir modificar o borrar entradas de historia clínica y no exponer `PATCH` ni `DELETE` sobre odontograma; cualquier solicitud a esos métodos o rutas inexistentes SHALL responder `404 NO_ENCONTRADO` sin alterar los datos persistidos.
 
 #### Scenario: No existe ruta PUT para modificar la historia clínica
 - **GIVEN** una sesión válida de `profesional` y una entrada existente en la historia clínica de `Paciente Ficticio Uno`
@@ -110,8 +114,8 @@ La API SHALL garantizar que las entradas de historia clínica no puedan modifica
 - **WHEN** el cliente envía `DELETE /api/pacientes/:id/odontograma`
 - **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}` y tanto el odontograma como su historial siguen existiendo
 
-### Requirement: Consulta del odontograma actual e historial completo
-La API SHALL exponer `GET /api/pacientes/:id/odontograma` exclusivamente para el rol `profesional`, devolviendo `200` con `{ odontogramaId, pacienteId, actualizadoEn, piezas, historial }` sin crear un `Odontograma` cuando el paciente todavía no tiene registros. `piezas` SHALL proyectar el estado vigente no contradictorio recorriendo `historial` en orden cronológico ascendente estable: distintas caras de una misma pieza coexisten, un registro de cara específica `(P, cara)` reemplaza a cualquier entrada previa de pieza completa `(P, undefined)` de la pieza `P`, y un registro de pieza completa `(P, undefined)` reemplaza a todas las entradas previas por cara `(P, *)` de la pieza `P`. `historial` SHALL incluir siempre el 100 % de la secuencia append-only ordenada cronológicamente ascendente sin alteraciones. Si el paciente no existe, SHALL responder `404 NO_ENCONTRADO`.
+### Requirement: Consulta y proyección vigente del odontograma
+La API SHALL exponer `GET /api/pacientes/:id/odontograma` solo para `profesional`, devolviendo `200` con `{ odontogramaId, pacienteId, actualizadoEn, piezas, historial }` sin crear registros en pacientes vacíos, o `404 NO_ENCONTRADO` si el paciente no existe. `piezas` SHALL proyectar el estado vigente no contradictorio preservando `historial` intacto.
 
 #### Scenario: Profesional consulta el odontograma de un paciente sin registros previos sin crear efectos secundarios
 - **GIVEN** una sesión válida de `profesional` y el paciente ficticio `Paciente Ficticio Uno` sin `Odontograma` persistido
@@ -143,8 +147,8 @@ La API SHALL exponer `GET /api/pacientes/:id/odontograma` exclusivamente para el
 - **WHEN** el profesional solicita `GET /api/pacientes/:id/odontograma` con un `id` de paciente inexistente
 - **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}`
 
-### Requirement: Actualización incremental append-only del odontograma con notación FDI
-La API SHALL exponer `PUT /api/pacientes/:id/odontograma` exclusivamente para el rol `profesional` recibiendo un lote `{ piezas: [{ pieza, cara?, estado }, ...] }` con al menos un elemento, sin claves `(pieza, cara)` duplicadas y sin mezclar pieza completa `(P, undefined)` con caras específicas `(P, cara)` para una misma pieza `P` dentro del mismo pedido (múltiples caras distintas de una misma pieza `P` sí son válidas). SHALL validar notación FDI exacta (permanentes `11–18, 21–28, 31–38, 41–48` y temporarias `51–55, 61–65, 71–75, 81–85`), los 7 valores de `EstadoDePieza`, las 5 caras opcionales de `CaraPieza` y el esquema estricto sin campos extra. Dentro de `conLockDeAgenda`, SHALL obtener o crear el `Odontograma` 1 a 1 del paciente, agregar un nuevo `EstadoPieza` append-only por cada ítem con `registradoPor = sesion.profesionalId` y `fecha = clock.ahora()`, actualizar `odontograma.actualizadoEn` y devolver `200` con `{ odontogramaId, pacienteId, actualizadoEn, piezas, historial }` proyectado según la regla de nivel no contradictorio.
+### Requirement: Actualización incremental y concurrencia del odontograma
+La API SHALL exponer `PUT /api/pacientes/:id/odontograma` solo para `profesional`, recibiendo `{ piezas }` de 1 a 260 ítems en esquema estricto. Dentro de `conLockDeAgenda`, SHALL obtener o crear el `Odontograma` 1 a 1, anexar cada `EstadoPieza` con autor de sesión y fecha del reloj, y devolver `200` con la vista proyectada (`404` si el paciente no existe).
 
 #### Scenario: Primera actualización crea el odontograma 1 a 1 y registra las piezas
 - **GIVEN** una sesión válida de `Dra. Ana Pérez` (`profesional`), un reloj fijo en `T1` y `Paciente Ficticio Uno` sin odontograma previo
@@ -156,9 +160,27 @@ La API SHALL exponer `PUT /api/pacientes/:id/odontograma` exclusivamente para el
 - **WHEN** el reloj avanza a `T2` y envía `PUT /api/pacientes/:id/odontograma` con `{"piezas":[{"pieza":16,"cara":"oclusal","estado":"obturado"}]}`
 - **THEN** recibe `200` manteniendo el mismo `odontogramaId`, actualizando `actualizadoEn` a `T2`, conservando la pieza `21` (`sano`) y actualizando `16/oclusal` a `obturado` en `piezas`, mientras `historial` conserva los 3 registros completos (`16 caries` en `T1`, `21 sano` en `T1`, `16 obturado` en `T2`)
 
+#### Scenario: Rechazo de campos controlados por el servidor en PUT odontograma
+- **GIVEN** una sesión válida de `profesional` y un paciente existente
+- **WHEN** envía `PUT /api/pacientes/:id/odontograma` incluyendo campos no permitidos como `odontogramaId`, `registradoPor`, `fecha` o `actualizadoEn` en el objeto raíz o en un ítem de `piezas`
+- **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ningún cambio
+
+#### Scenario: Actualización de odontograma para un paciente inexistente
+- **GIVEN** una sesión válida de `profesional`
+- **WHEN** envía `PUT /api/pacientes/:id/odontograma` con un `id` de paciente inexistente y un lote FDI válido
+- **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}` y no crea ningún odontograma
+
+#### Scenario: Dos actualizaciones simultáneas sobre un paciente sin odontograma previo
+- **GIVEN** una sesión válida de `profesional` y `Paciente Ficticio Uno` sin odontograma previo en el repositorio
+- **WHEN** llegan dos solicitudes simultáneas `PUT /api/pacientes/:id/odontograma` para ese paciente (una registrando pieza `16` como `caries` y la otra registrando pieza `21` como `obturado`)
+- **THEN** ambas responden `200`, en `repos.odontogramas` existe exactamente **1 `Odontograma`** para ese paciente, y al consultar el odontograma ambos cambios figuran tanto en `piezas` como en `historial`
+
+### Requirement: Validación FDI, estados por cara y consistencia intra-lote del odontograma
+En `PUT /api/pacientes/:id/odontograma`, la API SHALL validar las 52 piezas FDI (`11–48` y `51–85` sin huecos), `EstadoDePieza`, `CaraPieza` opcional y rechazar con `400 FORMATO_INVALIDO` lotes vacíos o `> 260` ítems, estados de pieza completa (`ausente`, `corona`, `endodoncia`, `a_extraer`) con `cara`, duplicados `(pieza, cara)` o mezcla de pieza completa y cara sobre la misma pieza.
+
 #### Scenario: Aceptación de todos los límites válidos de notación FDI permanente y temporaria
 - **GIVEN** una sesión válida de `profesional` y un paciente existente
-- **WHEN** envía `PUT /api/pacientes/:id/odontograma` incluyendo los extremos de los 8 cuadrantes FDI (`11, 18, 21, 28, 31, 38, 41, 48` permanentes y `51, 55, 61, 65, 71, 75, 81, 85` temporarias) con estados válidos de `EstadoDePieza` y caras opcionales de `CaraPieza`
+- **WHEN** envía `PUT /api/pacientes/:id/odontograma` incluyendo los extremos de los 8 cuadrantes FDI (`11, 18, 21, 28, 31, 38, 41, 48` permanentes y `51, 55, 61, 65, 71, 75, 81, 85` temporarias) con estados válidos de `EstadoDePieza` y caras opcionales compatibles
 - **THEN** recibe `200` y registra todas las piezas válidas
 
 #### Scenario: Rechazo de códigos FDI en huecos o fuera de rango
@@ -176,9 +198,19 @@ La API SHALL exponer `PUT /api/pacientes/:id/odontograma` exclusivamente para el
 - **WHEN** envía `PUT /api/pacientes/:id/odontograma` con un estado no definido en `EstadoDePieza` (por ejemplo `danado`, `sensible` o `en_recambio`) o una `cara` no definida en `CaraPieza`
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ningún cambio
 
+#### Scenario: Rechazo de estados exclusivos de pieza completa enviados con cara
+- **GIVEN** una sesión válida de `profesional` y un paciente existente
+- **WHEN** envía `PUT /api/pacientes/:id/odontograma` con `cara` informada para cualquiera de los estados de pieza completa (`ausente`, `corona`, `endodoncia`, `a_extraer`, por ejemplo `{"pieza":16,"cara":"oclusal","estado":"ausente"}`)
+- **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ningún cambio; en cambio esos 4 estados sin `cara` responden `200`, y `caries`, `obturado` y `sano` responden `200` tanto con `cara` como sin `cara`
+
 #### Scenario: Rechazo de lote vacío en actualización de odontograma
 - **GIVEN** una sesión válida de `profesional` y un paciente existente
 - **WHEN** envía `PUT /api/pacientes/:id/odontograma` con `{"piezas":[]}`
+- **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no crea ni modifica ningún odontograma
+
+#### Scenario: Rechazo de lote que supera el máximo de 260 ítems en actualización de odontograma
+- **GIVEN** una sesión válida de `profesional` y un paciente existente
+- **WHEN** envía `PUT /api/pacientes/:id/odontograma` con un arreglo `piezas` de `261` elementos
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no crea ni modifica ningún odontograma
 
 #### Scenario: Aceptación de múltiples caras distintas de la misma pieza en un mismo lote
@@ -196,23 +228,8 @@ La API SHALL exponer `PUT /api/pacientes/:id/odontograma` exclusivamente para el
 - **WHEN** envía `PUT /api/pacientes/:id/odontograma` mezclando un ítem de pieza completa sin `cara` y al menos un ítem con `cara` específica para la misma `pieza` (por ejemplo `(16, undefined)` junto con `(16, 'oclusal')`)
 - **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ninguno de los ítems del lote
 
-#### Scenario: Rechazo de campos controlados por el servidor en PUT odontograma
-- **GIVEN** una sesión válida de `profesional` y un paciente existente
-- **WHEN** envía `PUT /api/pacientes/:id/odontograma` incluyendo campos no permitidos como `odontogramaId`, `registradoPor`, `fecha` o `actualizadoEn` en el objeto raíz o en un ítem de `piezas`
-- **THEN** recibe `400` con `code` `FORMATO_INVALIDO` y no persiste ningún cambio
-
-#### Scenario: Actualización de odontograma para un paciente inexistente
-- **GIVEN** una sesión válida de `profesional`
-- **WHEN** envía `PUT /api/pacientes/:id/odontograma` con un `id` de paciente inexistente y un lote FDI válido
-- **THEN** recibe `404` con `{"code":"NO_ENCONTRADO"}` y no crea ningún odontograma
-
-#### Scenario: Dos actualizaciones simultáneas sobre un paciente sin odontograma previo
-- **GIVEN** una sesión válida de `profesional` y `Paciente Ficticio Uno` sin odontograma previo en el repositorio
-- **WHEN** llegan dos solicitudes simultáneas `PUT /api/pacientes/:id/odontograma` para ese paciente (una registrando pieza `16` como `caries` y la otra registrando pieza `21` como `obturado`)
-- **THEN** ambas responden `200`, en `repos.odontogramas` existe exactamente **1 `Odontograma`** para ese paciente, y al consultar el odontograma ambos cambios figuran tanto en `piezas` como en `historial`
-
 ### Requirement: Control de acceso por rol y visibilidad multiprofesional
-Las cuatro rutas del módulo clínico (`GET/POST /api/pacientes/:id/historia` y `GET/PUT /api/pacientes/:id/odontograma`) SHALL exigir autenticación válida (`401 NO_AUTENTICADO`) y rol `profesional` (`403 SIN_PERMISO` para `recepcionista` y `paciente`, evaluado antes de comprobar existencia del paciente). Cualquier profesional autenticado del consultorio SHALL poder consultar y agregar registros clínicos sobre cualquier paciente, preservando siempre su propio `profesionalId` como autor sin alterar la autoría de colegas.
+Las cuatro rutas clínicas SHALL exigir autenticación (`401 NO_AUTENTICADO`) y rol `profesional` (`403 SIN_PERMISO` para `recepcionista` y `paciente`, antes de verificar existencia del paciente). Cualquier profesional autenticado SHALL poder consultar y registrar sobre cualquier paciente preservando siempre su propio `profesionalId`.
 
 #### Scenario: Acceso sin autenticación o con token inválido en rutas clínicas
 - **WHEN** un cliente invoca cualquiera de las cuatro rutas clínicas sin encabezado `Authorization: Bearer` o con un token inválido
