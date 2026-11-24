@@ -44,6 +44,9 @@ Abrí http://localhost:5173 y entrá con un usuario de prueba. Son datos fictici
 | Profesional (Dr. Bruno Gómez) | `profesional2@example.com` | `profesional-ejemplo` |
 | Recepcionista | `recepcion@example.com` | `recepcion-ejemplo` |
 | Paciente | `paciente1@example.com` | `paciente-ejemplo` |
+| Paciente demo (Mario Santos) | `santos@example.com` | `simulador-ejemplo` |
+
+`npm start` también carga **pacientes de demostración** con nombres de personajes de ficción argentinos (`src/shared/seed-demo.ts`): Mario Santos, Emilio Ravenna, Gabriel Medina y Pablo Lamponne, de *Los simuladores*, y Mafalda y Felipe, de *Mafalda*, con dentición mixta. Cada uno tiene historia clínica, un odontograma armado en varias visitas para recorrerlo con la máquina del tiempo, turnos atendidos (que suman en Ganancias) y turnos próximos. Las fechas se calculan desde el momento en que arranca la API. Los tests no cargan estos datos.
 
 Los datos viven en memoria: al reiniciar la API se pierden los turnos creados y vuelven los seeds.
 
