@@ -39,9 +39,9 @@
 **Contexto**: pedido explícito de EP. OAuth agrega una integración con credenciales y riesgo para el plazo.
 
 ### DD-07 — Persistencia detrás de repositorios, en memoria primero
-**Decisión**: el MVP usa repositorios en memoria detrás de interfaces. SQLite viene como adaptador en un change posterior.
+**Decisión original**: el MVP usa repositorios en memoria detrás de interfaces. El plan de un adaptador SQLite posterior fue reemplazado por DD-14.
 **Justificación**: el change evaluado es lógica de dominio y no necesita base. Evita dependencias nativas en Windows al inicio.
-**Trade-offs**: los datos no persisten entre reinicios hasta que exista el adaptador SQLite.
+**Trade-offs**: en modo memoria los datos no persisten entre reinicios.
 
 ### DD-08 — Zona horaria del consultorio
 **Decisión**: todas las reglas de grilla, horario y 24 h se evalúan en `APP_TZ` (por defecto `America/Argentina/Mendoza`). Las fechas se persisten en ISO 8601 con offset.
@@ -63,6 +63,13 @@
 **Contexto**: revisión de la etapa 4 (2026-11-22). Seis personas trabajan en paralelo por PR. Con capas horizontales (`src/domain/`, `src/application/`…), todos editarían las mismas carpetas y los mismos archivos de rutas.
 **Alternativas consideradas**: capas horizontales, como estaba en la primera versión de 08 (más conflictos de merge).
 **Trade-offs aceptados**: un módulo puede importar funciones de otro ya mergeado, pero no editarlo. Un cambio en `src/shared/` pasa por EP.
+
+### DD-14 — Persistencia en PostgreSQL de Supabase
+**Decisión**: C-16 reemplaza el plan de SQLite de DD-07. La API conserva memoria por defecto y usa PostgreSQL cuando se configura `DATABASE_URL`. Las interfaces, los módulos, bcrypt y JWT no cambian. `TEST_DATABASE_URL` es optativa y habilita pruebas en esquemas desechables.
+
+**Justificación**: el modo optativo conserva los datos entre reinicios y añade exclusiones GiST e inmutabilidad en la base, sin obligar al CI a usar un servicio externo.
+
+**Trade-offs**: el proyecto autorizado está en `us-east-2`; la red y la [pausa de proyectos gratuitos por baja actividad](https://supabase.com/docs/guides/platform/free-project-pausing) afectan la disponibilidad. Cualquier uso futuro con datos de salud alojados por un tercero requiere una evaluación separada conforme a la [Ley 25.326](https://www.argentina.gob.ar/normativa/nacional/64790/actualizacion). Este trabajo usa exclusivamente datos ficticios (RN-DA-01).
 
 ## Supuestos inferidos
 

@@ -20,7 +20,7 @@ Agenda para consultorios odontológicos de 1 a 3 profesionales con recepcionista
 | API HTTP | Fastify | 5.x |
 | Validación de entrada | Zod | 3.x |
 | Tests | Vitest | 3.x |
-| Persistencia (MVP) | Repositorios en memoria detrás de interfaces; SQLite como adaptador posterior | — |
+| Persistencia (MVP) | Repositorios en memoria por defecto; PostgreSQL en Supabase optativo mediante `DATABASE_URL` | PostgreSQL 17 en C-16 |
 | Email | Adaptador SMTP (Nodemailer) con un "outbox" en memoria para tests | — |
 | Calendario | Link "Agregar a Google Calendar" y archivo `.ics` (RFC 5545), sin OAuth | — |
 

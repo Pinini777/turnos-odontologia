@@ -12,7 +12,7 @@
 | API HTTP | Fastify | 5.x |
 | Validación de entrada | Zod | 3.x |
 | Tests | Vitest | 3.x |
-| Persistencia (MVP) | Repositorios en memoria detrás de interfaces; SQLite como adaptador posterior | — |
+| Persistencia (MVP) | Repositorios en memoria por defecto; PostgreSQL en Supabase optativo detrás de los mismos puertos | PostgreSQL 17 en C-16 |
 | Email | Adaptador SMTP (Nodemailer) con un "outbox" en memoria para tests | — |
 | Calendario | Link "Agregar a Google Calendar" y archivo `.ics` (RFC 5545), sin OAuth | — |
 
@@ -34,13 +34,13 @@ Monolito modular con **arquitectura hexagonal**: el dominio (reglas de agenda) n
         ┌─────────────────────┼──────────────────────┐
         ▼                     ▼                      ▼
   Repositorios          Notificador email      Reloj (Clock)
-  (memoria → SQLite)    (SMTP / outbox)        (inyectable en tests)
+  (memoria o Postgres)  (SMTP / outbox)        (inyectable en tests)
 ```
 
 Decisiones de alto nivel:
 - **Dominio puro**: la detección de solapamientos es una función determinística sobre los turnos activos del profesional y del box. Es el corazón del change evaluado.
 - **Reloj inyectable**: las reglas dependen de "ahora" (no crear turnos en el pasado, regla de 24 h). Los tests fijan la hora.
-- **Persistencia detrás de puertos**: el MVP arranca en memoria. Pasar a SQLite no toca el dominio.
+- **Persistencia detrás de puertos**: el MVP arranca en memoria. Con `DATABASE_URL` utiliza PostgreSQL en Supabase sin modificar dominio, casos de uso ni rutas; `TEST_DATABASE_URL` habilita únicamente las pruebas PostgreSQL aisladas (DD-14).
 
 ## Integraciones externas
 
