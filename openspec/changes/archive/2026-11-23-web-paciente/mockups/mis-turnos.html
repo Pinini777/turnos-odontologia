@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mis turnos — Clínica Dental Alvear</title>
+    <link rel="stylesheet" href="../../../../design-system/tokens.css" />
+    <style>
+      :root {
+        --color-bg: #f4f8f9;
+        --color-surface: #ffffff;
+        --color-surface-subtle: #edf4f6;
+        --color-border: #d4e2e7;
+        --color-text: #0f2937;
+        --color-text-muted: #4b6370;
+        --color-primary: #0e7490;
+        --color-primary-soft: #e6f4f7;
+        --color-warning: #b45309;
+        --color-warning-soft: #fffbeb;
+        --color-warning-border: #fde68a;
+        --color-info: #1d4ed8;
+        --color-info-soft: #eff6ff;
+        --color-success: #047857;
+        --color-success-soft: #ecfdf5;
+        --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-full: 999px;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); }
+      .shell { display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); min-height: 100vh; }
+      .sidebar { background: var(--color-surface); border-right: 1px solid var(--color-border); padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+      .marca { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
+      .marca__sub { display: block; font-size: 0.75rem; font-weight: 400; color: var(--color-text-muted); }
+      .nav { display: flex; flex-direction: column; gap: 0.25rem; }
+      .nav a { text-decoration: none; color: var(--color-text-muted); padding: 0.65rem 0.875rem; border-radius: var(--radius-md); font-weight: 500; font-size: 0.92rem; }
+      .nav a.activo { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600; border-left: 3px solid var(--color-primary); }
+      .main { padding: 2rem; max-width: 60rem; width: 100%; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+      h1 { margin: 0 0 0.25rem; font-size: 1.75rem; }
+      .sub { margin: 0; color: var(--color-text-muted); }
+      .aviso-24h { background: var(--color-warning-soft); border: 1px solid var(--color-warning-border); color: var(--color-warning); border-radius: var(--radius-md); padding: 0.8rem 1rem; font-size: 0.88rem; margin-bottom: 1.25rem; }
+      .lista { display: flex; flex-direction: column; gap: 1rem; }
+      .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: 0 2px 6px rgba(15, 41, 55, 0.05); }
+      .card__head { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+      .fecha-bloque { width: 4rem; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); text-align: center; flex-shrink: 0; }
+      .fecha-bloque__mes { background: var(--color-primary); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.2rem; text-transform: uppercase; }
+      .fecha-bloque__dia { font-size: 1.35rem; font-weight: 700; padding-top: 0.2rem; }
+      .fecha-bloque__sem { font-size: 0.72rem; color: var(--color-text-muted); padding-bottom: 0.25rem; }
+      .badge { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: var(--radius-full); }
+      .badge--conf { background: var(--color-success-soft); color: var(--color-success); }
+      .badge--res { background: var(--color-info-soft); color: var(--color-info); }
+      .meta { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.88rem; color: var(--color-text-muted); margin-bottom: 1rem; }
+      .acciones { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+      .btn { border-radius: var(--radius-md); padding: 0.55rem 0.9rem; font: inherit; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); text-decoration: none; }
+      .btn--primario { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+      .btn--peligro { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+      .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .nota-plazo { margin-top: 0.75rem; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: var(--color-warning-soft); border: 1px solid var(--color-warning-border); color: var(--color-warning); font-size: 0.84rem; }
+      @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .sidebar { border-right: 0; border-bottom: 1px solid var(--color-border); }
+        .nav { flex-direction: row; flex-wrap: wrap; }
+        .main { padding: 1.25rem 1rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="marca">
+          <svg width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect width="40" height="40" rx="11" fill="#0E7490" />
+            <path d="M14.2 11.5C11.4 11.5 9.5 13.7 9.5 16.7C9.5 20.6 11.7 23.4 12.6 27.2C13 28.9 14.1 29.8 15.3 29.8C16.6 29.8 17.3 28.6 18 26.2C18.5 24.5 19.1 23.8 20 23.8C20.9 23.8 21.5 24.5 22 26.2C22.7 28.6 23.4 29.8 24.7 29.8C25.9 29.8 27 28.9 27.4 27.2C28.3 23.4 30.5 20.6 30.5 16.7C30.5 13.7 28.6 11.5 25.8 11.5C23.9 11.5 22.3 12.5 20 12.5C17.7 12.5 16.1 11.5 14.2 11.5Z" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="28.5" cy="11.5" r="3.5" fill="#059669" stroke="#FFFFFF" stroke-width="1.5" />
+          </svg>
+          <div>Clínica Dental Alvear<span class="marca__sub">Centro de salud bucal</span></div>
+        </div>
+        <nav class="nav" aria-label="Menú paciente">
+          <a href="#">Inicio</a>
+          <a href="#">Reservar turno</a>
+          <a href="#" class="activo">Mis turnos</a>
+          <a href="#">Mis datos</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <div class="top">
+          <div>
+            <h1>Mis turnos</h1>
+            <p class="sub">Consultá tus próximas visitas, descargá el recordatorio o modificá un turno.</p>
+          </div>
+          <a href="#" class="btn btn--primario">Reservar nuevo turno</a>
+        </div>
+
+        <div class="aviso-24h">
+          <strong>Política de cambios:</strong> podés cancelar o reprogramar tu turno online hasta <strong>24 horas antes</strong> del horario programado. Si faltan menos de 24 horas, comunicate con recepción al (0261) 000-0100.
+        </div>
+
+        <div class="lista">
+          <article class="card">
+            <div class="card__head">
+              <div class="fecha-bloque">
+                <div class="fecha-bloque__mes">NOV</div>
+                <div class="fecha-bloque__dia">24</div>
+                <div class="fecha-bloque__sem">Mar</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <strong>Consulta (30 min)</strong>
+                  <span class="badge badge--conf">Confirmado</span>
+                </div>
+                <div style="color:var(--color-text-muted);font-size:0.9rem;margin-top:0.2rem;">Martes 24 de noviembre · 09:00 a 09:30</div>
+              </div>
+            </div>
+            <div class="meta">
+              <span>Profesional: <strong>Dra. Ana Pérez</strong></span>
+              <span>Consultorio: <strong>Box 1</strong></span>
+            </div>
+            <div class="acciones">
+              <a href="#" class="btn">Agregar a Google Calendar</a>
+              <button type="button" class="btn">Descargar .ics</button>
+              <button type="button" class="btn" disabled>Reprogramar</button>
+              <button type="button" class="btn btn--peligro" disabled>Cancelar turno</button>
+            </div>
+            <div class="nota-plazo">
+              <strong>Plazo vencido (menos de 24 h):</strong> este turno ya no puede cancelarse ni reprogramarse online.
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__head">
+              <div class="fecha-bloque">
+                <div class="fecha-bloque__mes">NOV</div>
+                <div class="fecha-bloque__dia">27</div>
+                <div class="fecha-bloque__sem">Vie</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <strong>Limpieza (45 min)</strong>
+                  <span class="badge badge--res">Reservado</span>
+                </div>
+                <div style="color:var(--color-text-muted);font-size:0.9rem;margin-top:0.2rem;">Viernes 27 de noviembre · 15:00 a 15:45</div>
+              </div>
+            </div>
+            <div class="meta">
+              <span>Profesional: <strong>Dr. Bruno Gómez</strong></span>
+              <span>Consultorio: <strong>Box 2</strong></span>
+            </div>
+            <div class="acciones">
+              <a href="#" class="btn">Agregar a Google Calendar</a>
+              <button type="button" class="btn">Descargar .ics</button>
+              <a href="#" class="btn btn--primario">Reprogramar</a>
+              <button type="button" class="btn btn--peligro">Cancelar turno</button>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
