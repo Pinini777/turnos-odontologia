@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reservar turno — Clínica Dental Alvear</title>
+    <link rel="stylesheet" href="../../../../../design-system/tokens.css" />
+    <style>
+      :root {
+        --color-bg: #f4f8f9;
+        --color-surface: #ffffff;
+        --color-surface-subtle: #edf4f6;
+        --color-border: #d4e2e7;
+        --color-text: #0f2937;
+        --color-text-muted: #4b6370;
+        --color-primary: #0e7490;
+        --color-primary-soft: #e6f4f7;
+        --color-accent: #059669;
+        --color-danger: #b91c1c;
+        --color-danger-soft: #fef2f2;
+        --color-danger-border: #fecaca;
+        --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-full: 999px;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); }
+      .shell { display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); min-height: 100vh; }
+      .sidebar { background: var(--color-surface); border-right: 1px solid var(--color-border); padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+      .marca { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
+      .marca__sub { display: block; font-size: 0.75rem; font-weight: 400; color: var(--color-text-muted); }
+      .nav { display: flex; flex-direction: column; gap: 0.25rem; }
+      .nav a { text-decoration: none; color: var(--color-text-muted); padding: 0.65rem 0.875rem; border-radius: var(--radius-md); font-weight: 500; font-size: 0.92rem; }
+      .nav a.activo { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600; border-left: 3px solid var(--color-primary); }
+      .main { padding: 2rem; max-width: 72rem; width: 100%; }
+      h1 { margin: 0 0 0.25rem; font-size: 1.75rem; letter-spacing: -0.02em; }
+      .sub { margin: 0 0 1.25rem; color: var(--color-text-muted); font-size: 0.95rem; }
+      .alerta { background: var(--color-danger-soft); border: 1px solid var(--color-danger-border); color: var(--color-danger); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem; font-size: 0.88rem; }
+      .grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+      .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: 0 2px 6px rgba(15, 41, 55, 0.05); }
+      .sticky { position: sticky; top: 1.5rem; }
+      .paso-titulo { margin: 0 0 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+      .num { width: 1.45rem; height: 1.45rem; border-radius: var(--radius-full); background: var(--color-primary-soft); color: var(--color-primary); font-size: 0.75rem; font-weight: 700; display: inline-grid; place-items: center; }
+      .prestaciones, .profs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; margin-bottom: 1.25rem; }
+      .pill-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.75rem; background: var(--color-surface); }
+      .pill-card--activa { border-color: var(--color-primary); background: var(--color-primary-soft); box-shadow: 0 0 0 1px var(--color-primary); }
+      .tira { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.45rem; margin-bottom: 1.25rem; }
+      .dia { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.55rem 0.2rem; text-align: center; background: var(--color-surface); }
+      .dia--activo { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+      .punto { width: 6px; height: 6px; border-radius: 999px; background: var(--color-accent); margin: 0.25rem auto 0; }
+      .dia--activo .punto { background: #a7f3d0; }
+      .tabs { display: inline-grid; grid-template-columns: repeat(2, 1fr); background: var(--color-surface-subtle); padding: 0.25rem; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 0.9rem; gap: 0.25rem; }
+      .tab { padding: 0.45rem 0.9rem; border-radius: 7px; font-size: 0.85rem; font-weight: 600; color: var(--color-text-muted); }
+      .tab--activa { background: #fff; color: var(--color-primary); box-shadow: 0 1px 2px rgba(15, 41, 55, 0.08); }
+      .slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.45rem; }
+      .slot { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.55rem 0.4rem; text-align: center; font-weight: 600; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+      .slot--activo { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+      .resumen-fila { display: flex; justify-content: space-between; padding: 0.55rem 0; border-bottom: 1px solid var(--color-surface-subtle); font-size: 0.88rem; }
+      .btn-primario { width: 100%; margin-top: 1rem; background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 0.75rem 1rem; font: inherit; font-weight: 600; }
+      @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .sidebar { border-right: 0; border-bottom: 1px solid var(--color-border); }
+        .nav { flex-direction: row; flex-wrap: wrap; }
+        .main { padding: 1.25rem 1rem; }
+        .grid, .prestaciones, .profs { grid-template-columns: 1fr; }
+        .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="marca">
+          <svg width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect width="40" height="40" rx="11" fill="#0E7490" />
+            <path d="M14.2 11.5C11.4 11.5 9.5 13.7 9.5 16.7C9.5 20.6 11.7 23.4 12.6 27.2C13 28.9 14.1 29.8 15.3 29.8C16.6 29.8 17.3 28.6 18 26.2C18.5 24.5 19.1 23.8 20 23.8C20.9 23.8 21.5 24.5 22 26.2C22.7 28.6 23.4 29.8 24.7 29.8C25.9 29.8 27 28.9 27.4 27.2C28.3 23.4 30.5 20.6 30.5 16.7C30.5 13.7 28.6 11.5 25.8 11.5C23.9 11.5 22.3 12.5 20 12.5C17.7 12.5 16.1 11.5 14.2 11.5Z" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="28.5" cy="11.5" r="3.5" fill="#059669" stroke="#FFFFFF" stroke-width="1.5" />
+          </svg>
+          <div>Clínica Dental Alvear<span class="marca__sub">Centro de salud bucal</span></div>
+        </div>
+        <nav class="nav" aria-label="Menú paciente">
+          <a href="#">Inicio</a>
+          <a href="#" class="activo">Reservar turno</a>
+          <a href="#">Mis turnos</a>
+          <a href="#">Mis datos</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <h1>Reservar turno</h1>
+        <p class="sub">Elegí la prestación y un horario libre en Clínica Dental Alvear.</p>
+
+        <div class="alerta" role="alert">
+          <strong>SOLAPAMIENTO_PROFESIONAL</strong> — El horario elegido acaba de ocuparse. Actualizamos los horarios libres para que elijas otro.
+        </div>
+
+        <div class="grid">
+          <section class="card">
+            <h2 class="paso-titulo"><span class="num">1</span> Elegí la prestación</h2>
+            <div class="prestaciones">
+              <div class="pill-card pill-card--activa"><strong>Consulta ✓</strong><div class="marca__sub">30 min</div></div>
+              <div class="pill-card"><strong>Limpieza</strong><div class="marca__sub">45 min</div></div>
+              <div class="pill-card"><strong>Control</strong><div class="marca__sub">15 min</div></div>
+            </div>
+
+            <h2 class="paso-titulo"><span class="num">2</span> Elegí el profesional y la fecha</h2>
+            <div class="profs">
+              <div class="pill-card pill-card--activa"><strong>Cualquiera ✓</strong><div class="marca__sub">Primer disponible</div></div>
+              <div class="pill-card"><strong>AP · Dra. Ana Pérez</strong><div class="marca__sub">Odontología</div></div>
+              <div class="pill-card"><strong>BG · Dr. Bruno Gómez</strong><div class="marca__sub">Odontología</div></div>
+            </div>
+
+            <div class="tira">
+              <div class="dia dia--activo"><div>Mar</div><strong>24</strong><div>Nov</div><div class="punto"></div></div>
+              <div class="dia"><div>Mié</div><strong>25</strong><div>Nov</div><div class="punto"></div></div>
+              <div class="dia"><div>Jue</div><strong>26</strong><div>Nov</div><div class="punto"></div></div>
+              <div class="dia"><div>Vie</div><strong>27</strong><div>Nov</div><div class="punto"></div></div>
+              <div class="dia" style="opacity:.55"><div>Sáb</div><strong>28</strong><div>Nov</div></div>
+              <div class="dia" style="opacity:.55"><div>Dom</div><strong>29</strong><div>Nov</div></div>
+              <div class="dia"><div>Lun</div><strong>30</strong><div>Nov</div><div class="punto"></div></div>
+            </div>
+
+            <h2 class="paso-titulo"><span class="num">3</span> Seleccioná un horario disponible</h2>
+            <div class="tabs">
+              <span class="tab tab--activa">Mañana (15)</span>
+              <span class="tab">Tarde (15)</span>
+            </div>
+            <div class="slots">
+              <span class="slot">09:00</span>
+              <span class="slot">09:15</span>
+              <span class="slot">09:30</span>
+              <span class="slot">09:45</span>
+              <span class="slot slot--activo">10:00</span>
+              <span class="slot">10:15</span>
+              <span class="slot">10:30</span>
+              <span class="slot">10:45</span>
+              <span class="slot">11:00</span>
+              <span class="slot">11:15</span>
+            </div>
+          </section>
+
+          <aside class="card sticky">
+            <h2 style="margin:0 0 .75rem;font-size:1.05rem;">Resumen de tu reserva</h2>
+            <div class="resumen-fila"><span>Prestación</span><strong>Consulta (30 min)</strong></div>
+            <div class="resumen-fila"><span>Fecha</span><strong>Martes 24 de noviembre</strong></div>
+            <div class="resumen-fila"><span>Horario</span><strong>10:00 a 10:30</strong></div>
+            <div class="resumen-fila"><span>Profesional</span><strong>Dra. Ana Pérez</strong></div>
+            <div class="resumen-fila"><span>Consultorio</span><strong>Box 1 (automático)</strong></div>
+            <button type="button" class="btn-primario">Confirmar turno</button>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
