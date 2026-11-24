@@ -302,6 +302,13 @@ export function Odontograma3d({
       vista3dActiva: modoVista === '3d',
       flashPiezas,
     });
+    if (modoVista === '3d') {
+      const raf = window.requestAnimationFrame(() => {
+        motorRef.current?.redimensionar();
+      });
+      return () => window.cancelAnimationFrame(raf);
+    }
+    return undefined;
   }, [
     mapaEstadosVisibles,
     denticion,

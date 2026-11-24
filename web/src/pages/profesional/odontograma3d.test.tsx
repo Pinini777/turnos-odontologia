@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -430,5 +432,33 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
     fireEvent.click(btnVolver);
     expect(container.querySelector('[data-pieza="36"] [data-overlay="endodoncia"]')).toBeTruthy();
     expect(btnGuardar.disabled).toBe(false);
+  });
+
+  it('oculta el canvas 3D y aplica la clase de mapa centrado en modo Mapa clásico', async () => {
+    establecerSesion(SESION_PROF);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = leerUrl(input);
+      if (url === '/api/pacientes') return jsonResp(PACIENTES_SEED);
+      if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
+      if (url === '/api/pacientes/pac-1/historia') return jsonResp([]);
+      if (url === '/api/pacientes/pac-1/odontograma') return jsonResp(ODONTOGRAMA_HISTORIAL_SEED);
+      return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
+    });
+
+    const { container } = renderClinica();
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
+    });
+
+    expect(screen.getByRole('button', { name: /mapa clásico/i }).getAttribute('aria-pressed')).toBe('true');
+
+    const canvas3d = container.querySelector<HTMLCanvasElement>('canvas.prof-odo-canvas');
+    expect(canvas3d).toBeTruthy();
+    expect(canvas3d?.getAttribute('aria-label')).toMatch(/^Arcadas 3D/i);
+    expect(canvas3d?.hidden).toBe(true);
+    expect(canvas3d?.closest('.prof-odo-viewport')?.classList.contains('prof-odo-viewport--map')).toBe(true);
+    const profesionalCss = readFileSync(resolve(__dirname, 'profesional.css'), 'utf8');
+    expect(profesionalCss).toMatch(/\.prof-odo-canvas\[hidden\][^{]*\{[^}]*display:\s*none\s*;/);
   });
 });

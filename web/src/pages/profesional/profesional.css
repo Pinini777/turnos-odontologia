@@ -988,6 +988,8 @@
 }
 
 .prof-odo-stage {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
 }
@@ -1118,8 +1120,12 @@
 }
 
 .prof-odo-viewport--map {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   height: auto;
-  min-height: clamp(320px, 44vh, 440px);
+  min-height: 0;
   padding: var(--space-4);
   background: var(--color-surface);
 }
@@ -1135,6 +1141,11 @@
   height: 100%;
   touch-action: none;
   cursor: grab;
+}
+
+.prof-odo-canvas[hidden],
+.prof-odo-mini__canvas[hidden] {
+  display: none;
 }
 
 .prof-odo-canvas:active {
