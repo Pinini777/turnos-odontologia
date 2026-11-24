@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   construirLinkGoogleCalendar,
+  deduplicarHuecosPorHora,
   esErrorConflictoHueco,
   etiquetaBox,
   etiquetaProfesional,
   fechaBloqueCalendario,
+  fechaInicialSugerida,
+  generarTiraDias,
   horaEnZona,
   puedeAutogestionarTurno,
   rangoDiaConsultorio,
+  rangoVentanaDias,
   separarMananaTarde,
   sumarDiasIso,
 } from './dominio';
@@ -32,22 +36,48 @@ describe('dominio web-paciente (funciones puras)', () => {
     expect(puedeAutogestionarTurno('2026-11-28T09:00:00-03:00', 'ausente', ahora)).toBe(false);
   });
 
-  it('arma rango diario en America/Argentina/Mendoza con offset -03:00 y suma días sin desfase', () => {
+  it('arma rango diario y ventana de 7 días en America/Argentina/Mendoza con offset -03:00', () => {
     expect(rangoDiaConsultorio('2026-11-26')).toEqual({
       desde: '2026-11-26T00:00:00-03:00',
       hasta: '2026-11-26T23:59:59-03:00',
+    });
+    expect(rangoVentanaDias('2026-11-24', 7)).toEqual({
+      desde: '2026-11-24T00:00:00-03:00',
+      hasta: '2026-11-30T23:59:59-03:00',
     });
     expect(sumarDiasIso('2026-11-30', 1)).toBe('2026-12-01');
     expect(horaEnZona('2026-11-26T10:30:00-03:00')).toBe('10:30');
   });
 
-  it('separa huecos en mañana (< 13:00) y tarde (>= 13:00)', () => {
+  it('sugiere la fecha inicial hábil según la hora en Mendoza y genera la tira de 7 días en español', () => {
+    // Lunes 23/11 a las 10:00 -> mismo día
+    expect(fechaInicialSugerida(new Date('2026-11-23T10:00:00-03:00'))).toBe('2026-11-23');
+    // Lunes 23/11 a las 22:00 (jornada cerrada) -> martes 24/11
+    expect(fechaInicialSugerida(new Date('2026-11-23T22:00:00-03:00'))).toBe('2026-11-24');
+    // Viernes 27/11 a las 19:00 -> lunes 30/11
+    expect(fechaInicialSugerida(new Date('2026-11-27T19:00:00-03:00'))).toBe('2026-11-30');
+    // Sábado 28/11 -> lunes 30/11
+    expect(fechaInicialSugerida(new Date('2026-11-28T11:00:00-03:00'))).toBe('2026-11-30');
+
+    const tira = generarTiraDias('2026-11-24', 7);
+    expect(tira).toHaveLength(7);
+    expect(tira[0]?.fecha).toBe('2026-11-24');
+    expect(tira[0]?.diaNumero).toBe('24');
+    expect(tira[6]?.fecha).toBe('2026-11-30');
+  });
+
+  it('deduplica horarios repetidos para Cualquier profesional y separa mañana y tarde', () => {
     const huecos = [
       { inicio: '2026-11-26T09:00:00-03:00', fin: '2026-11-26T09:30:00-03:00', profesionalId: 'p1', boxIds: ['b1'] },
+      { inicio: '2026-11-26T09:00:00-03:00', fin: '2026-11-26T09:30:00-03:00', profesionalId: 'p2', boxIds: ['b2'] },
       { inicio: '2026-11-26T12:30:00-03:00', fin: '2026-11-26T13:00:00-03:00', profesionalId: 'p1', boxIds: ['b1'] },
       { inicio: '2026-11-26T15:00:00-03:00', fin: '2026-11-26T15:30:00-03:00', profesionalId: 'p2', boxIds: ['b2'] },
     ];
-    const { manana, tarde } = separarMananaTarde(huecos);
+    const unicos = deduplicarHuecosPorHora(huecos);
+    expect(unicos).toHaveLength(3);
+    expect(unicos[0]?.profesionalId).toBe('p1');
+
+    const { manana, tarde } = separarMananaTarde(unicos);
     expect(manana).toHaveLength(2);
     expect(tarde).toHaveLength(1);
   });

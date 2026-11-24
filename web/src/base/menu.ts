@@ -23,9 +23,9 @@ const MENU_BASE: readonly ItemMenu[] = [
   { etiqueta: 'Mis ganancias', ruta: '/profesional/ganancias', icono: 'ganancias', roles: ['profesional'] },
   { etiqueta: 'Historia clínica', ruta: '/profesional/clinica', icono: 'clinica', roles: ['profesional'] },
   // Paciente (reserva online y autogestión)
-  { etiqueta: 'Reservar turno', ruta: '/paciente/reservar', vistaPreview: 'reservar', icono: 'reservar', roles: ['paciente'], proximamente: true },
-  { etiqueta: 'Mis turnos', ruta: '/paciente/turnos', vistaPreview: 'turnos', icono: 'turnos', roles: ['paciente'], proximamente: true },
-  { etiqueta: 'Mis datos', ruta: '/paciente/datos', vistaPreview: 'datos', icono: 'datos', roles: ['paciente'], proximamente: true },
+  { etiqueta: 'Reservar turno', ruta: '/paciente/reservar', icono: 'reservar', roles: ['paciente'] },
+  { etiqueta: 'Mis turnos', ruta: '/paciente/turnos', icono: 'turnos', roles: ['paciente'] },
+  { etiqueta: 'Mis datos', ruta: '/paciente/datos', icono: 'datos', roles: ['paciente'] },
 ];
 
 export const ETIQUETA_ROL: Readonly<Record<RolUsuario, string>> = {

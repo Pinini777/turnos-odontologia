@@ -20,16 +20,38 @@ const PRESTACIONES_MOCK = [
   { id: ID_PREST_LIMPIEZA, nombre: 'Limpieza', duracionMin: 45, reservableOnline: true, activa: true },
 ];
 
-const HUECOS_MOCK = [
+// Incluye horario 09:00 duplicado para ambos profesionales (debe deduplicarse en "Cualquiera")
+const HUECOS_MOCK_DIA_24 = [
   {
-    inicio: '2026-11-26T09:00:00-03:00',
-    fin: '2026-11-26T09:30:00-03:00',
+    inicio: '2026-11-24T09:00:00-03:00',
+    fin: '2026-11-24T09:30:00-03:00',
     profesionalId: ID_PROF_ANA,
     boxIds: [ID_BOX_1],
   },
   {
-    inicio: '2026-11-26T15:00:00-03:00',
-    fin: '2026-11-26T15:30:00-03:00',
+    inicio: '2026-11-24T09:00:00-03:00',
+    fin: '2026-11-24T09:30:00-03:00',
+    profesionalId: ID_PROF_BRUNO,
+    boxIds: [ID_BOX_2],
+  },
+  {
+    inicio: '2026-11-24T15:00:00-03:00',
+    fin: '2026-11-24T15:30:00-03:00',
+    profesionalId: ID_PROF_BRUNO,
+    boxIds: [ID_BOX_2],
+  },
+];
+
+const HUECOS_MOCK_DIA_28 = [
+  {
+    inicio: '2026-11-28T09:00:00-03:00',
+    fin: '2026-11-28T09:30:00-03:00',
+    profesionalId: ID_PROF_ANA,
+    boxIds: [ID_BOX_1],
+  },
+  {
+    inicio: '2026-11-28T15:00:00-03:00',
+    fin: '2026-11-28T15:30:00-03:00',
     profesionalId: ID_PROF_BRUNO,
     boxIds: [ID_BOX_2],
   },
@@ -134,7 +156,7 @@ describe('web-paciente (C-14)', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
       const url = String(input);
       if (url.includes('/api/public/prestaciones')) return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
-      if (url.includes('/api/public/disponibilidad')) return Promise.resolve(respuestaJson(HUECOS_MOCK));
+      if (url.includes('/api/public/disponibilidad')) return Promise.resolve(respuestaJson(HUECOS_MOCK_DIA_24));
       return Promise.resolve(respuestaJson([]));
     });
 
@@ -147,34 +169,62 @@ describe('web-paciente (C-14)', () => {
     expect(screen.getByRole('link', { name: 'Mis datos' }).getAttribute('href')).toBe('/paciente/datos');
   });
 
-  it('permite elegir prestación, ver huecos agrupados en mañana y tarde, y ofrece día siguiente cuando no hay huecos', async () => {
+  it('deduplica horarios en Cualquiera, muestra tabs Mañana/Tarde con solo la hora y ofrece día siguiente cuando no hay huecos', async () => {
     sesionPaciente();
-    let intentosDisponibilidad = 0;
+    // Día 25 sin huecos, día 26 con horarios de mañana y tarde
+    const huecosDia26 = [
+      {
+        inicio: '2026-11-26T09:00:00-03:00',
+        fin: '2026-11-26T09:30:00-03:00',
+        profesionalId: ID_PROF_ANA,
+        boxIds: [ID_BOX_1],
+      },
+      {
+        inicio: '2026-11-26T09:00:00-03:00',
+        fin: '2026-11-26T09:30:00-03:00',
+        profesionalId: ID_PROF_BRUNO,
+        boxIds: [ID_BOX_2],
+      },
+      {
+        inicio: '2026-11-26T15:00:00-03:00',
+        fin: '2026-11-26T15:30:00-03:00',
+        profesionalId: ID_PROF_BRUNO,
+        boxIds: [ID_BOX_2],
+      },
+    ];
+
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
       const url = String(input);
       if (url.includes('/api/public/prestaciones')) return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
-      if (url.includes('/api/public/disponibilidad')) {
-        intentosDisponibilidad += 1;
-        if (intentosDisponibilidad === 1) return Promise.resolve(respuestaJson([]));
-        return Promise.resolve(respuestaJson(HUECOS_MOCK));
-      }
+      if (url.includes('/api/public/disponibilidad')) return Promise.resolve(respuestaJson(huecosDia26));
       return Promise.resolve(respuestaJson([]));
     });
 
     renderConRutas('/paciente/reservar', () => new Date('2026-11-25T10:00:00-03:00'));
 
+    // Día 25 no tiene huecos -> ofrece pasar al día siguiente con huecos (26)
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Probar el día siguiente' })).toBeTruthy();
     });
+    // Chips de profesional presentes sin <select> nativo
+    expect(screen.getByRole('button', { name: /Cualquiera/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Dra\. Ana Pérez/i })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Probar el día siguiente' }));
 
+    // Deduplicado: UN solo botón con exactamente "09:00" (sin el nombre del profesional adentro)
     await waitFor(() => {
-      expect(screen.getByRole('group', { name: 'Horarios de la mañana' })).toBeTruthy();
-      expect(screen.getByRole('group', { name: 'Horarios de la tarde' })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: /Mañana/i })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: /Tarde/i })).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: /09:00/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /15:00/ })).toBeTruthy();
+    const botones09 = screen.getAllByRole('button', { name: '09:00' });
+    expect(botones09).toHaveLength(1);
+
+    // Cambiar al tab Tarde muestra 15:00
+    fireEvent.click(screen.getByRole('tab', { name: /Tarde/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '15:00' })).toBeTruthy();
+    });
   });
 
   it('reserva un turno exitosamente y muestra confirmación con Google Calendar y descarga .ics autenticada', async () => {
@@ -182,7 +232,7 @@ describe('web-paciente (C-14)', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       const url = String(input);
       if (url.includes('/api/public/prestaciones')) return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
-      if (url.includes('/api/public/disponibilidad')) return Promise.resolve(respuestaJson(HUECOS_MOCK));
+      if (url.includes('/api/public/disponibilidad')) return Promise.resolve(respuestaJson(HUECOS_MOCK_DIA_24));
       if (url.endsWith('/api/paciente/turnos') && init?.method === 'POST') {
         return Promise.resolve(
           respuestaJson(
@@ -192,8 +242,8 @@ describe('web-paciente (C-14)', () => {
               boxId: ID_BOX_1,
               pacienteId: '00000000-0000-4000-8000-000000000501',
               prestacionId: ID_PREST_CONSULTA,
-              inicio: '2026-11-26T09:00:00-03:00',
-              fin: '2026-11-26T09:30:00-03:00',
+              inicio: '2026-11-24T09:00:00-03:00',
+              fin: '2026-11-24T09:30:00-03:00',
               estado: 'reservado',
               origen: 'online',
             },
@@ -209,9 +259,9 @@ describe('web-paciente (C-14)', () => {
       return Promise.resolve(respuestaJson([]));
     });
 
-    renderConRutas('/paciente/reservar', () => new Date('2026-11-24T10:00:00-03:00'));
+    renderConRutas('/paciente/reservar', () => new Date('2026-11-24T08:00:00-03:00'));
 
-    const botonHueco = await screen.findByRole('button', { name: /09:00/ });
+    const botonHueco = await screen.findByRole('button', { name: '09:00' });
     fireEvent.click(botonHueco);
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar turno' }));
 
@@ -242,8 +292,9 @@ describe('web-paciente (C-14)', () => {
       if (url.includes('/api/public/prestaciones')) return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
       if (url.includes('/api/public/disponibilidad')) {
         pedidosDisponibilidad += 1;
-        if (pedidosDisponibilidad === 1) return Promise.resolve(respuestaJson(HUECOS_MOCK));
-        return Promise.resolve(respuestaJson([HUECOS_MOCK[1]]));
+        if (pedidosDisponibilidad === 1) return Promise.resolve(respuestaJson(HUECOS_MOCK_DIA_24));
+        // En la recarga tras 409, el de las 09:00 ya no está y queda el de las 15:00
+        return Promise.resolve(respuestaJson([HUECOS_MOCK_DIA_24[2]]));
       }
       if (url.endsWith('/api/paciente/turnos') && init?.method === 'POST') {
         return Promise.resolve(respuestaJson({ code: 'SOLAPAMIENTO_PROFESIONAL' }, 409));
@@ -251,9 +302,9 @@ describe('web-paciente (C-14)', () => {
       return Promise.resolve(respuestaJson([]));
     });
 
-    renderConRutas('/paciente/reservar', () => new Date('2026-11-24T10:00:00-03:00'));
+    renderConRutas('/paciente/reservar', () => new Date('2026-11-24T08:00:00-03:00'));
 
-    fireEvent.click(await screen.findByRole('button', { name: /09:00/ }));
+    fireEvent.click(await screen.findByRole('button', { name: '09:00' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar turno' }));
 
     await waitFor(() => {
@@ -261,8 +312,8 @@ describe('web-paciente (C-14)', () => {
     });
     await waitFor(() => {
       expect(pedidosDisponibilidad).toBeGreaterThanOrEqual(2);
-      expect(screen.queryByRole('button', { name: /09:00/ })).toBeNull();
-      expect(screen.getByRole('button', { name: /15:00/ })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: '09:00' })).toBeNull();
+      expect(screen.getByRole('button', { name: '15:00' })).toBeTruthy();
     });
   });
 
@@ -424,7 +475,7 @@ describe('web-paciente (C-14)', () => {
       if (url.includes('/api/public/prestaciones')) return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
       if (url.includes('/api/public/disponibilidad')) {
         pedidosDisponibilidad += 1;
-        return Promise.resolve(respuestaJson(HUECOS_MOCK));
+        return Promise.resolve(respuestaJson(HUECOS_MOCK_DIA_28));
       }
       if (url.includes('/api/paciente/turnos/turno-reprog/reprogramar') && init?.method === 'PATCH') {
         intentosPatch += 1;
@@ -438,8 +489,8 @@ describe('web-paciente (C-14)', () => {
             boxId: ID_BOX_2,
             pacienteId: 'p1',
             prestacionId: ID_PREST_CONSULTA,
-            inicio: '2026-11-26T15:00:00-03:00',
-            fin: '2026-11-26T15:30:00-03:00',
+            inicio: '2026-11-28T15:00:00-03:00',
+            fin: '2026-11-28T15:30:00-03:00',
             estado: 'reservado',
             origen: 'online',
           }),
@@ -467,7 +518,7 @@ describe('web-paciente (C-14)', () => {
 
     renderConRutas('/paciente/turnos/turno-reprog/reprogramar', () => new Date('2026-11-24T10:00:00-03:00'));
 
-    fireEvent.click(await screen.findByRole('button', { name: /09:00/ }));
+    fireEvent.click(await screen.findByRole('button', { name: '09:00' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar nuevo horario' }));
 
     await waitFor(() => {
@@ -475,7 +526,8 @@ describe('web-paciente (C-14)', () => {
       expect(pedidosDisponibilidad).toBeGreaterThanOrEqual(2);
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: /15:00/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Tarde/i }));
+    fireEvent.click(await screen.findByRole('button', { name: '15:00' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar nuevo horario' }));
 
     await waitFor(() => {

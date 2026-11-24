@@ -8,7 +8,6 @@ import {
   AvatarIniciales,
   BadgeEstadoTurno,
   Boton,
-  Campo,
   Skeleton,
 } from '../../base/components';
 import {
@@ -26,13 +25,13 @@ import {
   etiquetaBox,
   etiquetaProfesional,
   fechaBloqueCalendario,
+  fechaInicialSugerida,
   fechaIsoEnZona,
   fechaLargaEnZona,
   horaEnZona,
-  PROFESIONALES_FILTRO,
-  sumarDiasIso,
 } from './dominio';
 import { GuardiaPaciente } from './GuardiaPaciente';
+import { IconoCheck, IconoPrestacion } from './iconosPaciente';
 import { ITEMS_PACIENTE } from './menuPaciente';
 import { SelectorHuecosPaciente } from './SelectorHuecosPaciente';
 import './paciente.css';
@@ -44,12 +43,13 @@ export interface PropsReservarPage {
 const relojPorDefecto = () => new Date();
 
 function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage) {
-  const hoyIso = fechaIsoEnZona(obtenerAhora());
+  const ahoraInicial = obtenerAhora();
+  const hoyIso = fechaIsoEnZona(ahoraInicial);
   const [prestaciones, setPrestaciones] = useState<PrestacionPublicaApi[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<ErrorApi | null>(null);
   const [prestacionId, setPrestacionId] = useState('');
   const [profesionalId, setProfesionalId] = useState('');
-  const [fecha, setFecha] = useState(hoyIso);
+  const [fecha, setFecha] = useState(() => fechaInicialSugerida(ahoraInicial));
   const [recargaHuecos, setRecargaHuecos] = useState(0);
   const [huecoElegido, setHuecoElegido] = useState<HuecoDisponibleApi | null>(null);
 
@@ -230,6 +230,27 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
     );
   }
 
+  const profesionalResumen = huecoElegido
+    ? etiquetaProfesional(huecoElegido.profesionalId)
+    : profesionalId
+      ? etiquetaProfesional(profesionalId)
+      : 'Primer disponible';
+
+  const fechaResumen = huecoElegido
+    ? fechaLargaEnZona(huecoElegido.inicio)
+    : fecha
+      ? fechaLargaEnZona(`${fecha}T12:00:00-03:00`)
+      : 'Sin seleccionar';
+
+  const horarioResumen = huecoElegido
+    ? `${horaEnZona(huecoElegido.inicio)} a ${horaEnZona(huecoElegido.fin)}`
+    : 'Elegí una hora';
+
+  const boxResumen =
+    huecoElegido && huecoElegido.boxIds[0]
+      ? `${etiquetaBox(huecoElegido.boxIds[0])} (automático)`
+      : 'Asignación automática';
+
   return (
     <AppLayout
       titulo="Reservar turno"
@@ -253,7 +274,7 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
         ) : null}
 
         <div className="pa-reserva-grid">
-          <section className="pa-card">
+          <section className="pa-card pa-stack">
             <div className="pa-paso">
               <h2 className="pa-paso__label">
                 <span className="pa-paso__num" aria-hidden="true">
@@ -269,121 +290,65 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
                 </p>
               ) : (
                 <div className="pa-prestaciones" role="group" aria-label="Prestaciones disponibles">
-                  {prestaciones.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className="pa-prestacion"
-                      aria-pressed={prestacionId === p.id}
-                      onClick={() => {
-                        setPrestacionId(p.id);
-                        setErrorReserva(null);
-                      }}
-                    >
-                      <span className="pa-prestacion__nombre">{p.nombre}</span>
-                      <span className="pa-prestacion__duracion">{p.duracionMin} min</span>
-                    </button>
-                  ))}
+                  {prestaciones.map((p) => {
+                    const seleccionada = prestacionId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="pa-prestacion"
+                        aria-pressed={seleccionada}
+                        onClick={() => {
+                          setPrestacionId(p.id);
+                          setErrorReserva(null);
+                        }}
+                      >
+                        <span className="pa-prestacion__cab">
+                          <span className="pa-prestacion__icono">
+                            <IconoPrestacion nombre={p.nombre} tamano={18} />
+                          </span>
+                          {seleccionada ? (
+                            <span className="pa-check-pill" aria-hidden="true">
+                              <IconoCheck tamano={12} />
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="pa-prestacion__nombre">{p.nombre}</span>
+                        <span className="pa-prestacion__duracion">{p.duracionMin} min</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="pa-paso">
-              <h2 className="pa-paso__label">
-                <span className="pa-paso__num" aria-hidden="true">
-                  2
-                </span>
-                Elegí el día y el profesional
-              </h2>
-              <div className="pa-filtros">
-                <div>
-                  <Campo
-                    etiqueta="Fecha"
-                    type="date"
-                    min={hoyIso}
-                    value={fecha}
-                    onChange={(e) => {
-                      setFecha(e.target.value);
-                      setErrorReserva(null);
-                    }}
-                  />
-                  <div className="pa-atajos-fecha" aria-label="Atajos de fecha">
-                    <button
-                      type="button"
-                      className="pa-chip"
-                      onClick={() => setFecha(hoyIso)}
-                    >
-                      Hoy
-                    </button>
-                    <button
-                      type="button"
-                      className="pa-chip"
-                      onClick={() => setFecha(sumarDiasIso(hoyIso, 1))}
-                    >
-                      Mañana
-                    </button>
-                    <button
-                      type="button"
-                      className="pa-chip"
-                      onClick={() => setFecha(sumarDiasIso(hoyIso, 2))}
-                    >
-                      En 2 días
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pa-campo-select">
-                  <label htmlFor="pa-filtro-profesional">Profesional</label>
-                  <select
-                    id="pa-filtro-profesional"
-                    className="pa-select"
-                    value={profesionalId}
-                    onChange={(e) => {
-                      setProfesionalId(e.target.value);
-                      setErrorReserva(null);
-                    }}
-                  >
-                    <option value="">Cualquier profesional disponible</option>
-                    {PROFESIONALES_FILTRO.map((prof) => (
-                      <option key={prof.id} value={prof.id}>
-                        {prof.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="pa-paso">
-              <h2 className="pa-paso__label">
-                <span className="pa-paso__num" aria-hidden="true">
-                  3
-                </span>
-                Seleccioná un horario disponible
-              </h2>
-              <SelectorHuecosPaciente
-                prestacionId={prestacionId}
-                profesionalId={profesionalId}
-                fecha={fecha}
-                onCambiarFecha={(nuevaFecha) => {
-                  setFecha(nuevaFecha);
-                  setErrorReserva(null);
-                }}
-                recarga={recargaHuecos}
-                elegido={huecoElegido}
-                onElegir={setHuecoElegido}
-              />
-            </div>
+            <SelectorHuecosPaciente
+              prestacionId={prestacionId}
+              profesionalId={profesionalId}
+              onCambiarProfesional={(nuevoProf) => {
+                setProfesionalId(nuevoProf);
+                setErrorReserva(null);
+              }}
+              fecha={fecha}
+              onCambiarFecha={(nuevaFecha) => {
+                setFecha(nuevaFecha);
+                setErrorReserva(null);
+              }}
+              fechaMinima={hoyIso}
+              recarga={recargaHuecos}
+              elegido={huecoElegido}
+              onElegir={setHuecoElegido}
+            />
           </section>
 
-          <aside className="pa-card" aria-label="Resumen de la reserva">
+          <aside className="pa-card pa-resumen-sticky" aria-label="Resumen de la reserva">
             <h2 className="pa-card__titulo">Resumen de tu reserva</h2>
             <p className="pa-card__sub">Revisá los datos antes de confirmar tu turno.</p>
 
             <div className="pa-resumen-lista">
               <div className="pa-resumen-fila">
                 <span>Prestación</span>
-                <strong>
+                <strong key={prestacionActual?.id ?? 'sin-p'} className="pa-valor-animado">
                   {prestacionActual
                     ? `${prestacionActual.nombre} (${prestacionActual.duracionMin} min)`
                     : 'Sin seleccionar'}
@@ -391,36 +356,29 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
               </div>
               <div className="pa-resumen-fila">
                 <span>Fecha</span>
-                <strong>
-                  {huecoElegido
-                    ? fechaLargaEnZona(huecoElegido.inicio)
-                    : fecha
-                      ? fechaLargaEnZona(`${fecha}T12:00:00-03:00`)
-                      : 'Sin seleccionar'}
+                <strong key={fechaResumen} className="pa-valor-animado">
+                  {fechaResumen}
                 </strong>
               </div>
               <div className="pa-resumen-fila">
                 <span>Horario</span>
-                <strong>
-                  {huecoElegido
-                    ? `${horaEnZona(huecoElegido.inicio)} a ${horaEnZona(huecoElegido.fin)}`
-                    : 'Elegí un bloque libre'}
+                <strong key={horarioResumen} className="pa-valor-animado">
+                  {horarioResumen}
                 </strong>
               </div>
               <div className="pa-resumen-fila">
                 <span>Profesional</span>
-                <strong>
-                  {huecoElegido
-                    ? etiquetaProfesional(huecoElegido.profesionalId)
-                    : 'Según horario elegido'}
+                <strong key={profesionalResumen} className="pa-valor-animado pa-resumen-prof">
+                  {huecoElegido || profesionalId ? (
+                    <AvatarIniciales nombre={profesionalResumen} tamano="sm" />
+                  ) : null}
+                  <span>{profesionalResumen}</span>
                 </strong>
               </div>
               <div className="pa-resumen-fila">
                 <span>Consultorio</span>
-                <strong>
-                  {huecoElegido && huecoElegido.boxIds[0]
-                    ? `${etiquetaBox(huecoElegido.boxIds[0])} (asignación automática)`
-                    : 'Asignación automática'}
+                <strong key={boxResumen} className="pa-valor-animado">
+                  {boxResumen}
                 </strong>
               </div>
             </div>

@@ -5,9 +5,9 @@ import { AppLayout } from '../../base/AppLayout';
 import { CLINICA } from '../../base/clinica';
 import {
   AlertaErrorNegocio,
+  AvatarIniciales,
   BadgeEstadoTurno,
   Boton,
-  Campo,
   Skeleton,
 } from '../../base/components';
 import {
@@ -26,10 +26,10 @@ import {
   etiquetaBox,
   etiquetaProfesional,
   fechaBloqueCalendario,
+  fechaInicialSugerida,
   fechaIsoEnZona,
   fechaLargaEnZona,
   horaEnZona,
-  PROFESIONALES_FILTRO,
   puedeAutogestionarTurno,
 } from './dominio';
 import { GuardiaPaciente } from './GuardiaPaciente';
@@ -45,14 +45,15 @@ const relojPorDefecto = () => new Date();
 
 function ReprogramarContenido({ obtenerAhora = relojPorDefecto }: PropsReprogramarTurnoPage) {
   const { id = '' } = useParams();
-  const hoyIso = fechaIsoEnZona(obtenerAhora());
+  const ahoraInicial = obtenerAhora();
+  const hoyIso = fechaIsoEnZona(ahoraInicial);
 
   const [turno, setTurno] = useState<TurnoPacienteApi | null>(null);
   const [noEncontrado, setNoEncontrado] = useState(false);
   const [prestacion, setPrestacion] = useState<PrestacionPublicaApi | null>(null);
   const [errorCarga, setErrorCarga] = useState<ErrorApi | null>(null);
 
-  const [fecha, setFecha] = useState(hoyIso);
+  const [fecha, setFecha] = useState(() => fechaInicialSugerida(ahoraInicial));
   const [profesionalId, setProfesionalId] = useState('');
   const [recargaHuecos, setRecargaHuecos] = useState(0);
   const [huecoElegido, setHuecoElegido] = useState<HuecoDisponibleApi | null>(null);
@@ -207,6 +208,8 @@ function ReprogramarContenido({ obtenerAhora = relojPorDefecto }: PropsReprogram
     puedeAutogestionarTurno(turno.inicio, turno.estado, ahora) &&
     !plazoVencidoServidor;
 
+  const profesionalNuevo = huecoElegido ? etiquetaProfesional(huecoElegido.profesionalId) : null;
+
   return (
     <AppLayout
       titulo="Reprogramar turno"
@@ -247,7 +250,7 @@ function ReprogramarContenido({ obtenerAhora = relojPorDefecto }: PropsReprogram
                   <span className="pa-flecha" aria-hidden="true">
                     →
                   </span>
-                  <div>
+                  <div className="pa-valor-animado" key={huecoElegido.inicio}>
                     <strong>Nuevo horario</strong>
                     <div>
                       {fechaLargaEnZona(huecoElegido.inicio)} · {horaEnZona(huecoElegido.inicio)} a{' '}
@@ -278,58 +281,29 @@ function ReprogramarContenido({ obtenerAhora = relojPorDefecto }: PropsReprogram
             ) : null}
 
             <div className="pa-reserva-grid">
-              <section className="pa-card pa-stack">
-                <div className="pa-filtros">
-                  <Campo
-                    etiqueta="Nueva fecha"
-                    type="date"
-                    min={hoyIso}
-                    value={fecha}
-                    disabled={!puedeReprogramar}
-                    onChange={(e) => {
-                      setFecha(e.target.value);
-                      setErrorReprog(null);
-                    }}
-                  />
-                  <div className="pa-campo-select">
-                    <label htmlFor="pa-reprog-profesional">Profesional</label>
-                    <select
-                      id="pa-reprog-profesional"
-                      className="pa-select"
-                      value={profesionalId}
-                      disabled={!puedeReprogramar}
-                      onChange={(e) => {
-                        setProfesionalId(e.target.value);
-                        setErrorReprog(null);
-                      }}
-                    >
-                      <option value="">Cualquier profesional disponible</option>
-                      {PROFESIONALES_FILTRO.map((prof) => (
-                        <option key={prof.id} value={prof.id}>
-                          {prof.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {puedeReprogramar ? (
-                  <SelectorHuecosPaciente
-                    prestacionId={turno.prestacionId}
-                    profesionalId={profesionalId}
-                    fecha={fecha}
-                    onCambiarFecha={(nuevaFecha) => {
-                      setFecha(nuevaFecha);
-                      setErrorReprog(null);
-                    }}
-                    recarga={recargaHuecos}
-                    elegido={huecoElegido}
-                    onElegir={setHuecoElegido}
-                  />
-                ) : null}
+              <section className="pa-card">
+                <SelectorHuecosPaciente
+                  prestacionId={turno.prestacionId}
+                  profesionalId={profesionalId}
+                  onCambiarProfesional={(nuevoProf) => {
+                    setProfesionalId(nuevoProf);
+                    setErrorReprog(null);
+                  }}
+                  fecha={fecha}
+                  onCambiarFecha={(nuevaFecha) => {
+                    setFecha(nuevaFecha);
+                    setErrorReprog(null);
+                  }}
+                  fechaMinima={hoyIso}
+                  recarga={recargaHuecos}
+                  elegido={huecoElegido}
+                  onElegir={setHuecoElegido}
+                  deshabilitado={!puedeReprogramar}
+                  mostrarNumeracionPasos={false}
+                />
               </section>
 
-              <aside className="pa-card">
+              <aside className="pa-card pa-resumen-sticky">
                 <h2 className="pa-card__titulo">Confirmar cambio</h2>
                 <p className="pa-card__sub">
                   El turno volverá a estado Reservado con el nuevo horario elegido.
@@ -342,22 +316,29 @@ function ReprogramarContenido({ obtenerAhora = relojPorDefecto }: PropsReprogram
                   </div>
                   <div className="pa-resumen-fila">
                     <span>Nuevo día</span>
-                    <strong>
+                    <strong key={huecoElegido?.inicio ?? 'sin-d'} className="pa-valor-animado">
                       {huecoElegido ? fechaLargaEnZona(huecoElegido.inicio) : 'Sin elegir'}
                     </strong>
                   </div>
                   <div className="pa-resumen-fila">
                     <span>Nuevo horario</span>
-                    <strong>
+                    <strong key={huecoElegido?.fin ?? 'sin-h'} className="pa-valor-animado">
                       {huecoElegido
                         ? `${horaEnZona(huecoElegido.inicio)} a ${horaEnZona(huecoElegido.fin)}`
-                        : 'Elegí un hueco libre'}
+                        : 'Elegí una hora'}
                     </strong>
                   </div>
                   <div className="pa-resumen-fila">
                     <span>Profesional</span>
-                    <strong>
-                      {huecoElegido ? etiquetaProfesional(huecoElegido.profesionalId) : '—'}
+                    <strong key={profesionalNuevo ?? 'sin-pr'} className="pa-valor-animado pa-resumen-prof">
+                      {profesionalNuevo ? (
+                        <>
+                          <AvatarIniciales nombre={profesionalNuevo} tamano="sm" />
+                          <span>{profesionalNuevo}</span>
+                        </>
+                      ) : (
+                        <span>—</span>
+                      )}
                     </strong>
                   </div>
                 </div>

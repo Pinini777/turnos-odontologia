@@ -10,6 +10,18 @@ export interface HuecoConInicio {
   readonly inicio: string;
 }
 
+export interface HuecoConProfesional extends HuecoConInicio {
+  readonly profesionalId: string;
+}
+
+export interface DiaTira {
+  readonly fecha: string;
+  readonly diaSemana: string;
+  readonly diaNumero: string;
+  readonly mesCorto: string;
+  readonly etiquetaCompleta: string;
+}
+
 export interface DatosGoogleCalendar {
   readonly prestacionNombre: string;
   readonly profesionalNombre: string;
@@ -81,6 +93,15 @@ const fmtDiaSemanaCorto = new Intl.DateTimeFormat('es-AR', {
   weekday: 'short',
 });
 
+const fmtDiaSemanaEn = new Intl.DateTimeFormat('en-US', {
+  timeZone: ZONA_CONSULTORIO,
+  weekday: 'short',
+});
+
+function capitalizar(texto: string): string {
+  return texto.length > 0 ? `${texto[0]?.toUpperCase() ?? ''}${texto.slice(1)}` : texto;
+}
+
 /**
  * Regla RN-RE-02: el paciente puede cancelar o reprogramar un turno activo
  * únicamente si falta al menos 24 horas exactas (`inicio - ahora >= 24 h`).
@@ -111,6 +132,30 @@ export function fechaIsoEnZona(instante: Date): string {
   return fmtFechaPartes.format(instante);
 }
 
+/** Extrae `YYYY-MM-DD` en zona del consultorio a partir de un timestamp ISO. */
+export function fechaYmdDeIso(iso: string): string {
+  return fmtFechaPartes.format(new Date(iso));
+}
+
+/**
+ * Elige la fecha inicial óptima para reservar:
+ * si hoy es día hábil antes de las 18:30 devuelve hoy; si ya cerró la jornada o es fin de semana,
+ * avanza automáticamente al próximo día hábil (lunes a viernes).
+ */
+export function fechaInicialSugerida(ahora: Date): string {
+  const hoy = fechaIsoEnZona(ahora);
+  const diaEn = fmtDiaSemanaEn.format(ahora);
+  const horaStr = fmtHora.format(ahora);
+  const minutosDelDia = Number(horaStr.slice(0, 2)) * 60 + Number(horaStr.slice(3, 5));
+
+  if (diaEn === 'Sat') return sumarDiasIso(hoy, 2);
+  if (diaEn === 'Sun') return sumarDiasIso(hoy, 1);
+  if (minutosDelDia >= 18 * 60 + 30) {
+    return diaEn === 'Fri' ? sumarDiasIso(hoy, 3) : sumarDiasIso(hoy, 1);
+  }
+  return hoy;
+}
+
 /** Devuelve el rango diario completo en offset explícito `-03:00` (Mendoza, sin DST). */
 export function rangoDiaConsultorio(fechaYmd: string): {
   readonly desde: string;
@@ -119,6 +164,18 @@ export function rangoDiaConsultorio(fechaYmd: string): {
   return {
     desde: `${fechaYmd}T00:00:00-03:00`,
     hasta: `${fechaYmd}T23:59:59-03:00`,
+  };
+}
+
+/** Devuelve el rango multi-día (máximo 31 días) en offset explícito `-03:00`. */
+export function rangoVentanaDias(
+  inicioYmd: string,
+  cantidadDias: number,
+): { readonly desde: string; readonly hasta: string } {
+  const finYmd = sumarDiasIso(inicioYmd, Math.max(1, cantidadDias) - 1);
+  return {
+    desde: `${inicioYmd}T00:00:00-03:00`,
+    hasta: `${finYmd}T23:59:59-03:00`,
   };
 }
 
@@ -135,6 +192,26 @@ export function sumarDiasIso(fechaYmd: string, dias: number): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Genera `cantidad` días consecutivos en español para la tira horizontal de fechas. */
+export function generarTiraDias(inicioYmd: string, cantidad = 7): DiaTira[] {
+  const dias: DiaTira[] = [];
+  for (let i = 0; i < cantidad; i++) {
+    const fecha = sumarDiasIso(inicioYmd, i);
+    const mediodia = new Date(`${fecha}T12:00:00-03:00`);
+    const diaSemana = capitalizar(fmtDiaSemanaCorto.format(mediodia).replace(/\.$/, ''));
+    const mesCorto = capitalizar(fmtMesCorto.format(mediodia).replace(/\.$/, ''));
+    const diaNumero = fmtDiaNumero.format(mediodia);
+    dias.push({
+      fecha,
+      diaSemana,
+      diaNumero,
+      mesCorto,
+      etiquetaCompleta: fechaLargaEnZona(`${fecha}T12:00:00-03:00`),
+    });
+  }
+  return dias;
+}
+
 /** Formatea `HH:mm` en zona `America/Argentina/Mendoza`. */
 export function horaEnZona(iso: string): string {
   return fmtHora.format(new Date(iso));
@@ -142,22 +219,36 @@ export function horaEnZona(iso: string): string {
 
 /** Formatea fecha larga capitalizada en español argentino (ej. "Jueves 26 de noviembre de 2026"). */
 export function fechaLargaEnZona(iso: string): string {
-  const texto = fmtFechaLarga.format(new Date(iso));
-  return texto.length > 0 ? `${texto[0]?.toUpperCase() ?? ''}${texto.slice(1)}` : texto;
+  return capitalizar(fmtFechaLarga.format(new Date(iso)));
 }
 
 /** Extrae mes corto, día y día de semana para el bloque visual de calendario. */
 export function fechaBloqueCalendario(iso: string): BloqueFechaCalendario {
   const fecha = new Date(iso);
-  const mesCrudo = fmtMesCorto.format(fecha).replace(/\.$/, '').toUpperCase();
-  const semCrudo = fmtDiaSemanaCorto.format(fecha).replace(/\.$/, '');
-  const diaSemanaCorto =
-    semCrudo.length > 0 ? `${semCrudo[0]?.toUpperCase() ?? ''}${semCrudo.slice(1)}` : semCrudo;
+  const mesCorto = fmtMesCorto.format(fecha).replace(/\.$/, '').toUpperCase();
+  const diaSemanaCorto = capitalizar(fmtDiaSemanaCorto.format(fecha).replace(/\.$/, ''));
   return {
-    mesCorto: mesCrudo,
+    mesCorto,
     dia: fmtDiaNumero.format(fecha),
     diaSemanaCorto,
   };
+}
+
+/**
+ * Deduplica huecos con el mismo `inicio` (conservando determinísticamente el primero en la lista),
+ * evitando mostrar horas repetidas cuando se consulta con "Cualquier profesional".
+ */
+export function deduplicarHuecosPorHora<T extends HuecoConProfesional>(
+  huecos: readonly T[],
+): T[] {
+  const vistos = new Set<string>();
+  const resultado: T[] = [];
+  for (const h of huecos) {
+    if (vistos.has(h.inicio)) continue;
+    vistos.add(h.inicio);
+    resultado.push(h);
+  }
+  return resultado;
 }
 
 /** Separa huecos en mañana (< 13:00) y tarde (>= 13:00) según la hora del consultorio. */
@@ -215,6 +306,6 @@ export function etiquetaBox(boxId: string): string {
   return BOXES_CONOCIDOS[boxId] ?? 'Box asignado';
 }
 
-/** Lista de profesionales conocidos del consultorio para el filtro opcional de disponibilidad. */
+/** Lista de profesionales conocidos del consultorio para el selector visual. */
 export const PROFESIONALES_FILTRO: readonly { readonly id: string; readonly nombre: string }[] =
   Object.entries(PROFESIONALES_CONOCIDOS).map(([id, nombre]) => ({ id, nombre }));
