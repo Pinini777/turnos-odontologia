@@ -461,4 +461,36 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
     const profesionalCss = readFileSync(resolve(__dirname, 'profesional.css'), 'utf8');
     expect(profesionalCss).toMatch(/\.prof-odo-canvas\[hidden\][^{]*\{[^}]*display:\s*none\s*;/);
   });
+
+  it('ubica Historial del odontograma y Máquina del tiempo dentro de .prof-odo-col-izq debajo de .prof-odo-stage', async () => {
+    establecerSesion(SESION_PROF);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = leerUrl(input);
+      if (url === '/api/pacientes') return jsonResp(PACIENTES_SEED);
+      if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
+      if (url === '/api/pacientes/pac-1/historia') return jsonResp([]);
+      if (url === '/api/pacientes/pac-1/odontograma') return jsonResp(ODONTOGRAMA_HISTORIAL_SEED);
+      return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
+    });
+
+    const { container } = renderClinica();
+
+    await waitFor(() => {
+      expect(container.querySelector('.prof-odo-col-izq')).toBeTruthy();
+    });
+
+    const colIzq = container.querySelector('.prof-grid-clinica > .prof-odo-col-izq');
+    expect(colIzq).toBeTruthy();
+
+    const hijos = Array.from(colIzq!.children);
+    const stage = colIzq!.querySelector('.prof-odo-stage');
+    const maquinaTiempo = colIzq!.querySelector('.prof-odo-time');
+    const historialCard = colIzq!.querySelector('[aria-labelledby="titulo-hist-odo"]');
+
+    expect(stage).toBeTruthy();
+    expect(maquinaTiempo).toBeTruthy();
+    expect(historialCard).toBeTruthy();
+    expect(hijos).toEqual([stage, maquinaTiempo, historialCard]);
+    expect(colIzq!.querySelector('[aria-labelledby="titulo-hc"]')).toBeNull();
+  });
 });

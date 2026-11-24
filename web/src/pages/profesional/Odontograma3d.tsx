@@ -6,6 +6,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { Boton } from '../../base/components';
 import type {
@@ -52,6 +53,7 @@ export interface PropsOdontograma3d {
   readonly nombreProfesional: (id: string) => string;
   readonly onGuardarCambios: (items: readonly ItemActualizacionPiezaPayload[]) => Promise<boolean>;
   readonly onNotificar?: (mensaje: string) => void;
+  readonly contenidoDebajoDiagrama?: ReactNode;
 }
 
 type ModoVista = '3d' | '2d';
@@ -73,6 +75,7 @@ export function Odontograma3d({
   nombreProfesional,
   onGuardarCambios,
   onNotificar,
+  contenidoDebajoDiagrama,
 }: PropsOdontograma3d) {
   const [denticion, setDenticion] = useState<TipoDenticion>('permanente');
   const [modoVista, setModoVista] = useState<ModoVista>('2d');
@@ -445,7 +448,8 @@ export function Odontograma3d({
   return (
     <div className="prof-odo-workspace-stack">
       <section className="prof-grid-clinica" aria-label="Odontograma FDI interactivo">
-        <div className="prof-card prof-odo-stage">
+        <div className="prof-odo-col-izq">
+          <div className="prof-card prof-odo-stage">
           <div className="prof-odo-toolbar">
             <div className="prof-odo-toolbar__left">
               <div className="prof-odo-segment" role="group" aria-label="Dentición">
@@ -611,6 +615,81 @@ export function Odontograma3d({
           {mensajeFallback ? (
             <p className="prof-odo-fallback">{mensajeFallback}</p>
           ) : null}
+          </div>
+
+          {snapshots.length > 0 && snapshotActivo ? (
+            <section className="prof-card prof-odo-time" aria-labelledby="titulo-maquina-tiempo">
+              <div>
+                <span className="prof-odo-eyebrow">Historial clínico</span>
+                <h2 id="titulo-maquina-tiempo" className="prof-card__titulo">
+                  Máquina del tiempo
+                </h2>
+                <p className="prof-card__sub" aria-live="polite">
+                  {enPasado ? 'Consulta histórica · ' : 'Actual · '}
+                  {formatearFechaHora(snapshotActivo.fecha)} · {nombreProfesional(snapshotActivo.autor)}
+                </p>
+              </div>
+
+              <div className="prof-odo-timeline">
+                <label className="prof-sr-only" htmlFor="odo-time-scrub">
+                  Fecha de consulta
+                </label>
+                <input
+                  id="odo-time-scrub"
+                  type="range"
+                  min={0}
+                  max={Math.max(0, snapshots.length - 1)}
+                  step={1}
+                  value={indiceEfectivo}
+                  disabled={snapshots.length <= 1}
+                  aria-valuetext={formatearFechaHora(snapshotActivo.fecha)}
+                  onChange={(e) => {
+                    const idx = Number(e.target.value);
+                    if (idx >= snapshots.length - 1) {
+                      irAlSnapshot(null);
+                    } else {
+                      irAlSnapshot(idx);
+                    }
+                  }}
+                />
+                <div className="prof-odo-timeline-steps" aria-label="Consultas">
+                  {snapshots.map((snap, i) => (
+                    <button
+                      key={`${snap.clave}-${i}`}
+                      type="button"
+                      className="prof-odo-timeline-step"
+                      aria-current={i === indiceEfectivo ? 'step' : undefined}
+                      aria-label={`Consulta del ${formatearFechaHora(snap.fecha)}`}
+                      onClick={() => {
+                        if (i >= snapshots.length - 1 && !enPasado) {
+                          irAlSnapshot(null);
+                        } else {
+                          irAlSnapshot(i);
+                        }
+                      }}
+                    >
+                      {formatearFechaCorta(snap.fecha)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="prof-odo-time-actions">
+                {snapshots.length > 1 ? (
+                  <Boton variante="secundario" onClick={toggleReproduccion}>
+                    {reproduciendo ? 'Pausar evolución' : 'Reproducir evolución'}
+                  </Boton>
+                ) : null}
+                {enPasado ? (
+                  <Boton variante="primario" onClick={() => irAlSnapshot(null)}>
+                    Volver al presente
+                  </Boton>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
+          {contenidoDebajoDiagrama}
         </div>
 
         <aside className="prof-card prof-odo-sheet" aria-labelledby="titulo-editor-pieza">
@@ -827,78 +906,6 @@ export function Odontograma3d({
           </form>
         </aside>
       </section>
-
-      {snapshots.length > 0 && snapshotActivo ? (
-        <section className="prof-card prof-odo-time" aria-labelledby="titulo-maquina-tiempo">
-          <div>
-            <span className="prof-odo-eyebrow">Historial clínico</span>
-            <h2 id="titulo-maquina-tiempo" className="prof-card__titulo">
-              Máquina del tiempo
-            </h2>
-            <p className="prof-card__sub" aria-live="polite">
-              {enPasado ? 'Consulta histórica · ' : 'Actual · '}
-              {formatearFechaHora(snapshotActivo.fecha)} · {nombreProfesional(snapshotActivo.autor)}
-            </p>
-          </div>
-
-          <div className="prof-odo-timeline">
-            <label className="prof-sr-only" htmlFor="odo-time-scrub">
-              Fecha de consulta
-            </label>
-            <input
-              id="odo-time-scrub"
-              type="range"
-              min={0}
-              max={Math.max(0, snapshots.length - 1)}
-              step={1}
-              value={indiceEfectivo}
-              disabled={snapshots.length <= 1}
-              aria-valuetext={formatearFechaHora(snapshotActivo.fecha)}
-              onChange={(e) => {
-                const idx = Number(e.target.value);
-                if (idx >= snapshots.length - 1) {
-                  irAlSnapshot(null);
-                } else {
-                  irAlSnapshot(idx);
-                }
-              }}
-            />
-            <div className="prof-odo-timeline-steps" aria-label="Consultas">
-              {snapshots.map((snap, i) => (
-                <button
-                  key={`${snap.clave}-${i}`}
-                  type="button"
-                  className="prof-odo-timeline-step"
-                  aria-current={i === indiceEfectivo ? 'step' : undefined}
-                  aria-label={`Consulta del ${formatearFechaHora(snap.fecha)}`}
-                  onClick={() => {
-                    if (i >= snapshots.length - 1 && !enPasado) {
-                      irAlSnapshot(null);
-                    } else {
-                      irAlSnapshot(i);
-                    }
-                  }}
-                >
-                  {formatearFechaCorta(snap.fecha)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="prof-odo-time-actions">
-            {snapshots.length > 1 ? (
-              <Boton variante="secundario" onClick={toggleReproduccion}>
-                {reproduciendo ? 'Pausar evolución' : 'Reproducir evolución'}
-              </Boton>
-            ) : null}
-            {enPasado ? (
-              <Boton variante="primario" onClick={() => irAlSnapshot(null)}>
-                Volver al presente
-              </Boton>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
