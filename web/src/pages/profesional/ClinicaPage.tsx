@@ -9,9 +9,7 @@ import {
   listarPacientes,
   listarProfesionales,
   obtenerOdontograma,
-  type CaraPiezaApi,
   type EntradaHistoriaApi,
-  type EstadoDePiezaApi,
   type ItemActualizacionPiezaPayload,
   type ProfesionalApi,
   type VistaOdontogramaApi,
@@ -19,14 +17,8 @@ import {
 import { formatearFechaHora } from './formatos';
 import { GuardiaProfesional } from './GuardiaProfesional';
 import { MENU_PROFESIONAL } from './menuProfesional';
-import { OdontogramaFdi } from './OdontogramaFdiSvg';
-import {
-  agruparEstadosPorPieza,
-  esEstadoSoloPiezaCompleta,
-  ETIQUETA_CARA_PIEZA,
-  ETIQUETA_ESTADO_PIEZA,
-  nombreAnatomicoFdi,
-} from './odontogramaFdi';
+import { Odontograma3d } from './Odontograma3d';
+import { ETIQUETA_CARA_PIEZA, ETIQUETA_ESTADO_PIEZA } from './odontogramaFdi';
 
 function ContenidoClinica() {
   const [pacientes, setPacientes] = useState<readonly PacienteApi[]>([]);
@@ -41,12 +33,6 @@ function ContenidoClinica() {
   const [guardandoHc, setGuardandoHc] = useState<boolean>(false);
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
   const [estadoMensaje, setEstadoMensaje] = useState<string | null>(null);
-
-  // Estado del odontograma interactivo
-  const [mostrarTemporaria, setMostrarTemporaria] = useState<boolean>(false);
-  const [piezaSel, setPiezaSel] = useState<number>(16);
-  const [caraSel, setCaraSel] = useState<CaraPiezaApi | ''>('oclusal');
-  const [estadoSel, setEstadoSel] = useState<EstadoDePiezaApi>('sano');
 
   // Estado del formulario de historia clínica append-only
   const [textoHc, setTextoHc] = useState<string>('');
@@ -109,48 +95,30 @@ function ContenidoClinica() {
   }, [pacienteId]);
 
   const pacienteActual = pacientes.find((p) => p.id === pacienteId) ?? null;
-  const soloPiezaCompleta = esEstadoSoloPiezaCompleta(estadoSel);
-  const nombrePieza = nombreAnatomicoFdi(piezaSel);
 
   function nombreProfesional(id: string): string {
     return profesionales.find((p) => p.id === id)?.nombre ?? id;
   }
 
-  function seleccionarPiezaYCara(pieza: number, cara: CaraPiezaApi): void {
-    setPiezaSel(pieza);
-    const mapa = agruparEstadosPorPieza(odontograma?.piezas ?? []);
-    const registro = mapa.get(pieza);
-    const estadoActual = registro?.completa ?? registro?.caras[cara] ?? 'sano';
-    setEstadoSel(estadoActual);
-    setCaraSel(esEstadoSoloPiezaCompleta(estadoActual) ? '' : cara);
-    setEstadoMensaje(`Seleccionada pieza ${pieza}, cara ${cara}.`);
-  }
-
-  function cambiarEstadoClinico(nuevoEstado: EstadoDePiezaApi): void {
-    setEstadoSel(nuevoEstado);
-    if (esEstadoSoloPiezaCompleta(nuevoEstado)) {
-      setCaraSel('');
-    }
-  }
-
-  async function handleGuardarOdontograma(e: FormEvent): Promise<void> {
-    e.preventDefault();
-    if (!pacienteId) return;
+  async function handleGuardarCambiosOdontograma(
+    items: readonly ItemActualizacionPiezaPayload[],
+  ): Promise<boolean> {
+    if (!pacienteId || items.length === 0) return false;
     setErrorApi(null);
     setEstadoMensaje(null);
-
-    const item: ItemActualizacionPiezaPayload =
-      soloPiezaCompleta || caraSel === ''
-        ? { pieza: piezaSel, estado: estadoSel }
-        : { pieza: piezaSel, cara: caraSel, estado: estadoSel };
-
     setGuardandoOdo(true);
     try {
-      const actualizado = await actualizarOdontograma(pacienteId, [item]);
+      const actualizado = await actualizarOdontograma(pacienteId, items);
       setOdontograma(actualizado);
-      setEstadoMensaje(`Cambio guardado en pieza ${piezaSel}.`);
+      const etiqueta =
+        items.length === 1 && items[0]
+          ? `Cambio guardado en pieza ${items[0].pieza}.`
+          : `${items.length} cambios guardados en el odontograma.`;
+      setEstadoMensaje(etiqueta);
+      return true;
     } catch (err: unknown) {
       setErrorApi(err instanceof ErrorApi ? err : new ErrorApi(500, 'ERROR_INTERNO'));
+      return false;
     } finally {
       setGuardandoOdo(false);
     }
@@ -252,217 +220,149 @@ function ContenidoClinica() {
 
         {!cargando && pacienteActual ? (
           <>
-            <section className="prof-grid-clinica" aria-label="Odontograma FDI interactivo">
-              <OdontogramaFdi
-                piezas={odontograma?.piezas ?? []}
-                piezaSeleccionada={piezaSel}
-                caraSeleccionada={caraSel}
-                mostrarTemporaria={mostrarTemporaria}
-                onToggleTemporaria={setMostrarTemporaria}
-                onSeleccionar={seleccionarPiezaYCara}
-              />
-
-              <aside className="prof-card" aria-labelledby="titulo-editor-pieza">
-                <h2 id="titulo-editor-pieza" className="prof-card__titulo">
-                  Actualizar pieza seleccionada
-                </h2>
-                <div className="prof-editor-badge" data-testid="editor-pieza-badge">
-                  Pieza {piezaSel} ·{' '}
-                  {soloPiezaCompleta || caraSel === ''
-                    ? 'Pieza completa'
-                    : `Cara ${caraSel}`}
-                </div>
-                <p className="prof-card__sub" style={{ marginBottom: 'var(--space-4)' }}>
-                  {nombrePieza}
-                </p>
-
-                <form className="prof-form" onSubmit={(e) => void handleGuardarOdontograma(e)}>
-                  <div className="prof-field">
-                    <label htmlFor="odo-estado" className="prof-field__label">
-                      Estado clínico
-                    </label>
-                    <select
-                      id="odo-estado"
-                      className="prof-select"
-                      value={estadoSel}
-                      onChange={(e) => cambiarEstadoClinico(e.target.value as EstadoDePiezaApi)}
-                    >
-                      <option value="sano">Sano</option>
-                      <option value="caries">Caries</option>
-                      <option value="obturado">Obturado</option>
-                      <option value="corona">Corona (pieza completa)</option>
-                      <option value="endodoncia">Endodoncia (pieza completa)</option>
-                      <option value="ausente">Ausente (pieza completa)</option>
-                      <option value="a_extraer">A extraer (pieza completa)</option>
-                    </select>
+            <Odontograma3d
+              pacienteId={pacienteActual.id}
+              piezas={odontograma?.piezas ?? []}
+              historial={odontograma?.historial ?? []}
+              guardando={guardandoOdo}
+              nombreProfesional={nombreProfesional}
+              onGuardarCambios={handleGuardarCambiosOdontograma}
+              onNotificar={setEstadoMensaje}
+              contenidoDebajoDiagrama={
+                <div className="prof-card" aria-labelledby="titulo-hist-odo">
+                  <div className="prof-card__head">
+                    <div>
+                      <h2 id="titulo-hist-odo" className="prof-card__titulo">
+                        Historial del odontograma
+                      </h2>
+                      <p className="prof-card__sub">
+                        Cada modificación queda registrada cronológicamente con autor y fecha.
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="prof-field">
-                    <label htmlFor="odo-cara" className="prof-field__label">
-                      Cara anatómica
-                    </label>
-                    <select
-                      id="odo-cara"
-                      className="prof-select"
-                      value={soloPiezaCompleta ? '' : caraSel}
-                      disabled={soloPiezaCompleta}
-                      onChange={(e) => setCaraSel(e.target.value as CaraPiezaApi | '')}
-                    >
-                      <option value="">Pieza completa</option>
-                      <option value="oclusal">Oclusal</option>
-                      <option value="mesial">Mesial</option>
-                      <option value="distal">Distal</option>
-                      <option value="vestibular">Vestibular</option>
-                      <option value="lingual">Lingual / Palatina</option>
-                    </select>
-                    <span className="prof-hint">
-                      {soloPiezaCompleta
-                        ? 'Este estado aplica a la pieza completa y no admite cara específica.'
-                        : 'Orientación espejada automáticamente según el cuadrante FDI.'}
-                    </span>
-                  </div>
-
-                  <Boton type="submit" cargando={guardandoOdo}>
-                    Guardar en odontograma
-                  </Boton>
-                </form>
-              </aside>
-            </section>
-
-            <section className="prof-grid-2">
-              <div className="prof-card" aria-labelledby="titulo-hc">
-                <div className="prof-card__head">
-                  <div>
-                    <h2 id="titulo-hc" className="prof-card__titulo">
-                      Historia clínica
-                    </h2>
-                    <p className="prof-card__sub">
-                      Registro append-only: las entradas no se modifican ni borran; ante un error se agrega una corrección referenciada.
-                    </p>
-                  </div>
-                </div>
-
-                {historia.length === 0 ? (
-                  <EstadoVacio
-                    titulo="Sin evoluciones registradas"
-                    descripcion="Registrá la primera evolución clínica del paciente desde el formulario."
-                  />
-                ) : (
-                  <div className="prof-timeline" style={{ marginBottom: 'var(--space-5)' }}>
-                    {historia.map((entrada) => (
-                      <article
-                        key={entrada.id}
-                        className={[
-                          'prof-entry',
-                          entrada.corrigeAId ? 'prof-entry--correccion' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                      >
-                        <div className="prof-entry__meta">
-                          <strong>
-                            {nombreProfesional(entrada.profesionalId)} ·{' '}
-                            {formatearFechaHora(entrada.fecha)}
-                          </strong>
-                          {entrada.corrigeAId ? (
-                            <span className="prof-entry__badge">
-                              Corrección de entrada #{entrada.corrigeAId}
-                            </span>
-                          ) : (
-                            <span>Entrada #{entrada.id}</span>
-                          )}
-                        </div>
-                        <p className="prof-entry__texto">{entrada.texto}</p>
-                        <Boton
-                          variante="secundario"
-                          onClick={() => setCorrigeAId(entrada.id)}
-                        >
-                          Agregar corrección
-                        </Boton>
-                      </article>
-                    ))}
-                  </div>
-                )}
-
-                <form className="prof-form" onSubmit={(e) => void handleGuardarHistoria(e)}>
-                  <div className="prof-field">
-                    <label htmlFor="hc-texto" className="prof-field__label">
-                      {corrigeAId
-                        ? `Corrección sobre entrada #${corrigeAId}`
-                        : 'Nueva evolución clínica'}
-                    </label>
-                    <textarea
-                      id="hc-texto"
-                      className="prof-textarea"
-                      value={textoHc}
-                      onChange={(e) => setTextoHc(e.target.value)}
-                      placeholder="Describí el hallazgo, tratamiento o indicación clínica…"
-                      required
+                  {(odontograma?.historial.length ?? 0) === 0 ? (
+                    <EstadoVacio
+                      titulo="Sin registros en el odontograma"
+                      descripcion="Al guardar el estado de una pieza aparecerá aquí la cronología."
                     />
-                  </div>
-                  <div className="prof-acciones">
-                    <Boton type="submit" cargando={guardandoHc}>
-                      {corrigeAId ? 'Registrar corrección' : 'Registrar evolución'}
-                    </Boton>
-                    {corrigeAId ? (
-                      <Boton variante="secundario" onClick={() => setCorrigeAId(null)}>
-                        Cancelar corrección
-                      </Boton>
-                    ) : null}
-                  </div>
-                </form>
-              </div>
-
-              <div className="prof-card" aria-labelledby="titulo-hist-odo">
-                <div className="prof-card__head">
-                  <div>
-                    <h2 id="titulo-hist-odo" className="prof-card__titulo">
-                      Historial del odontograma
-                    </h2>
-                    <p className="prof-card__sub">
-                      Cada modificación queda registrada cronológicamente con autor y fecha.
-                    </p>
-                  </div>
-                </div>
-
-                {(odontograma?.historial.length ?? 0) === 0 ? (
-                  <EstadoVacio
-                    titulo="Sin registros en el odontograma"
-                    descripcion="Al guardar el estado de una pieza aparecerá aquí la cronología."
-                  />
-                ) : (
-                  <div className="prof-tabla-wrap">
-                    <table className="prof-tabla" aria-label="Historial del odontograma">
-                      <thead>
-                        <tr>
-                          <th scope="col">Fecha</th>
-                          <th scope="col">Pieza</th>
-                          <th scope="col">Cara</th>
-                          <th scope="col">Estado</th>
-                          <th scope="col">Autor</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(odontograma?.historial ?? []).map((reg) => (
-                          <tr key={reg.id}>
-                            <td data-label="Fecha" className="prof-num">
-                              {formatearFechaHora(reg.fecha)}
-                            </td>
-                            <td data-label="Pieza" className="prof-num">
-                              {reg.pieza}
-                            </td>
-                            <td data-label="Cara">
-                              {reg.cara ? ETIQUETA_CARA_PIEZA[reg.cara] : 'Completa'}
-                            </td>
-                            <td data-label="Estado">{ETIQUETA_ESTADO_PIEZA[reg.estado]}</td>
-                            <td data-label="Autor">{nombreProfesional(reg.registradoPor)}</td>
+                  ) : (
+                    <div className="prof-tabla-wrap">
+                      <table className="prof-tabla" aria-label="Historial del odontograma">
+                        <thead>
+                          <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Pieza</th>
+                            <th scope="col">Cara</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Autor</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody>
+                          {(odontograma?.historial ?? []).map((reg) => (
+                            <tr key={reg.id}>
+                              <td data-label="Fecha" className="prof-num">
+                                {formatearFechaHora(reg.fecha)}
+                              </td>
+                              <td data-label="Pieza" className="prof-num">
+                                {reg.pieza}
+                              </td>
+                              <td data-label="Cara">
+                                {reg.cara ? ETIQUETA_CARA_PIEZA[reg.cara] : 'Completa'}
+                              </td>
+                              <td data-label="Estado">{ETIQUETA_ESTADO_PIEZA[reg.estado]}</td>
+                              <td data-label="Autor">{nombreProfesional(reg.registradoPor)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              }
+            />
+
+            <section className="prof-card" aria-labelledby="titulo-hc">
+              <div className="prof-card__head">
+                <div>
+                  <h2 id="titulo-hc" className="prof-card__titulo">
+                    Historia clínica
+                  </h2>
+                  <p className="prof-card__sub">
+                    Registro append-only: las entradas no se modifican ni borran; ante un error se agrega una corrección referenciada.
+                  </p>
+                </div>
               </div>
+
+              {historia.length === 0 ? (
+                <EstadoVacio
+                  titulo="Sin evoluciones registradas"
+                  descripcion="Registrá la primera evolución clínica del paciente desde el formulario."
+                />
+              ) : (
+                <div className="prof-timeline" style={{ marginBottom: 'var(--space-5)' }}>
+                  {historia.map((entrada) => (
+                    <article
+                      key={entrada.id}
+                      className={[
+                        'prof-entry',
+                        entrada.corrigeAId ? 'prof-entry--correccion' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <div className="prof-entry__meta">
+                        <strong>
+                          {nombreProfesional(entrada.profesionalId)} ·{' '}
+                          {formatearFechaHora(entrada.fecha)}
+                        </strong>
+                        {entrada.corrigeAId ? (
+                          <span className="prof-entry__badge">
+                            Corrección de entrada #{entrada.corrigeAId}
+                          </span>
+                        ) : (
+                          <span>Entrada #{entrada.id}</span>
+                        )}
+                      </div>
+                      <p className="prof-entry__texto">{entrada.texto}</p>
+                      <Boton
+                        variante="secundario"
+                        onClick={() => setCorrigeAId(entrada.id)}
+                      >
+                        Agregar corrección
+                      </Boton>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              <form className="prof-form" onSubmit={(e) => void handleGuardarHistoria(e)}>
+                <div className="prof-field">
+                  <label htmlFor="hc-texto" className="prof-field__label">
+                    {corrigeAId
+                      ? `Corrección sobre entrada #${corrigeAId}`
+                      : 'Nueva evolución clínica'}
+                  </label>
+                  <textarea
+                    id="hc-texto"
+                    className="prof-textarea"
+                    value={textoHc}
+                    onChange={(e) => setTextoHc(e.target.value)}
+                    placeholder="Describí el hallazgo, tratamiento o indicación clínica…"
+                    required
+                  />
+                </div>
+                <div className="prof-acciones">
+                  <Boton type="submit" cargando={guardandoHc}>
+                    {corrigeAId ? 'Registrar corrección' : 'Registrar evolución'}
+                  </Boton>
+                  {corrigeAId ? (
+                    <Boton variante="secundario" onClick={() => setCorrigeAId(null)}>
+                      Cancelar corrección
+                    </Boton>
+                  ) : null}
+                </div>
+              </form>
             </section>
           </>
         ) : null}
