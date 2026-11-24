@@ -500,7 +500,7 @@ export function InicioPage() {
       subtitulo={`${CLINICA.nombre} · Reservá, consultá o modificá tus visitas`}
       claveVista="inicio-paciente"
       acciones={
-        <Boton variante="primario" onClick={() => void navigate('/inicio?vista=reservar')}>
+        <Boton variante="primario" onClick={() => void navigate('/paciente/reservar')}>
           <Icono nombre="reservar" tamano={16} />
           <span>Reservar nuevo turno</span>
         </Boton>
@@ -563,24 +563,10 @@ export function InicioPage() {
           </dl>
 
           <div className="wb-turno-destacado__acciones">
-            <Boton
-              variante="primario"
-              onClick={() =>
-                setAviso(
-                  'Podés elegir un nuevo horario disponible para reprogramar este turno desde Mis turnos.',
-                )
-              }
-            >
+            <Boton variante="primario" onClick={() => void navigate('/paciente/turnos')}>
               Reprogramar turno
             </Boton>
-            <Boton
-              variante="secundario"
-              onClick={() =>
-                setAviso(
-                  'La cancelación libera tu horario inmediatamente (disponible hasta 24 horas antes del inicio).',
-                )
-              }
-            >
+            <Boton variante="secundario" onClick={() => void navigate('/paciente/turnos')}>
               Cancelar turno
             </Boton>
           </div>
