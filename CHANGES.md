@@ -484,7 +484,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `design-system/components.html` (ganancias, tabla)
 
 ### [C-16] `persistencia-supabase`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-24)
 - **Responsable**: EP (con Codex) · **Capability**: `persistencia` · **Prioridad**: P3 (fuera de la consigna; no debe romper la entrega)
 - **Scope**:
   - Adaptador PostgreSQL (Supabase) para los 12 repositorios de `Repositorios`, que se activa solo con la variable `DATABASE_URL`. Sin ella, la API sigue en memoria (los tests, el CI y el README no cambian).
