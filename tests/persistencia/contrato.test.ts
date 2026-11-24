@@ -1,74 +1,120 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import type { AuditoriaTurno } from '../../src/shared/entidades';
-import type { Repositorios } from '../../src/shared/repositorios';
+import { buildApp } from '../../src/app';
+import { FixedClock } from '../../src/shared/clock';
 import { crearRepositoriosEnMemoria } from '../../src/shared/repositorios';
 import { SEED } from '../../src/shared/seed';
-import { conBase } from './esquema';
-import { boxId, cargarBase, fin, inicio, pacienteId, profesionalId, turnoFicticio, usuarioId } from './fixtures';
+import { conBase, conEsquema, TIMEOUT_POSTGRES } from './esquema';
+import type { BasePrueba } from './esquema';
+import { cargarBase, inicio, turnoFicticio } from './fixtures';
+import { verificarContratoComun } from './contrato';
 
-async function prepararPostgres(probar: (repos: Repositorios) => Promise<void>) {
-  const { crearRepositoriosPostgres } = await import('../../src/shared/persistencia/repositorios-postgres');
-  await conBase((sql, esquema) => probar(crearRepositoriosPostgres(sql, esquema)));
+const postgresHabilitado = Boolean(process.env.TEST_DATABASE_URL);
+
+async function conPostgres<T>(probar: (base: BasePrueba) => Promise<T>): Promise<T> {
+  const base = await conBase();
+  try { return await probar(base); }
+  finally { await base.cerrar(); }
 }
 
-type Ejecutar = (probar: (repos: Repositorios) => Promise<void>) => Promise<void>;
+describe('Contrato de persistencia', () => {
+  it('Contrato común de lectura y escritura', async () => {
+    await verificarContratoComun(crearRepositoriosEnMemoria({ seed: false }));
+  });
 
-function contrato(ejecutar: Ejecutar) {
-  it('guarda, encuentra, filtra y actualiza sin cambiar el orden de inserción', () => ejecutar(async repos => {
-    await cargarBase(repos);
-    const primera = SEED.prestaciones.consulta;
-    const actualizada = { ...primera, precio: 15000.25 };
-    await repos.prestaciones.guardar(actualizada);
-    expect(await repos.prestaciones.buscarPorId(primera.id)).toEqual(actualizada);
-    expect(await repos.prestaciones.existe(primera.id)).toBe(true);
-    const inexistente = randomUUID();
-    expect(await repos.prestaciones.buscarPorId(inexistente)).toBeUndefined();
-    expect(await repos.prestaciones.existe(inexistente)).toBe(false);
-    expect((await repos.prestaciones.listar()).map(p => p.id)).toEqual(Object.values(SEED.prestaciones).map(p => p.id));
-    expect(await repos.prestaciones.listar(p => p.precio === 15000.25)).toEqual([actualizada]);
-    expect(await repos.usuarios.buscarPorId(usuarioId)).toEqual(SEED.usuarios.anaPerez);
-    expect(await repos.profesionales.buscarPorId(profesionalId)).toEqual(SEED.profesionales.anaPerez);
-    expect(await repos.boxes.buscarPorId(boxId)).toEqual(SEED.boxes.box1);
-    expect(await repos.pacientes.buscarPorId(SEED.pacientes.dos.id)).toStrictEqual(SEED.pacientes.dos);
-  }), 25_000);
+  it.skipIf(!postgresHabilitado)('Upsert, ausencia y representación de datos', async () => conPostgres(async ({ sql, esquema }) => {
+      const { crearRepositoriosPostgres } = await import('../../src/shared/persistencia/repositorios-postgres');
+      const repos = crearRepositoriosPostgres(sql, esquema);
+      await cargarBase(repos);
 
-  it('borra horarios y bloqueos sin alterar los demás repositorios', () => ejecutar(async repos => {
-    await cargarBase(repos);
-    const horario = SEED.horarios[0];
-    if (!horario) throw new Error('Falta el horario de prueba.');
-    const bloqueo = { id: randomUUID(), boxId, inicio, fin, motivo: 'Prueba ficticia' };
-    await repos.bloqueos.guardar(bloqueo);
-    expect(await repos.bloqueos.buscarPorId(bloqueo.id)).toStrictEqual(bloqueo);
-    await repos.bloqueos.borrar(bloqueo.id);
-    await repos.horarios.borrar(horario.id);
-    expect(await repos.bloqueos.existe(bloqueo.id)).toBe(false);
-    expect(await repos.horarios.existe(horario.id)).toBe(false);
-    expect(await repos.profesionales.existe(horario.profesionalId)).toBe(true);
-  }), 25_000);
+      const paciente = SEED.pacientes.dos;
+      await repos.pacientes.guardar(paciente);
+      await repos.pacientes.guardar({ ...paciente, telefono: '0000-000202' });
+      expect(await repos.pacientes.listar(p => p.id === paciente.id)).toEqual([{ ...paciente, telefono: '0000-000202' }]);
+      expect(await repos.pacientes.buscarPorId(paciente.id)).toStrictEqual({ ...paciente, telefono: '0000-000202' });
+      expect(await repos.pacientes.buscarPorId(randomUUID())).toBeUndefined();
 
-  it('preserva objetos Date, opcionales ausentes y registros append-only', () => ejecutar(async repos => {
-    await cargarBase(repos);
-    const turno = turnoFicticio();
-    const odontograma = { id: randomUUID(), pacienteId, actualizadoEn: inicio };
-    const auditoria: AuditoriaTurno = {
-      id: randomUUID(), turnoId: turno.id, accion: 'creado', actor: 'paciente', fecha: inicio,
-      detalle: { despues: turno, anidado: [fin], literal: inicio.toISOString() },
-    };
-    const historial = { id: randomUUID(), pacienteId, profesionalId, fecha: fin, texto: 'Prueba ficticia' };
-    const pieza = { id: randomUUID(), odontogramaId: odontograma.id, pieza: 11, estado: 'sano' as const, registradoPor: profesionalId, fecha: fin };
-    await repos.auditoria.agregar(auditoria);
-    await repos.turnos.guardar(turno);
-    await repos.historiaClinica.agregar(historial);
-    await repos.estadosPieza.agregar(pieza);
-    await repos.odontogramas.guardar(odontograma);
-    expect(await repos.turnos.buscarPorId(turno.id)).toStrictEqual(turno);
-    expect(await repos.odontogramas.buscarPorId(odontograma.id)).toStrictEqual(odontograma);
-    expect(await repos.auditoria.listar(a => a.turnoId === turno.id)).toStrictEqual([auditoria]);
-    expect(await repos.historiaClinica.listar()).toStrictEqual([historial]);
-    expect(await repos.estadosPieza.listar()).toStrictEqual([pieza]);
-  }), 25_000);
-}
+      const prestacion = { ...SEED.prestaciones.control, id: randomUUID(), nombre: 'Control de prueba', precio: 15000.25 };
+      await repos.prestaciones.guardar(prestacion);
+      expect(await repos.prestaciones.buscarPorId(prestacion.id)).toStrictEqual(prestacion);
+      expect(await repos.prestaciones.listar()).toHaveLength(Object.keys(SEED.prestaciones).length + 1);
 
-describe('contrato de repositorios en memoria', () => contrato(probar => probar(crearRepositoriosEnMemoria({ seed: false }))));
-describe.skipIf(!process.env.TEST_DATABASE_URL)('contrato de repositorios PostgreSQL', () => contrato(prepararPostgres));
+      const auditoria = {
+        id: randomUUID(), turnoId: randomUUID(), accion: 'creado' as const, actor: 'paciente', fecha: inicio,
+        detalle: { fecha: inicio, lista: [new Date('2027-01-04T12:30:00Z')], literal: inicio.toISOString() },
+      };
+      const turnoPersistido = turnoFicticio();
+      await repos.turnos.guardar(turnoPersistido);
+      await repos.auditoria.agregar({ ...auditoria, turnoId: turnoPersistido.id });
+      const [recuperada] = await repos.auditoria.listar(a => a.id === auditoria.id);
+      expect(recuperada?.detalle).toEqual({
+        fecha: inicio, lista: [new Date('2027-01-04T12:30:00Z')], literal: inicio.toISOString(),
+      });
+      expect(recuperada?.detalle.literal).toBeTypeOf('string');
+  }), TIMEOUT_POSTGRES);
+
+  describe.skipIf(!postgresHabilitado)('Contrato PostgreSQL', () => {
+    it('Suite PostgreSQL habilitada', async () => conPostgres(async ({ sql, esquema }) => {
+      expect(esquema).toMatch(/^test_[0-9a-f]{32}$/);
+      const { crearRepositoriosPostgres, TABLAS_APLICACION } = await import('../../src/shared/persistencia/repositorios-postgres');
+      const repos = crearRepositoriosPostgres(sql, esquema);
+      await verificarContratoComun(repos);
+      const tablas = await sql<{ nombre: string }[]>`
+        select c.relname as nombre from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = ${esquema} and c.relkind = 'r'`;
+      expect(tablas.map(f => f.nombre).sort()).toEqual([...TABLAS_APLICACION, 'schema_migrations'].sort());
+    }), TIMEOUT_POSTGRES);
+
+    it('Documento o correo único duplicado', async () => conPostgres(async ({ sql, esquema }) => {
+      const { crearRepositoriosPostgres } = await import('../../src/shared/persistencia/repositorios-postgres');
+      const repos = crearRepositoriosPostgres(sql, esquema);
+      await cargarBase(repos);
+      await expect(repos.usuarios.guardar({
+        ...SEED.usuarios.paciente1, id: randomUUID(), email: ' PACIENTE1@EXAMPLE.COM ',
+      })).rejects.toMatchObject({ code: 'DUPLICADO' });
+      await expect(repos.pacientes.guardar({
+        ...SEED.pacientes.dos, id: randomUUID(), documento: SEED.pacientes.uno.documento, email: 'otro@example.com',
+      })).rejects.toMatchObject({ code: 'DUPLICADO' });
+      await expect(repos.pacientes.guardar({
+        ...SEED.pacientes.dos, id: randomUUID(), documento: '00000991', email: SEED.pacientes.uno.email,
+      })).rejects.toMatchObject({ code: 'DUPLICADO' });
+      expect(await repos.usuarios.buscarPorId(SEED.usuarios.paciente1.id)).toEqual(SEED.usuarios.paciente1);
+      expect(await repos.pacientes.buscarPorId(SEED.pacientes.uno.id)).toEqual(SEED.pacientes.uno);
+    }), TIMEOUT_POSTGRES);
+
+    it('Una cuenta conserva el correo de su propia ficha', async () => conPostgres(async ({ sql, esquema }) => {
+      const { crearRepositoriosPostgres } = await import('../../src/shared/persistencia/repositorios-postgres');
+      const repos = crearRepositoriosPostgres(sql, esquema);
+      await cargarBase(repos);
+      const ficha = {
+        id: randomUUID(), nombre: 'Paciente Ficticio Vinculación', apellido: 'Prueba', documento: '00000992',
+        email: 'vinculacion@example.com',
+      };
+      await repos.pacientes.guardar(ficha);
+      const app = await buildApp({ repos, clock: new FixedClock(inicio) });
+      try {
+        const respuesta = await app.inject({
+          method: 'POST', url: '/api/public/pacientes/registro',
+          payload: { ...ficha, password: 'clave-ficticia-de-prueba' },
+        });
+        expect(respuesta.statusCode).toBe(201);
+        const paciente = await repos.pacientes.buscarPorId(ficha.id);
+        expect(paciente?.usuarioId).toBeTypeOf('string');
+        expect(await repos.usuarios.buscarPorId(paciente?.usuarioId ?? '')).toMatchObject({ email: ficha.email });
+      } finally { await app.close(); }
+    }), TIMEOUT_POSTGRES);
+  });
+
+  it.skipIf(!postgresHabilitado)('Un test PostgreSQL falla', async () => {
+    let esquemaFallido = '';
+    await expect(conEsquema(async (_sql, esquema) => {
+      esquemaFallido = esquema;
+      throw new Error('Falla ficticia de prueba');
+    })).rejects.toThrow('Falla ficticia de prueba');
+    await conEsquema(async (sql, esquema) => {
+      expect(esquema).not.toBe(esquemaFallido);
+      const [fila] = await sql<{ eliminado: boolean }[]>`select to_regnamespace(${esquemaFallido}) is null as eliminado`;
+      expect(fila?.eliminado).toBe(true);
+    });
+  }, TIMEOUT_POSTGRES);
+});

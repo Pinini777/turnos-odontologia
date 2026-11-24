@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app';
 import { FixedClock } from '../../src/shared/clock';
+import type { Turno } from '../../src/shared/entidades';
+import { crearRepositoriosPostgres } from '../../src/shared/persistencia/repositorios-postgres';
+import type { Repositorios } from '../../src/shared/repositorios';
 import { SEED } from '../../src/shared/seed';
-import { crearRepositoriosPostgres, TABLAS_APLICACION } from '../../src/shared/persistencia/repositorios-postgres';
 import type { AuthPort } from '../../src/shared/sesion';
-import { conBase, conEsquema } from './esquema';
-import { boxId, cargarBase, creadoEn, fin, inicio, pacienteId, prestacionId, profesionalId, turnoFicticio, usuarioId } from './fixtures';
+import { conBase, TIMEOUT_POSTGRES, type BasePrueba } from './esquema';
+import { boxId, cargarBase, creadoEn, pacienteId, prestacionId, profesionalId, turnoFicticio, usuarioId } from './fixtures';
 
 const auth: AuthPort = {
   verificar: async token => {
@@ -17,112 +19,147 @@ const auth: AuthPort = {
   },
 };
 const clock = new FixedClock(creadoEn);
-const turnoJson = { profesionalId, boxId, prestacionId, pacienteId, inicio: inicio.toISOString() };
+const notificador = { enviar: () => Promise.resolve() };
+const equipo = { authorization: 'Bearer equipo' };
 
-describe.skipIf(!process.env.TEST_DATABASE_URL)('invariantes en PostgreSQL', () => {
-  it('no deja el esquema de prueba si falla el trabajo', async () => {
-    let nombre = '';
-    await expect(conEsquema(async (_sql, esquema) => {
-      nombre = esquema;
-      throw new Error('Falla ficticia');
-    })).rejects.toThrow('Falla ficticia');
-    await conEsquema(async (sql, otro) => {
-      expect(otro).not.toBe(nombre);
-      const [fila] = await sql<{ eliminado: boolean }[]>`select to_regnamespace(${nombre}) is null as eliminado`;
-      expect(fila?.eliminado).toBe(true);
-    });
-  }, 30_000);
+/** Cada escenario usa su propio día (lunes a viernes, 09:00 en Argentina) para compartir el esquema sin pisarse. */
+const a = (dia: string, hora = '09:00') => new Date(`2027-01-${dia}T${hora}:00-03:00`);
+const minutos = (d: Date, n: number) => new Date(d.getTime() + n * 60_000);
+const delDia = (turnos: Turno[], dia: Date) => turnos.filter(t => t.inicio.toISOString().slice(0, 10) === dia.toISOString().slice(0, 10));
 
-  it('habilita RLS sin políticas ni acceso público para todas las tablas y el registro', () => conBase(async (sql, esquema) => {
-    const filas = await sql<{ nombre: string; rls: boolean; expuesto: boolean; politicas: number }[]>`
-      select c.relname as nombre, c.relrowsecurity as rls,
-        has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE')
-          or has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE') as expuesto,
-        (select count(*)::int from pg_policy p where p.polrelid = c.oid) as politicas
-      from pg_class c join pg_namespace n on n.oid = c.relnamespace
-      where n.nspname = ${esquema} and c.relkind = 'r'`;
-    expect(filas.map(f => f.nombre).sort()).toEqual([...TABLAS_APLICACION, 'schema_migrations'].sort());
-    for (const fila of filas) expect(fila).toMatchObject({ rls: true, expuesto: false, politicas: 0 });
-  }), 25_000);
+describe.skipIf(!process.env.TEST_DATABASE_URL)('Exclusión e inmutabilidad en PostgreSQL', () => {
+  let base: BasePrueba;
+  let repos: Repositorios;
 
-  it('traduce cada exclusión SQL a 409 aunque la lectura previa todavía no vea el conflicto', () => conBase(async (sql, esquema) => {
-    const repos = crearRepositoriosPostgres(sql, esquema);
+  beforeAll(async () => {
+    base = await conBase();
+    repos = crearRepositoriosPostgres(base.sql, base.esquema);
     await cargarBase(repos);
-    const original = turnoFicticio();
-    await repos.turnos.guardar(original);
-    const app = await buildApp({ repos: { ...repos, turnos: { ...repos.turnos, listar: async () => [] } }, clock, auth });
+  }, TIMEOUT_POSTGRES);
+
+  afterAll(async () => { await base?.cerrar(); }, TIMEOUT_POSTGRES);
+
+  /** Simula que la validación previa no vio el conflicto: solo la exclusión de la base puede frenarlo. */
+  async function appSinLecturaPrevia() {
+    return buildApp({ repos: { ...repos, turnos: { ...repos.turnos, listar: async () => [] } }, clock, auth, notificador });
+  }
+
+  it('Dos recursos disponibles', async () => {
+    const turno = turnoFicticio({ inicio: a('04'), fin: minutos(a('04'), 30) });
+    await repos.turnos.guardar(turno);
+    expect(await repos.turnos.buscarPorId(turno.id)).toEqual(turno);
+  }, TIMEOUT_POSTGRES);
+
+  it('La barrera de base detecta el mismo profesional', async () => {
+    const ocupado = turnoFicticio({ inicio: a('05'), fin: minutos(a('05'), 30) });
+    await repos.turnos.guardar(ocupado);
+    const app = await appSinLecturaPrevia();
     try {
-      const casos = [
-        { datos: { ...turnoJson, boxId: SEED.boxes.box2.id }, code: 'SOLAPAMIENTO_PROFESIONAL' },
-        { datos: { ...turnoJson, profesionalId: SEED.profesionales.brunoGomez.id }, code: 'SOLAPAMIENTO_BOX' },
-      ];
-      for (const { datos, code } of casos) {
-        const respuesta = await app.inject({ method: 'POST', url: '/api/turnos', headers: { authorization: 'Bearer equipo' }, payload: datos });
-        expect(respuesta.statusCode).toBe(409);
-        expect(respuesta.json()).toEqual({ code });
-      }
-      expect(await repos.turnos.listar()).toEqual([original]);
+      const respuesta = await app.inject({
+        method: 'POST', url: '/api/turnos', headers: equipo,
+        payload: { profesionalId, boxId: SEED.boxes.box2.id, prestacionId, pacienteId, inicio: a('05').toISOString() },
+      });
+      expect(respuesta.statusCode).toBe(409);
+      expect(respuesta.json()).toEqual({ code: 'SOLAPAMIENTO_PROFESIONAL' });
     } finally { await app.close(); }
-  }), 40_000);
+    expect(delDia(await repos.turnos.listar(), a('05'))).toEqual([ocupado]);
+  }, TIMEOUT_POSTGRES);
 
-  it('acepta turnos contiguos y reutiliza el intervalo de un cancelado sin borrarlo', () => conBase(async (sql, esquema) => {
-    const repos = crearRepositoriosPostgres(sql, esquema);
-    await cargarBase(repos);
-    const primero = turnoFicticio();
-    const contiguo = turnoFicticio({ inicio: fin, fin: new Date('2027-01-04T13:00:00Z') });
+  it('La barrera de base detecta el mismo box', async () => {
+    const ocupado = turnoFicticio({ inicio: a('06'), fin: minutos(a('06'), 30) });
+    await repos.turnos.guardar(ocupado);
+    const app = await appSinLecturaPrevia();
+    try {
+      const respuesta = await app.inject({
+        method: 'POST', url: '/api/turnos', headers: equipo,
+        payload: { profesionalId: SEED.profesionales.brunoGomez.id, boxId, prestacionId, pacienteId, inicio: a('06').toISOString() },
+      });
+      expect(respuesta.statusCode).toBe(409);
+      expect(respuesta.json()).toEqual({ code: 'SOLAPAMIENTO_BOX' });
+    } finally { await app.close(); }
+    expect(delDia(await repos.turnos.listar(), a('06'))).toEqual([ocupado]);
+  }, TIMEOUT_POSTGRES);
+
+  it('Turnos contiguos', async () => {
+    const primero = turnoFicticio({ inicio: a('07', '10:00'), fin: a('07', '10:30') });
+    const siguiente = turnoFicticio({ inicio: a('07', '10:30'), fin: a('07', '11:00') });
     await repos.turnos.guardar(primero);
-    await repos.turnos.guardar(contiguo);
-    const cancelado = { ...primero, estado: 'cancelado' as const };
+    await repos.turnos.guardar(siguiente);
+    expect(delDia(await repos.turnos.listar(), a('07'))).toEqual([primero, siguiente]);
+  }, TIMEOUT_POSTGRES);
+
+  it('Un turno cancelado no ocupa el intervalo', async () => {
+    const cancelado = turnoFicticio({ inicio: a('08'), fin: minutos(a('08'), 30), estado: 'cancelado' });
+    const nuevo = turnoFicticio({ inicio: a('08'), fin: minutos(a('08'), 30) });
     await repos.turnos.guardar(cancelado);
-    const reemplazo = turnoFicticio();
-    await repos.turnos.guardar(reemplazo);
-    expect(await repos.turnos.listar()).toEqual([cancelado, contiguo, reemplazo]);
-  }), 35_000);
+    await repos.turnos.guardar(nuevo);
+    expect(delDia(await repos.turnos.listar(), a('08'))).toEqual([cancelado, nuevo]);
+  }, TIMEOUT_POSTGRES);
 
-  it('rechaza duplicados de C-04 y permite que la ficha use el correo de su propia cuenta', () => conBase(async (sql, esquema) => {
-    const repos = crearRepositoriosPostgres(sql, esquema);
-    await cargarBase(repos);
-    const ficha = SEED.pacientes.dos;
-    await expect(repos.usuarios.guardar({ ...SEED.usuarios.paciente1, id: randomUUID(), email: ' PACIENTE1@EXAMPLE.COM ' })).rejects.toMatchObject({ code: 'DUPLICADO' });
-    await expect(repos.pacientes.guardar({ ...ficha, id: randomUUID(), email: 'distinto@example.com' })).rejects.toMatchObject({ code: 'DUPLICADO' });
-    await expect(repos.pacientes.guardar({ ...ficha, id: randomUUID(), documento: '00000199' })).rejects.toMatchObject({ code: 'DUPLICADO' });
-    const app = await buildApp({ repos, clock });
+  it('Cancelación con auditoría', async () => {
+    const turno = turnoFicticio({ inicio: a('11'), fin: minutos(a('11'), 30) });
+    await repos.turnos.guardar(turno);
+    const app = await buildApp({ repos, clock, auth, notificador });
     try {
-      const { documento, email, nombre, apellido } = ficha;
-      const respuesta = await app.inject({ method: 'POST', url: '/api/public/pacientes/registro', payload: { documento, email, nombre, apellido, password: 'paciente-ficticio-ejemplo' } });
-      expect(respuesta.statusCode).toBe(201);
-      const paciente = await repos.pacientes.buscarPorId(ficha.id);
-      expect(paciente?.usuarioId).toBeTypeOf('string');
-      expect(await repos.usuarios.buscarPorId(paciente?.usuarioId ?? '')).toMatchObject({ email });
+      const respuesta = await app.inject({ method: 'POST', url: `/api/turnos/${turno.id}/cancelar`, headers: equipo });
+      expect(respuesta.statusCode).toBe(200);
     } finally { await app.close(); }
-  }), 40_000);
+    expect(await repos.turnos.buscarPorId(turno.id)).toEqual({ ...turno, estado: 'cancelado' });
+    expect(await repos.auditoria.listar(r => r.turnoId === turno.id)).toEqual([
+      expect.objectContaining({ accion: 'cancelado', actor: SEED.usuarios.recepcion.id }),
+    ]);
+  }, TIMEOUT_POSTGRES);
 
-  it('conserva la reserva online y el primer odontograma y protege la escritura append-only', () => conBase(async (sql, esquema) => {
-    const repos = crearRepositoriosPostgres(sql, esquema);
-    await cargarBase(repos);
-    const app = await buildApp({ repos, clock, auth, notificador: { enviar: () => Promise.resolve() } });
+  it('SQL directo intenta alterar el historial', async () => {
+    const { sql, esquema } = base;
+    const pacienteDos = SEED.pacientes.dos.id;
+    const turno = turnoFicticio({ inicio: a('12'), fin: minutos(a('12'), 30), pacienteId: pacienteDos });
+    await repos.turnos.guardar(turno);
+    const auditoria = { id: randomUUID(), turnoId: turno.id, accion: 'creado' as const, actor: usuarioId, fecha: creadoEn, detalle: { despues: turno } };
+    const historia = { id: randomUUID(), pacienteId: pacienteDos, profesionalId, fecha: a('12'), texto: 'Entrada ficticia' };
+    const odontogramaId = randomUUID();
+    const pieza = { id: randomUUID(), odontogramaId, pieza: 16, cara: 'oclusal' as const, estado: 'caries' as const, registradoPor: profesionalId, fecha: a('12') };
+    await repos.auditoria.agregar(auditoria);
+    await repos.historiaClinica.agregar(historia);
+    await repos.estadosPieza.agregar(pieza);
+    await repos.odontogramas.guardar({ id: odontogramaId, pacienteId: pacienteDos, actualizadoEn: a('12') });
+
+    const prohibido = { code: '23514' };
+    await expect(sql`delete from ${sql(esquema)}.turnos where id = ${turno.id}`).rejects.toMatchObject(prohibido);
+    for (const [tabla, id] of [['auditoria', auditoria.id], ['historia_clinica', historia.id], ['estados_pieza', pieza.id]] as const) {
+      await expect(sql`update ${sql(esquema)}.${sql(tabla)} set fecha = ${a('13')} where id = ${id}`).rejects.toMatchObject(prohibido);
+      await expect(sql`delete from ${sql(esquema)}.${sql(tabla)} where id = ${id}`).rejects.toMatchObject(prohibido);
+    }
+
+    expect(await repos.turnos.buscarPorId(turno.id)).toEqual(turno);
+    expect(await repos.auditoria.listar(r => r.id === auditoria.id)).toEqual([auditoria]);
+    expect(await repos.historiaClinica.listar(r => r.id === historia.id)).toEqual([historia]);
+    expect(await repos.estadosPieza.listar(r => r.id === pieza.id)).toEqual([pieza]);
+  }, TIMEOUT_POSTGRES);
+
+  it('Primera escritura con relaciones aún no materializadas', async () => {
+    expect(await repos.odontogramas.listar(o => o.pacienteId === pacienteId)).toEqual([]);
+    const app = await buildApp({ repos, clock, auth, notificador });
     try {
-      const online = await app.inject({ method: 'POST', url: '/api/paciente/turnos', headers: { authorization: 'Bearer paciente' }, payload: { profesionalId, boxId, prestacionId, inicio: inicio.toISOString() } });
-      expect(online.statusCode).toBe(201);
-      const odontograma = await app.inject({ method: 'PUT', url: `/api/pacientes/${pacienteId}/odontograma`, headers: { authorization: 'Bearer odontologia' }, payload: { piezas: [{ pieza: 11, estado: 'caries', cara: 'oclusal' }] } });
+      const reserva = await app.inject({
+        method: 'POST', url: '/api/paciente/turnos', headers: { authorization: 'Bearer paciente' },
+        payload: { profesionalId, boxId, prestacionId, inicio: a('14').toISOString() },
+      });
+      expect(reserva.statusCode).toBe(201);
+      const odontograma = await app.inject({
+        method: 'PUT', url: `/api/pacientes/${pacienteId}/odontograma`, headers: { authorization: 'Bearer odontologia' },
+        payload: { piezas: [{ pieza: 11, estado: 'caries', cara: 'oclusal' }] },
+      });
       expect(odontograma.statusCode).toBe(200);
-      await repos.historiaClinica.agregar({ id: randomUUID(), pacienteId, profesionalId, fecha: inicio, texto: 'Prueba ficticia' });
-      const fila = await repos.turnos.listar();
-      expect(fila).toHaveLength(1);
-      const id = fila[0]?.id;
-      expect(id).toBeTypeOf('string');
-      expect(await repos.auditoria.listar()).toHaveLength(1);
-      expect(await repos.estadosPieza.listar()).toHaveLength(1);
-      expect(await repos.odontogramas.listar()).toHaveLength(1);
-      await expect(sql`delete from ${sql(esquema)}.turnos where id = ${id ?? ''}`).rejects.toMatchObject({ code: '23514' });
-      for (const tabla of ['auditoria', 'historia_clinica', 'estados_pieza']) {
-        await expect(sql`update ${sql(esquema)}.${sql(tabla)} set fecha = ${fin}`).rejects.toMatchObject({ code: '23514' });
-        await expect(sql`delete from ${sql(esquema)}.${sql(tabla)}`).rejects.toMatchObject({ code: '23514' });
-      }
-      expect(await repos.turnos.listar()).toEqual(fila);
-      expect(await repos.auditoria.listar()).toHaveLength(1);
-      expect(await repos.historiaClinica.listar()).toHaveLength(1);
-      expect(await repos.estadosPieza.listar()).toHaveLength(1);
     } finally { await app.close(); }
-  }), 50_000);
+
+    const [turno] = delDia(await repos.turnos.listar(), a('14'));
+    expect(turno).toMatchObject({ pacienteId, origen: 'online' });
+    expect(await repos.auditoria.listar(r => r.turnoId === turno?.id)).toEqual([expect.objectContaining({ accion: 'creado' })]);
+    const [cabecera] = await repos.odontogramas.listar(o => o.pacienteId === pacienteId);
+    expect(cabecera).toBeDefined();
+    expect(await repos.estadosPieza.listar(e => e.odontogramaId === cabecera?.id)).toEqual([
+      expect.objectContaining({ pieza: 11, cara: 'oclusal', estado: 'caries' }),
+    ]);
+  }, TIMEOUT_POSTGRES);
 });
