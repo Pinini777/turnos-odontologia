@@ -136,6 +136,19 @@ web/src/pages/profesional/
    - Navegación por teclado con `Tab` / flechas (roving focus por arcada) y activación con `Enter` / `Space`.
    - Región `aria-live="polite"` que anuncia la pieza/cara seleccionada y el resultado del guardado.
 
+### D5. Mejoras UX post-revisión de EP (2026-11-24): Odontograma 3D procedural y bloqueos intuitivos
+
+1. **Odontograma 3D procedural con fallback automático a 2D (`Odontograma3d.tsx`, `odontograma3dMotor.ts`, `odontogramaHistorial.ts`, `threeCdn.ts`)**:
+   - Carga dinámica de Three.js `0.170.0` vía `esm.sh` en tiempo de ejecución sin modificar `package.json`, `web/package.json` ni `web/index.html` (regla dura 3).
+   - Detección de WebGL 2 y fallback automático e inmediato al **Mapa clásico 2D SVG** (`OdontogramaFdiSvg`) cuando el entorno no soporta WebGL 2 (por ejemplo jsdom o dispositivos sin GPU) o falla la carga de red, preservando el 100 % de los selectores y pruebas existentes.
+   - Funcionalidades clínicas sobre el contrato backend intacto (`GET/PUT /api/pacientes/:id/odontograma`): dentición `Permanente` (32), `Temporaria` (20) y `Mixta` (52); vista **Rayos X**; inspector aislado con las 5 caras anatómicas (`Palatina` en arcada superior / `Lingual` en inferior) deshabilitadas en estados de pieza completa; **borrador multi-cambio** con deshacer ítem por ítem que envía todo el lote en un único `PUT`; y **Máquina del tiempo** sobre `historial` para recorrer consultas previas en modo solo lectura.
+
+2. **Gestión intuitiva de horarios y bloqueos (`HorariosPage.tsx`, `formatos.ts`, `horariosUx.test.tsx`)**:
+   - **Tira semanal `Lun`–`Dom`**: resume visualmente qué días tienen franjas cargadas y cuáles están libres; tocar un día libre agrega en 1 click una franja `09:00–13:00` y tocar un día configurado enfoca su primera franja sin duplicarla.
+   - **Alcance claro + chips 1-click de Box**: reemplaza la jerga técnica por tarjetas descriptivas (`Mi agenda (profesional)` vs `Un box del consultorio`) y agrega chips 1-click para cada box activo sincronizados con el `<select id="bloqueo-box">`.
+   - **Atajos de fecha, franja horaria y motivos**: atajos `Hoy`, `Mañana`, `Esta semana` y `Próxima semana`; conmutador visual `"Bloquear día completo"` (activo por defecto) junto al botón `"Elegir franja horaria"` con presets (`Mañana 08:00–13:00`, `Tarde 14:00–20:00`, `+1 h`, `+2 h`), autoajuste automático de `Hora hasta` a `Hora desde + 1 h` (tope `21:45`) al elegir una hora mayor o igual en el mismo día, validación inline ante rangos inválidos, chips de motivo contextuales según alcance y **vista previa legible** antes de confirmar.
+   - **Tabla de bloqueos vigentes**: filtros rápidos (`Todos` / `Mi agenda` / `Boxes`) y badges diferenciados (`Box`, `Mi agenda`, `Día completo`), manteniendo 100 % de compatibilidad con `POST /api/bloqueos`, `DELETE /api/bloqueos/:id` y `POST /api/profesionales/:id/horarios`.
+
 ## Risks / Trade-offs
 
 - [Menú base en `web/src/base/menu.ts` mantiene `proximamente: true` hasta `chore(shared)` de EP] → Mitigado pasando `itemsExtra={MENU_PROFESIONAL}` desde todas las pantallas de `C-15`; una vez que EP actualice `menu.ts`, la navegación desde `/inicio` apuntará directamente a `/profesional/*` sin cambios en `C-15`.

@@ -9,6 +9,7 @@ import {
   nombreAnatomicoFdi,
   type EstadoVisualPieza,
 } from './odontogramaFdi';
+import type { TipoDenticion } from './odontogramaHistorial';
 
 export interface PropsOdontogramaFdi {
   readonly piezas: readonly EstadoPiezaApi[];
@@ -17,6 +18,9 @@ export interface PropsOdontogramaFdi {
   readonly mostrarTemporaria: boolean;
   readonly onToggleTemporaria: (visible: boolean) => void;
   readonly onSeleccionar: (pieza: number, cara: CaraPiezaApi) => void;
+  readonly denticion?: TipoDenticion;
+  readonly embebido?: boolean;
+  readonly piezasDestacadas?: ReadonlySet<number>;
 }
 
 function fillPorEstado(estado: EstadoDePiezaApi): string {
@@ -89,6 +93,7 @@ interface PropsPiezaSvg {
   readonly numeroArriba: boolean;
   readonly estadoVisual: EstadoVisualPieza | undefined;
   readonly seleccionada: boolean;
+  readonly destacada: boolean;
   readonly caraSeleccionada: CaraPiezaApi | '';
   readonly onSeleccionar: (pieza: number, cara: CaraPiezaApi) => void;
 }
@@ -98,6 +103,7 @@ function PiezaFdiSvg({
   numeroArriba,
   estadoVisual,
   seleccionada,
+  destacada,
   caraSeleccionada,
   onSeleccionar,
 }: PropsPiezaSvg) {
@@ -202,7 +208,13 @@ function PiezaFdiSvg({
 
   return (
     <div
-      className={['prof-tooth', seleccionada ? 'prof-tooth--selected' : ''].filter(Boolean).join(' ')}
+      className={[
+        'prof-tooth',
+        seleccionada ? 'prof-tooth--selected' : '',
+        destacada ? 'prof-tooth--flash' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       data-tooth-fdi={pieza}
     >
       {numeroArriba ? (
@@ -227,8 +239,14 @@ export function OdontogramaFdi({
   mostrarTemporaria,
   onToggleTemporaria,
   onSeleccionar,
+  denticion,
+  embebido = false,
+  piezasDestacadas,
 }: PropsOdontogramaFdi) {
   const mapaEstados = agruparEstadosPorPieza(piezas);
+  const denticionEfectiva: TipoDenticion = denticion ?? (mostrarTemporaria ? 'mixta' : 'permanente');
+  const verPermanentes = denticionEfectiva !== 'temporaria';
+  const verTemporarias = denticionEfectiva !== 'permanente';
 
   function renderCuadrante(
     lista: readonly number[],
@@ -244,6 +262,7 @@ export function OdontogramaFdi({
             numeroArriba={numeroArriba}
             estadoVisual={mapaEstados.get(p)}
             seleccionada={piezaSeleccionada === p}
+            destacada={Boolean(piezasDestacadas?.has(p))}
             caraSeleccionada={caraSeleccionada}
             onSeleccionar={onSeleccionar}
           />
@@ -252,24 +271,26 @@ export function OdontogramaFdi({
     );
   }
 
-  return (
-    <div className="prof-card">
-      <div className="prof-card__head">
-        <div>
-          <h2 className="prof-card__titulo">Odontograma FDI</h2>
-          <p className="prof-card__sub">
-            Seleccioná una cara o pieza para actualizar su estado clínico.
-          </p>
+  const contenido = (
+    <>
+      {!embebido ? (
+        <div className="prof-card__head">
+          <div>
+            <h2 className="prof-card__titulo">Odontograma FDI</h2>
+            <p className="prof-card__sub">
+              Seleccioná una cara o pieza para actualizar su estado clínico.
+            </p>
+          </div>
+          <label className="prof-check">
+            <input
+              type="checkbox"
+              checked={mostrarTemporaria}
+              onChange={(e) => onToggleTemporaria(e.target.checked)}
+            />
+            <span>Mostrar dentición temporaria (51–85)</span>
+          </label>
         </div>
-        <label className="prof-check">
-          <input
-            type="checkbox"
-            checked={mostrarTemporaria}
-            onChange={(e) => onToggleTemporaria(e.target.checked)}
-          />
-          <span>Mostrar dentición temporaria (51–85)</span>
-        </label>
-      </div>
+      ) : null}
 
       {/* Patrón SVG accesible (WCAG 1.4.1: color + trama) */}
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -335,21 +356,23 @@ export function OdontogramaFdi({
       </div>
 
       <div className="prof-odo-board" aria-label="Grilla interactiva de piezas dentales FDI">
-        <div className="prof-odo-arch">
-          <div className="prof-odo-quad-block">
-            <span className="prof-odo-quad-label">Cuadrante 1 · Sup. derecho (18–11)</span>
-            {renderCuadrante(CUADRANTES_PERMANENTES.q1, true)}
+        {verPermanentes ? (
+          <div className="prof-odo-arch">
+            <div className="prof-odo-quad-block">
+              <span className="prof-odo-quad-label">Cuadrante 1 · Sup. derecho (18–11)</span>
+              {renderCuadrante(CUADRANTES_PERMANENTES.q1, true)}
+            </div>
+            <div className="prof-odo-midline-v" aria-hidden="true" />
+            <div className="prof-odo-quad-block">
+              <span className="prof-odo-quad-label prof-odo-quad-label--right">
+                Cuadrante 2 · Sup. izquierdo (21–28)
+              </span>
+              {renderCuadrante(CUADRANTES_PERMANENTES.q2, true)}
+            </div>
           </div>
-          <div className="prof-odo-midline-v" aria-hidden="true" />
-          <div className="prof-odo-quad-block">
-            <span className="prof-odo-quad-label prof-odo-quad-label--right">
-              Cuadrante 2 · Sup. izquierdo (21–28)
-            </span>
-            {renderCuadrante(CUADRANTES_PERMANENTES.q2, true)}
-          </div>
-        </div>
+        ) : null}
 
-        {mostrarTemporaria ? (
+        {verTemporarias ? (
           <div>
             <div className="prof-odo-temp-title">Dentición temporaria superior (55–51 | 61–65)</div>
             <div className="prof-odo-arch">
@@ -366,7 +389,7 @@ export function OdontogramaFdi({
 
         <hr className="prof-odo-midline-h" />
 
-        {mostrarTemporaria ? (
+        {verTemporarias ? (
           <div>
             <div className="prof-odo-temp-title">Dentición temporaria inferior (85–81 | 71–75)</div>
             <div className="prof-odo-arch">
@@ -381,20 +404,28 @@ export function OdontogramaFdi({
           </div>
         ) : null}
 
-        <div className="prof-odo-arch">
-          <div className="prof-odo-quad-block">
-            <span className="prof-odo-quad-label">Cuadrante 4 · Inf. derecho (48–41)</span>
-            {renderCuadrante(CUADRANTES_PERMANENTES.q4, false)}
+        {verPermanentes ? (
+          <div className="prof-odo-arch">
+            <div className="prof-odo-quad-block">
+              <span className="prof-odo-quad-label">Cuadrante 4 · Inf. derecho (48–41)</span>
+              {renderCuadrante(CUADRANTES_PERMANENTES.q4, false)}
+            </div>
+            <div className="prof-odo-midline-v" aria-hidden="true" />
+            <div className="prof-odo-quad-block">
+              <span className="prof-odo-quad-label prof-odo-quad-label--right">
+                Cuadrante 3 · Inf. izquierdo (31–38)
+              </span>
+              {renderCuadrante(CUADRANTES_PERMANENTES.q3, false)}
+            </div>
           </div>
-          <div className="prof-odo-midline-v" aria-hidden="true" />
-          <div className="prof-odo-quad-block">
-            <span className="prof-odo-quad-label prof-odo-quad-label--right">
-              Cuadrante 3 · Inf. izquierdo (31–38)
-            </span>
-            {renderCuadrante(CUADRANTES_PERMANENTES.q3, false)}
-          </div>
-        </div>
+        ) : null}
       </div>
-    </div>
+    </>
   );
+
+  if (embebido) {
+    return <div className="prof-odo-map-wrap">{contenido}</div>;
+  }
+
+  return <div className="prof-card">{contenido}</div>;
 }
