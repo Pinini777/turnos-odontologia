@@ -6,7 +6,7 @@
 |---|---|---|
 | Arquitectura hexagonal (puertos y adaptadores) | Dentro de cada `src/modules/<capability>/`: `dominio/` ↔ `aplicacion/` ↔ `routes.ts`, con puertos en `src/shared/` | Las reglas de agenda se testean sin HTTP ni base de datos |
 | Funciones de dominio puras | Detección de solapamientos, grilla, transiciones de estado | Deterministas: un test por escenario del spec, sin mocks |
-| Repository | `TurnoRepository`, `ProfesionalRepository`, etc. | Arranca en memoria y migra a SQLite sin tocar el dominio |
+| Repository | `TurnoRepository`, `ProfesionalRepository`, etc. | Memoria por defecto o PostgreSQL en Supabase, sin tocar el dominio (DD-14) |
 | Caso de uso (application service) | `CrearTurno`, `CancelarTurno`, `ReprogramarTurno`, `ReservarOnline` | Un punto que orquesta validación, persistencia, auditoría y notificación |
 | Reloj inyectable (`Clock`) | Reglas que dependen de "ahora" | Tests reproducibles de RN-AG-10 y de la regla de 24 h |
 | Errores de dominio con código | `ReglaDeNegocioError(code)` → HTTP `409` | Los tests verifican el motivo exacto del rechazo |
@@ -43,7 +43,8 @@ turnos-odontologia/
 - **Validación de input**: esquemas Zod en cada endpoint. Fechas en ISO 8601 con zona horaria explícita.
 - **Secrets management**: variables de entorno; `.env` ignorado por git (además, el harness `permissions` de Active Stack lo bloquea); `.env.example` con valores falsos.
 - **Datos sensibles**: HC y odontograma solo para profesionales, con auditoría. Sin datos reales de pacientes en el repo (RN-DA-01).
-- **Concurrencia**: validar y guardar un turno es atómico. En memoria, con un lock por consultorio. En SQLite, con una transacción `BEGIN IMMEDIATE` (RN-RE-04).
+- **Concurrencia**: `conLockDeAgenda` serializa las operaciones de agenda dentro de una instancia de la API (RN-RE-04). En PostgreSQL, dos exclusiones GiST protegen los intervalos `[inicio, fin)` no cancelados por profesional y por box. No vuelven transaccionales todas las escrituras de los módulos ni amplían el soporte a varias instancias activas.
+- **Persistencia externa**: la API usa un pool TLS contra el Session pooler. Las tablas de C-16 tienen RLS sin políticas y no conceden acceso público. Las migraciones se ejecutan explícitamente con `npm run db:migrar`; el arranque solo siembra tablas de aplicación vacías.
 
 ## Variables de entorno
 
@@ -55,7 +56,8 @@ turnos-odontologia/
 | `SMTP_HOST` / `SMTP_PORT` | Servidor de correo | `localhost` / `1025` | N |
 | `SMTP_USER` / `SMTP_PASS` | Credenciales SMTP | `usuario-ejemplo` / `clave-ejemplo` | **S** |
 | `MAIL_FROM` | Remitente | `turnos@example.com` | N |
-| `DB_PATH` | Archivo SQLite (cuando exista) | `./data/turnos.db` | N |
+| `DATABASE_URL` | Conexión del Session pooler para la API y el migrador; si falta se usa memoria | — | S |
+| `TEST_DATABASE_URL` | Conexión para la suite PostgreSQL; cada ejecución usa su propio esquema | — | S |
 
 ## Calidad y verificación
 

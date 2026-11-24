@@ -9,7 +9,8 @@
     "web"
   ],
   "scripts": {
-    "start": "tsx src/server.ts",
+    "start": "node --env-file-if-exists=.env --import tsx src/server.ts",
+    "db:migrar": "node --env-file-if-exists=.env --import tsx src/shared/persistencia/migrar-cli.ts",
     "test": "vitest run && npm test -w web",
     "typecheck": "tsc && npm run typecheck -w web",
     "lint": "eslint ."
@@ -19,6 +20,7 @@
     "fastify": "5.12.8",
     "jose": "6.2.18",
     "nodemailer": "10.6.1",
+    "postgres": "3.4.8",
     "zod": "3.25.76"
   },
   "devDependencies": {

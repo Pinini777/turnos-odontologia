@@ -48,11 +48,11 @@ Abrí http://localhost:5173 y entrá con un usuario de prueba. Son datos fictici
 
 `npm start` también carga **pacientes de demostración** con nombres de personajes de ficción argentinos (`src/shared/seed-demo.ts`): Mario Santos, Emilio Ravenna, Gabriel Medina y Pablo Lamponne, de *Los simuladores*, y Mafalda y Felipe, de *Mafalda*, con dentición mixta. Cada uno tiene historia clínica, un odontograma armado en varias visitas para recorrerlo con la máquina del tiempo, turnos atendidos (que suman en Ganancias) y turnos próximos. Las fechas se calculan desde el momento en que arranca la API. Los tests no cargan estos datos.
 
-Los datos viven en memoria: al reiniciar la API se pierden los turnos creados y vuelven los seeds.
+Por defecto los datos viven en memoria: al reiniciar la API se pierden los turnos creados y vuelven los seeds. Con PostgreSQL, la siembra solo se aplica cuando la base está vacía y el contenido se conserva entre reinicios.
 
 ### Variables de entorno (opcionales)
 
-La API lee variables del entorno del proceso; no carga un archivo `.env` por su cuenta. `.env.example` lista las disponibles.
+`npm start` carga el `.env` local si existe. Las variables del entorno del proceso tienen prioridad; `.env.example` lista las disponibles. Los tests ordinarios no cargan `.env` automáticamente.
 
 | Variable | Para qué | Si no se define |
 |---|---|---|
@@ -62,6 +62,14 @@ La API lee variables del entorno del proceso; no carga un archivo `.env` por su 
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Envío real de emails de confirmación | Los emails quedan en un outbox en memoria |
 
 Ejemplo en PowerShell: `$env:APP_TZ = "America/Argentina/Buenos_Aires"; npm start`. En bash: `APP_TZ=America/Argentina/Buenos_Aires npm start`.
+
+### Persistencia en Supabase (opcional)
+
+1. Crea o abre el proyecto Supabase autorizado y elige **Connect → Session pooler** (puerto `5432`).
+2. Copia la cadena completa en `DATABASE_URL` dentro del `.env` local: reemplaza el marcador entero por la contraseña de PostgreSQL y codifica sus caracteres reservados. No compartas ni versiones la cadena. Para las pruebas PostgreSQL, configura también `TEST_DATABASE_URL`; puede ser la misma cadena, ya que cada corrida usa un esquema propio.
+3. Ejecuta `npm run db:migrar` para aplicar las migraciones pendientes. Después inicia la API con `npm start`.
+
+Sin `DATABASE_URL` la API usa memoria, y los tests y el CI ordinarios no requieren Supabase. El plan gratuito puede [pausar un proyecto con baja actividad durante una semana](https://supabase.com/docs/guides/platform/free-project-pausing). No utilices datos reales de pacientes en este entorno.
 
 ## Estructura
 
