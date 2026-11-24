@@ -455,7 +455,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `design-system/components.html` (agenda por box, formulario de turno)
 
 ### [C-14] `web-paciente`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-23)
 - **Responsable**: Lucas · **Capability**: `web-paciente` · **Prioridad**: P2
 - **Scope**:
   - `web/src/pages/paciente/`: elegir prestación, ver huecos libres, reservar, "Mis turnos", cancelar o reprogramar con el aviso de 24 h, botón "Agregar a Google Calendar" y descarga del `.ics`.
