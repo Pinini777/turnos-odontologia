@@ -49,7 +49,7 @@ La fuente de verdad del dominio vive en `knowledge-base/`. **Leé el archivo rel
 
 > En `10_preguntas_abiertas.md` no hay preguntas de prioridad **Alta** sin resolver. Las de prioridad Media (PA-03 a PA-12) tienen un supuesto por defecto en la ficha de cada change de `CHANGES.md`; si EP no responde, se aplica el supuesto y se anota en el `design.md` del change.
 
-Otras fuentes: el informe de Discovery ([docs/discovery/informe-discovery.md](docs/discovery/informe-discovery.md), MVP en la sección D.3), la política visual ([design-system/README.md](design-system/README.md), `system-and-mockups`, aprobación pendiente) y el flujo de equipo ([CONTRIBUTING.md](CONTRIBUTING.md)).
+Otras fuentes: el informe de Discovery ([docs/discovery/informe-discovery.md](docs/discovery/informe-discovery.md), MVP en la sección D.3), la política visual ([design-system/README.md](design-system/README.md), `system-and-mockups`, revisión 2 aprobada por EP el 2026-11-23) y el flujo de equipo ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ---
 

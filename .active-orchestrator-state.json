@@ -43,7 +43,7 @@
       },
       "visual-design": {
         "variant": "system-and-mockups",
-        "status": "deferred",
+        "status": "done",
         "requires": [],
         "outputs": [
           "design-system/README.md",
@@ -56,7 +56,10 @@
         ],
         "changed_at": "2026-11-21",
         "changed_by": "EP (antes: off)",
-        "deferred_reason": "EP: dejar el design system para después y enfocarse en la etapa 3 (2026-11-21). Revisión 1 creada, aprobación pendiente."
+        "deferred_reason": "EP: dejar el design system para después y enfocarse en la etapa 3 (2026-11-21). Revisión 1 creada, aprobación pendiente.",
+        "completed_at": "2026-11-23",
+        "approved_by": "EP",
+        "notes": "Revisión 2 aprobada por EP el 2026-11-23; los changes C-12 a C-15 la usaron con mockups aprobados."
       },
       "roadmap": {
         "variant": "local-markdown",
@@ -328,8 +331,10 @@
   "visual_design": {
     "created_by": "design-system",
     "mode": "system-and-mockups",
-    "status": "pending",
-    "revision": 1,
+    "status": "approved",
+    "revision": 2,
+    "approved_at": "2026-11-23",
+    "approved_by": "EP",
     "path": "design-system/README.md"
   },
   "roadmap": {
