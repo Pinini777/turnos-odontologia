@@ -123,6 +123,7 @@ Cada integrante **conduce al menos dos changes** con el agente, de explore a arc
 | UI | Lautaro | C-13 web-recepcion | `web-recepcion` | `web/src/pages/recepcion/` |
 | UI | Lucas | C-14 web-paciente | `web-paciente` | `web/src/pages/paciente/` |
 | UI | Facundo | C-15 web-profesional | `web-profesional` | `web/src/pages/profesional/` |
+| 5 | EP | C-16 persistencia-supabase | `persistencia` | `src/shared/persistencia/`, `src/server.ts`, `supabase/migrations/`, `tests/persistencia/`, `package.json`, lockfile, `.env.example`, `README.md`, KB (`02`, `08`, `09`), `AGENTS.md` y `CLAUDE.md` (fila de persistencia) |
 
 Además, cada change escribe en `openspec/changes/<nombre-del-change>/` y, al archivar, en `openspec/specs/<su-capability>/`. Como **ninguna capability se repite**, los archive no chocan.
 
@@ -482,6 +483,22 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/07_flujos_principales.md` §F-06, §F-07
   - `design-system/components.html` (ganancias, tabla)
 
+### [C-16] `persistencia-supabase`
+- **Estado**: `[ ]` pendiente
+- **Responsable**: EP (con Codex) · **Capability**: `persistencia` · **Prioridad**: P3 (fuera de la consigna; no debe romper la entrega)
+- **Scope**:
+  - Adaptador PostgreSQL (Supabase) para los 12 repositorios de `Repositorios`, que se activa solo con la variable `DATABASE_URL`. Sin ella, la API sigue en memoria (los tests, el CI y el README no cambian).
+  - Migraciones SQL versionadas en `supabase/migrations/`: tablas, `EXCLUDE` contra solapamientos de turnos no cancelados por profesional y por box, triggers que impiden borrar turnos y editar o borrar auditoría, historia clínica y estados de pieza, y RLS activado sin políticas para que la API REST pública de Supabase no exponga nada.
+  - Siembra inicial (`SEED` y pacientes demo) solo si la base está vacía.
+  - Tests de contrato de los repositorios: siempre contra memoria y, si existe `TEST_DATABASE_URL`, también contra Postgres.
+- **Dependencias**: `C-01` a `C-15` (todos mergeados)
+- **Governance**: CRITICO (datos de pacientes y persistencia): EP aprueba el spec antes de `apply`.
+- **Leer antes**:
+  - `knowledge-base/09_decisiones_y_supuestos.md` §DD-07 (esta decisión cambia de SQLite a Supabase)
+  - `knowledge-base/08_arquitectura_propuesta.md` (repositorios, concurrencia y variables de entorno)
+  - `knowledge-base/04_modelo_de_datos.md` (entidades y constraints)
+  - `knowledge-base/05_reglas_de_negocio.md` §RN-AG, RN-TU-03, RN-TU-05, RN-CL-01, RN-DA-01
+
 ---
 
 ## Resumen
@@ -493,6 +510,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 | 2 · Ganancias y clínica | C-08, C-09 | Agustin, Facundo | ALTO, CRITICO |
 | 3 · Reprogramación y reserva | C-10, C-11 | Lautaro, Renzo | MEDIO, ALTO |
 | 4 · Interfaz web | C-12, C-13, C-14, C-15 | Lucas, Lautaro, Lucas, Facundo | MEDIO, BAJO, BAJO, BAJO |
+| 5 · Persistencia | C-16 | EP | CRITICO |
 
 **Changes por persona**: EP 2 (C-01, C-02) · Agustin 2 (C-07, C-08, los más simples) · Renzo 2 (C-03, C-11) · Facundo 3 (C-04, C-09, C-15) · Lautaro 3 (C-05, C-10, C-13) · Lucas 3 (C-06, C-12, C-14). Si se corta la UI, todos conservan al menos 2 changes de backend, salvo Lucas, que queda con 1 (C-06).
 
