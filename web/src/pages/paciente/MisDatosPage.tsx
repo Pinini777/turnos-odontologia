@@ -22,6 +22,9 @@ interface FormularioDatos {
   readonly nroAfiliado: string;
 }
 
+type CampoDatos = keyof FormularioDatos;
+type ErroresFormularioDatos = Partial<Record<CampoDatos, string>>;
+
 function desdePaciente(p: PacienteApi): FormularioDatos {
   return {
     nombre: p.nombre,
@@ -43,6 +46,7 @@ function MisDatosContenido() {
     plan: '',
     nroAfiliado: '',
   });
+  const [erroresCampo, setErroresCampo] = useState<ErroresFormularioDatos>({});
   const [errorCarga, setErrorCarga] = useState<ErrorApi | null>(null);
   const [errorGuardado, setErrorGuardado] = useState<ErrorApi | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -64,29 +68,66 @@ function MisDatosContenido() {
     };
   }, []);
 
+  function actualizarCampo(campo: CampoDatos, valor: string): void {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    setGuardadoOk(false);
+    setErroresCampo((prev) => {
+      if (!prev[campo]) return prev;
+      const copia: ErroresFormularioDatos = { ...prev };
+      delete copia[campo];
+      return copia;
+    });
+  }
+
   async function handleSubmit(e: FormEvent): Promise<void> {
     e.preventDefault();
-    setGuardando(true);
+    if (!paciente) return;
+
     setErrorGuardado(null);
     setGuardadoOk(false);
 
-    const payload: Record<string, string> = {};
-    const pares: [keyof EntradaActualizarDatosPaciente, string][] = [
-      ['nombre', form.nombre.trim()],
-      ['apellido', form.apellido.trim()],
-      ['telefono', form.telefono.trim()],
-      ['obraSocial', form.obraSocial.trim()],
-      ['plan', form.plan.trim()],
-      ['nroAfiliado', form.nroAfiliado.trim()],
-    ];
-    for (const [clave, valor] of pares) {
-      if (valor.length > 0) {
-        payload[clave] = valor;
-      }
+    const nombre = form.nombre.trim();
+    const apellido = form.apellido.trim();
+    const telefono = form.telefono.trim();
+    const obraSocial = form.obraSocial.trim();
+    const plan = form.plan.trim();
+    const nroAfiliado = form.nroAfiliado.trim();
+
+    const nuevosErrores: ErroresFormularioDatos = {};
+    if (nombre.length === 0) nuevosErrores.nombre = 'Este campo no puede quedar vacío.';
+    if (apellido.length === 0) nuevosErrores.apellido = 'Este campo no puede quedar vacío.';
+    if (paciente.telefono && telefono.length === 0) {
+      nuevosErrores.telefono = 'Este campo no puede quedar vacío.';
+    }
+    if (paciente.obraSocial && obraSocial.length === 0) {
+      nuevosErrores.obraSocial = 'Este campo no puede quedar vacío.';
+    }
+    if (paciente.plan && plan.length === 0) {
+      nuevosErrores.plan = 'Este campo no puede quedar vacío.';
+    }
+    if (paciente.nroAfiliado && nroAfiliado.length === 0) {
+      nuevosErrores.nroAfiliado = 'Este campo no puede quedar vacío.';
     }
 
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErroresCampo(nuevosErrores);
+      return;
+    }
+
+    setErroresCampo({});
+    setGuardando(true);
+
+    const payload: EntradaActualizarDatosPaciente = {
+      nombre,
+      apellido,
+      ...(telefono.length > 0 ? { telefono } : {}),
+      ...(obraSocial.length > 0 ? { obraSocial } : {}),
+      ...(plan.length > 0 ? { plan } : {}),
+      ...(nroAfiliado.length > 0 ? { nroAfiliado } : {}),
+    };
+
     try {
-      const actualizado = await actualizarMisDatos(payload as EntradaActualizarDatosPaciente);
+      const actualizado = await actualizarMisDatos(payload);
       setPaciente(actualizado);
       setForm(desdePaciente(actualizado));
       setGuardadoOk(true);
@@ -158,56 +199,44 @@ function MisDatosContenido() {
                   etiqueta="Nombre"
                   required
                   value={form.nombre}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, nombre: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.nombre}
+                  onChange={(e) => actualizarCampo('nombre', e.target.value)}
                 />
                 <Campo
                   etiqueta="Apellido"
                   required
                   value={form.apellido}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, apellido: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.apellido}
+                  onChange={(e) => actualizarCampo('apellido', e.target.value)}
                 />
                 <Campo
                   etiqueta="Teléfono"
                   type="tel"
                   placeholder="Ej. (0261) 000-0100"
                   value={form.telefono}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, telefono: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.telefono}
+                  onChange={(e) => actualizarCampo('telefono', e.target.value)}
                 />
                 <Campo
                   etiqueta="Obra social"
                   placeholder="Ej. OSDE, OSEP, Particular"
                   value={form.obraSocial}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, obraSocial: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.obraSocial}
+                  onChange={(e) => actualizarCampo('obraSocial', e.target.value)}
                 />
                 <Campo
                   etiqueta="Plan"
                   placeholder="Opcional"
                   value={form.plan}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, plan: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.plan}
+                  onChange={(e) => actualizarCampo('plan', e.target.value)}
                 />
                 <Campo
                   etiqueta="Número de afiliado"
                   placeholder="Opcional"
                   value={form.nroAfiliado}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, nroAfiliado: e.target.value }));
-                    setGuardadoOk(false);
-                  }}
+                  error={erroresCampo.nroAfiliado}
+                  onChange={(e) => actualizarCampo('nroAfiliado', e.target.value)}
                 />
               </div>
 

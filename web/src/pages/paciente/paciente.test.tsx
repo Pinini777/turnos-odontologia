@@ -597,6 +597,44 @@ describe('web-paciente (C-14)', () => {
     expect(enviado).not.toHaveProperty('nroAfiliado');
   });
 
+  it('en Mis datos muestra error y no guarda si el usuario vacía un campo que ya tenía valor', async () => {
+    sesionPaciente();
+    let patchInvocado = false;
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      const url = String(input);
+      if (url.endsWith('/api/paciente/datos') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve(
+          respuestaJson({
+            id: '00000000-0000-4000-8000-000000000501',
+            nombre: 'Paciente',
+            apellido: 'Ficticio Uno',
+            documento: '00000001',
+            email: 'paciente1@example.com',
+            telefono: '0000-000001',
+            obraSocial: 'Obra Social Ficticia',
+          }),
+        );
+      }
+      if (url.endsWith('/api/paciente/datos') && init?.method === 'PATCH') {
+        patchInvocado = true;
+        return Promise.resolve(respuestaJson({}));
+      }
+      return Promise.resolve(respuestaJson([]));
+    });
+
+    renderConRutas('/paciente/datos');
+
+    const campoTelefono = await screen.findByLabelText('Teléfono');
+    fireEvent.change(campoTelefono, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Este campo no puede quedar vacío/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/Tus datos se guardaron correctamente/i)).toBeNull();
+    expect(patchInvocado).toBe(false);
+  });
+
   it('nunca expone precios ni el símbolo $ aunque vengan inyectados en las respuestas (RN-RO-01)', async () => {
     sesionPaciente();
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {

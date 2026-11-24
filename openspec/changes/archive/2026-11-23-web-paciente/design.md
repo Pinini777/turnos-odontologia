@@ -102,5 +102,5 @@ web/src/pages/paciente/
 - Design system revision: 2 (`design-system/tokens.css`, `design-system/brand.js`, `design-system/assets/logo.svg`)
 - Decision: yes — 2026-11-23
 - Mockups: `openspec/changes/archive/2026-11-23-web-paciente/mockups/` (`disponibilidad.html`, `confirmacion.html`, `mis-turnos.html`, ver `mockups/README.md`)
-- Preview: manual (390×844 y 1440×900, 2026-11-23)
-- Approval: pending (pendiente de revisión de EP en PR)
+- Preview: rendered (2026-11-23, revisado por EP)
+- Approval: approved (2026-11-23, by EP)
