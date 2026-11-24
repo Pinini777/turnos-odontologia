@@ -138,10 +138,13 @@ web/src/pages/profesional/
 
 ### D5. Mejoras UX post-revisión de EP (2026-11-24): Odontograma 3D procedural y bloqueos intuitivos
 
-1. **Odontograma 3D procedural con fallback automático a 2D (`Odontograma3d.tsx`, `odontograma3dMotor.ts`, `odontogramaHistorial.ts`, `threeCdn.ts`)**:
-   - Carga dinámica de Three.js `0.170.0` vía `esm.sh` en tiempo de ejecución sin modificar `package.json`, `web/package.json` ni `web/index.html` (regla dura 3).
-   - Detección de WebGL 2 y fallback automático e inmediato al **Mapa clásico 2D SVG** (`OdontogramaFdiSvg`) cuando el entorno no soporta WebGL 2 (por ejemplo jsdom o dispositivos sin GPU) o falla la carga de red, preservando el 100 % de los selectores y pruebas existentes.
-   - Funcionalidades clínicas sobre el contrato backend intacto (`GET/PUT /api/pacientes/:id/odontograma`): dentición `Permanente` (32), `Temporaria` (20) y `Mixta` (52); vista **Rayos X**; inspector aislado con las 5 caras anatómicas (`Palatina` en arcada superior / `Lingual` en inferior) deshabilitadas en estados de pieza completa; **borrador multi-cambio** con deshacer ítem por ítem que envía todo el lote en un único `PUT`; y **Máquina del tiempo** sobre `historial` para recorrer consultas previas en modo solo lectura.
+- Decision: provided — maqueta 3D de EP (2026-11-24)
+- Approval: approved (2026-11-24, by EP)
+
+1. **Odontograma 3D procedural con fallback automático a 2D (`Odontograma3d.tsx`, `odontograma3dMotor.ts`, `odontogramaHistorial.ts`)**:
+   - Carga diferida del paquete local `three@0.170.0` (con tipos `@types/three@0.170.0` incorporados por EP en `d5d34b1`) mediante `Promise.all([import('three'), import('three/examples/jsm/controls/OrbitControls.js'), import('three/examples/jsm/environments/RoomEnvironment.js')])`, permitiendo a Vite emitir un chunk separado fuera del bundle inicial sin depender de servicios externos.
+   - Detección de WebGL 2 y fallback automático e inmediato al **Mapa clásico 2D SVG** (`OdontogramaFdiSvg`) cuando el entorno no soporta WebGL 2 (por ejemplo jsdom o dispositivos sin GPU) o falla la inicialización del visor 3D, preservando el 100 % de los selectores y pruebas existentes.
+   - Funcionalidades clínicas sobre el contrato backend intacto (`GET/PUT /api/pacientes/:id/odontograma`): dentición `Permanente` (32), `Temporaria` (20) y `Mixta` (52); vista **Rayos X** (habilitada en 3D y deshabilitada en Mapa clásico 2D); inspector aislado con las 5 caras anatómicas (`Palatina` en arcada superior / `Lingual` en inferior) deshabilitadas en estados de pieza completa; **borrador multi-cambio** con deshacer ítem por ítem que envía todo el lote en un único `PUT`; y **Máquina del tiempo** sobre `historial` para recorrer consultas previas en modo solo lectura.
 
 2. **Gestión intuitiva de horarios y bloqueos (`HorariosPage.tsx`, `formatos.ts`, `horariosUx.test.tsx`)**:
    - **Tira semanal `Lun`–`Dom`**: resume visualmente qué días tienen franjas cargadas y cuáles están libres; tocar un día libre agrega en 1 click una franja `09:00–13:00` y tocar un día configurado enfoca su primera franja sin duplicarla.

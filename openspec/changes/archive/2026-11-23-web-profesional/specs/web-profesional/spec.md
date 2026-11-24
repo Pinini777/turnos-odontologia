@@ -75,10 +75,25 @@ Las rutas de `/profesional/*` SHALL exigir una sesión activa con rol `profesion
 - **WHEN** el profesional pulsa "Eliminar" y la API responde `204`
 - **THEN** se invoca `DELETE /api/bloqueos/:id` y el bloqueo desaparece del listado sin errores
 
-#### Scenario: Bloqueos intuitivos con chips de box, atajos de fecha/horario, motivos, resumen previo y filtros
-- **GIVEN** el profesional en `/profesional/horarios` con boxes activos, tira semanal `Lun`–`Dom` y bloqueos vigentes propios y de box
-- **WHEN** agrega un día libre desde la tira semanal, selecciona un box con chip 1-click, usa atajos de fecha/horario ("Elegir franja horaria", presets y autoajuste de `Hora hasta`) y chips contextuales de motivo, revisa el resumen previo y filtra bloqueos por `Todos` / `Mi agenda` / `Boxes`
-- **THEN** el formulario completa los valores manteniendo compatibilidad con `POST /api/bloqueos` (XOR) y `POST /api/profesionales/:id/horarios`, previene rangos horarios inválidos y filtra la tabla con badges claros de `Box`, `Mi agenda` y `Día completo`
+#### Scenario: Tira semanal Lun–Dom para sumar franjas en un clic
+- **GIVEN** el profesional en `/profesional/horarios` con la tira semanal `Lun`–`Dom` y el día Lunes ya configurado
+- **WHEN** pulsa un día ya configurado (`Lun`) y luego pulsa un día libre (`Sáb`) y guarda horarios
+- **THEN** tocar el día ya configurado no duplica franjas, tocar `Sáb` agrega una franja `09:00`–`13:00` y `POST /api/profesionales/:id/horarios` incluye ambas franjas
+
+#### Scenario: Chips de box sincronizados con el selector de bloqueo
+- **GIVEN** el profesional en la sección Bloqueos de `/profesional/horarios` con boxes activos e inactivos cargados
+- **WHEN** elige alcance "Un box del consultorio", pulsa el chip del box activo `Box 2`, elige fecha y motivo y registra el bloqueo
+- **THEN** solo se muestran chips de boxes activos sincronizados con el `<select>` de box, el resumen previo refleja la selección y `POST /api/bloqueos` envía únicamente `boxId` sin `profesionalId`
+
+#### Scenario: Atajos de fecha y franja horaria con autoajuste de Hora hasta
+- **GIVEN** el profesional en el formulario de bloqueos de `/profesional/horarios` con "Bloquear día completo" activo por defecto
+- **WHEN** usa los atajos de fecha (`Hoy`, `Mañana`, `Próxima semana`), activa "Elegir franja horaria", cambia `Hora desde` a una hora posterior a `Hora hasta` en el mismo día, prueba los presets horarios y fuerza un rango inválido
+- **THEN** los atajos completan las fechas, `Hora hasta` se autoajusta a `Hora desde + 1 h` (tope `21:45`), los presets actualizan la franja y el rango inválido muestra validación inline sin enviar `POST /api/bloqueos`
+
+#### Scenario: Filtros Todos, Mi agenda y Boxes sobre los bloqueos vigentes
+- **GIVEN** la tabla de bloqueos vigentes en `/profesional/horarios` con bloqueos propios del profesional y bloqueos de box
+- **WHEN** el profesional alterna entre los filtros `Mi agenda`, `Boxes` y `Todos`
+- **THEN** la tabla muestra únicamente los bloqueos correspondientes a cada categoría con sus badges (`Mi agenda`, `Box`, `Día completo`) y muestra estado vacío cuando un filtro no tiene coincidencias
 
 ### Requirement: Ganancias privadas exclusivas del profesional logueado
 `/profesional/ganancias` SHALL consultar únicamente el `profesionalId` del profesional autenticado sin ofrecer selector de otros profesionales, mostrando KPI total en ARS, desglose de turnos `atendido` con precio congelado, estado vacío en `$ 0` y alertas ante `403 SIN_PERMISO`.
@@ -121,10 +136,25 @@ Las rutas de `/profesional/*` SHALL exigir una sesión activa con rol `profesion
 - **WHEN** el profesional elige el estado `corona` (o `ausente`, `endodoncia`, `a_extraer`) y pulsa "Guardar en odontograma"
 - **THEN** el selector de `cara` queda deshabilitado automáticamente, `PUT /api/pacientes/:id/odontograma` se envía sin propiedad `cara`, y la vista actualiza tanto `piezas` como la tabla cronológica de `historial`
 
-#### Scenario: Odontograma 3D procedural con fallback 2D, Rayos X, borrador multi-cambio y Máquina del tiempo
-- **GIVEN** un paciente seleccionado en `/profesional/clinica` con múltiples consultas en `historial`
-- **WHEN** se intenta montar el visor 3D procedural (Three.js ESM) o se alterna al Mapa clásico 2D SVG, se activa Rayos X, se acumulan cambios en el borrador multi-cambio o se recorre la Máquina del tiempo
-- **THEN** sin WebGL 2 o red hace fallback automático al Mapa clásico 2D SVG sin errores, el borrador se persiste en un único `PUT /api/pacientes/:id/odontograma` y la Máquina del tiempo reconstruye snapshots históricos bloqueando ediciones en el pasado
+#### Scenario: Fallback automático al mapa clásico 2D sin WebGL 2
+- **GIVEN** un paciente seleccionado en `/profesional/clinica` en un entorno sin soporte de WebGL 2
+- **WHEN** se monta el odontograma
+- **THEN** hace fallback automático al Mapa clásico 2D SVG sin errores mostrando las 32 piezas permanentes, mantiene activo el botón "Mapa clásico" y deja deshabilitado el botón "3D"
+
+#### Scenario: Vista Rayos X disponible en modo 3D y deshabilitada en mapa clásico 2D
+- **GIVEN** el componente `Odontograma3d` montado con el motor 3D activo
+- **WHEN** el profesional activa "Rayos X" en vista 3D y luego alterna a "Mapa clásico"
+- **THEN** en vista 3D el botón "Rayos X" está habilitado y actualiza `aria-pressed` y el estado del motor, y al cambiar a "Mapa clásico" queda deshabilitado con `aria-pressed="false"`
+
+#### Scenario: Borrador multi-cambio guardado en un solo PUT
+- **GIVEN** un paciente cargado en `/profesional/clinica` con el odontograma visible
+- **WHEN** el profesional agrega dos cambios al borrador, quita el primero con "Deshacer" y pulsa "Guardar en odontograma"
+- **THEN** no aparecen botones de editar ni borrar, el borrador conserva solo el cambio restante y envía un único `PUT /api/pacientes/:id/odontograma` con ese lote
+
+#### Scenario: Máquina del tiempo en solo lectura sobre el historial
+- **GIVEN** un paciente en `/profesional/clinica` con múltiples consultas en `historial` del odontograma
+- **WHEN** el profesional desplaza la Máquina del tiempo a una consulta anterior y luego pulsa "Volver al presente"
+- **THEN** el odontograma proyecta el estado de esa consulta histórica deshabilitando el guardado y la edición, y al volver al presente restaura el estado actual y rehabilita los cambios
 
 ### Requirement: Agenda profesional y auditoría append-only de turnos
 `/profesional/agenda` y `/profesional/turnos/:id/auditoria` SHALL listar turnos mediante `GET /api/agenda` y abrir la cronología append-only de auditoría vía `GET /api/turnos/:id/auditoria` mostrando acción, actor, fecha y detalle sin controles de modificación.

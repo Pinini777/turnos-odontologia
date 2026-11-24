@@ -13,8 +13,13 @@ import {
   proyectarEstadoActual,
   quitarCambioBorrador,
 } from './odontogramaHistorial';
+import { Odontograma3d } from './Odontograma3d';
+import {
+  soportaWebGl2,
+  type EstadoMotor3d,
+  type InstanciaMotor3d,
+} from './odontograma3dMotor';
 import { routes } from './routes';
-import { soportaWebGl2 } from './threeCdn';
 
 const SESION_PROF = {
   token: 'jwt-prof-3d',
@@ -237,9 +242,8 @@ describe('odontogramaHistorial — lógica pura de proyección, snapshots y borr
 });
 
 describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borrador y máquina del tiempo', () => {
-  it('hace fallback automático a Mapa clásico 2D en jsdom sin errores y soporta Permanente (32) / Temporaria (20) / Mixta (52)', async () => {
-    establecerSesion(SESION_PROF);
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+  function mockFetchClinica() {
+    return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = leerUrl(input);
       if (url === '/api/pacientes') return jsonResp(PACIENTES_SEED);
       if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
@@ -247,6 +251,11 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
       if (url === '/api/pacientes/pac-1/odontograma') return jsonResp(ODONTOGRAMA_HISTORIAL_SEED);
       return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
     });
+  }
+
+  it('Fallback automático al mapa clásico 2D sin WebGL 2', async () => {
+    establecerSesion(SESION_PROF);
+    mockFetchClinica();
 
     const { container } = renderClinica();
 
@@ -254,23 +263,107 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
       expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
     });
 
-    // Botón 3D deshabilitado por ausencia de WebGL 2 y Mapa clásico activo
-    const btn3d = screen.getByRole('button', { name: /^3d$/i }) as HTMLButtonElement;
-    const btnMapa = screen.getByRole('button', { name: /mapa clásico/i });
+    const toolbar = container.querySelector('.prof-odo-toolbar') as HTMLElement;
+    const grupoVista = within(toolbar).getByRole('group', { name: /^vista$/i });
+    const btn3d = within(grupoVista).getByRole('button', { name: /^3d$/i }) as HTMLButtonElement;
+    const btnMapa = within(grupoVista).getByRole('button', { name: /mapa clásico/i });
+    const btnRayosX = within(toolbar).getByRole('button', { name: /rayos x/i }) as HTMLButtonElement;
+
     expect(btn3d.disabled).toBe(true);
     expect(btnMapa.getAttribute('aria-pressed')).toBe('true');
+    expect(btnRayosX.disabled).toBe(true);
+    expect(btnRayosX.getAttribute('aria-pressed')).toBe('false');
+  });
 
-    // Selector segmentado de dentición
-    fireEvent.click(screen.getByRole('button', { name: /^temporaria$/i }));
+  it('permite cambiar a dentición Temporaria (20 piezas)', async () => {
+    establecerSesion(SESION_PROF);
+    mockFetchClinica();
+
+    const { container } = renderClinica();
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
+    });
+
+    const grupoDenticion = within(container.querySelector('.prof-odo-toolbar') as HTMLElement).getByRole(
+      'group',
+      { name: /^dentición$/i },
+    );
+
+    fireEvent.click(within(grupoDenticion).getByRole('button', { name: /^temporaria$/i }));
     expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(20);
     expect(container.querySelector('[data-tooth-fdi="55"]')).toBeTruthy();
     expect(container.querySelector('[data-tooth-fdi="16"]')).toBeNull();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: /^mixta$/i }));
+  it('permite cambiar a dentición Mixta (52 piezas)', async () => {
+    establecerSesion(SESION_PROF);
+    mockFetchClinica();
+
+    const { container } = renderClinica();
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
+    });
+
+    const grupoDenticion = within(container.querySelector('.prof-odo-toolbar') as HTMLElement).getByRole(
+      'group',
+      { name: /^dentición$/i },
+    );
+
+    fireEvent.click(within(grupoDenticion).getByRole('button', { name: /^mixta$/i }));
     expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(52);
+    expect(container.querySelector('[data-tooth-fdi="16"]')).toBeTruthy();
+    expect(container.querySelector('[data-tooth-fdi="55"]')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: /^permanente$/i }));
+    fireEvent.click(within(grupoDenticion).getByRole('button', { name: /^permanente$/i }));
     expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
+  });
+
+  it('Vista Rayos X disponible en modo 3D y deshabilitada en mapa clásico 2D', async () => {
+    const estadosRecibidos: EstadoMotor3d[] = [];
+    const motorStub: InstanciaMotor3d = {
+      actualizarEstado: vi.fn((estado: EstadoMotor3d) => {
+        estadosRecibidos.push(estado);
+      }),
+      enfocarPieza: vi.fn(),
+      centrarArcadas: vi.fn(),
+      setGiroMini: vi.fn(),
+      redimensionar: vi.fn(),
+      dispose: vi.fn(),
+    };
+
+    const { container } = render(
+      <Odontograma3d
+        pacienteId="pac-1"
+        piezas={ODONTOGRAMA_HISTORIAL_SEED.piezas}
+        historial={HISTORIAL_MULTI_CONSULTA}
+        guardando={false}
+        nombreProfesional={() => 'Dra. Ficticia Uno'}
+        onGuardarCambios={async () => true}
+        inicializarMotor3d={async () => motorStub}
+      />,
+    );
+
+    const toolbar = container.querySelector('.prof-odo-toolbar') as HTMLElement;
+    const btnRayosX = within(toolbar).getByRole('button', { name: /rayos x/i }) as HTMLButtonElement;
+    const grupoVista = within(toolbar).getByRole('group', { name: /^vista$/i });
+
+    await waitFor(() => {
+      expect(btnRayosX.disabled).toBe(false);
+    });
+    expect(btnRayosX.getAttribute('aria-pressed')).toBe('false');
+
+    // Activar Rayos X en modo 3D
+    fireEvent.click(btnRayosX);
+    expect(btnRayosX.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText(/rayos x · raíces y conductos/i)).toBeTruthy();
+    expect(estadosRecibidos.some((e) => e.rayosX && e.vista3dActiva)).toBe(true);
+
+    // Al pasar a Mapa clásico 2D, Rayos X queda deshabilitado con aria-pressed="false"
+    fireEvent.click(within(grupoVista).getByRole('button', { name: /mapa clásico/i }));
+    expect(btnRayosX.disabled).toBe(true);
+    expect(btnRayosX.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('paleta de 7 estados y 5 botones de cara respetan Palatina/Lingual y deshabilitan caras en estados de pieza completa', async () => {
@@ -313,7 +406,7 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
     expect(selectCara.disabled).toBe(false);
   });
 
-  it('permite armar un borrador multi-cambio, quitar un ítem con Deshacer y guardar el lote en un único PUT', async () => {
+  it('Borrador multi-cambio guardado en un solo PUT', async () => {
     establecerSesion(SESION_PROF);
     const putPayloads: unknown[] = [];
 
@@ -364,30 +457,31 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
       expect(container.querySelector('[data-pieza="11"][data-cara="vestibular"]')).toBeTruthy();
     });
 
-    const grupoPaleta = screen.getByRole('group', { name: /estados clínicos/i });
+    const panelEditor = container.querySelector('.prof-odo-sheet') as HTMLElement;
+    const grupoPaleta = within(panelEditor).getByRole('group', { name: /estados clínicos/i });
 
     // 1er cambio al borrador: pieza 11 vestibular caries
     fireEvent.click(container.querySelector('[data-pieza="11"][data-cara="vestibular"]')!);
     fireEvent.click(within(grupoPaleta).getByRole('button', { name: /caries/i }));
-    fireEvent.click(screen.getByRole('button', { name: /agregar cambio al borrador/i }));
+    fireEvent.click(within(panelEditor).getByRole('button', { name: /agregar cambio al borrador/i }));
 
     // 2do cambio al borrador: pieza 24 ausente (pieza completa)
     fireEvent.click(container.querySelector('[data-pieza="24"][data-cara="oclusal"]')!);
     fireEvent.click(within(grupoPaleta).getByRole('button', { name: /ausente/i }));
-    fireEvent.click(screen.getByRole('button', { name: /agregar cambio al borrador/i }));
+    fireEvent.click(within(panelEditor).getByRole('button', { name: /agregar cambio al borrador/i }));
 
     // Verificar botones Deshacer y ausencia estricta de editar/eliminar/borrar
-    const botonesDeshacer = screen.getAllByRole('button', { name: /deshacer/i });
+    const botonesDeshacer = within(panelEditor).getAllByRole('button', { name: /deshacer/i });
     expect(botonesDeshacer).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: /editar/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /eliminar|borrar/i })).toBeNull();
+    expect(within(panelEditor).queryByRole('button', { name: /editar/i })).toBeNull();
+    expect(within(panelEditor).queryByRole('button', { name: /eliminar|borrar/i })).toBeNull();
 
     // Quitar el primer cambio (pieza 11) con Deshacer
     fireEvent.click(botonesDeshacer[0]!);
-    expect(screen.getAllByRole('button', { name: /deshacer/i })).toHaveLength(1);
+    expect(within(panelEditor).getAllByRole('button', { name: /deshacer/i })).toHaveLength(1);
 
     // Guardar el borrador envía solo el cambio restante en un único PUT
-    fireEvent.click(screen.getByRole('button', { name: /guardar en odontograma/i }));
+    fireEvent.click(within(panelEditor).getByRole('button', { name: /guardar en odontograma/i }));
 
     await waitFor(() => {
       expect(putPayloads).toHaveLength(1);
@@ -397,7 +491,7 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
     });
   });
 
-  it('Máquina del tiempo recorre consultas históricas, bloquea edición en el pasado y permite volver al presente', async () => {
+  it('Máquina del tiempo en solo lectura sobre el historial', async () => {
     establecerSesion(SESION_PROF);
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = leerUrl(input);
@@ -414,18 +508,23 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
       expect(container.querySelector('[data-pieza="36"] [data-overlay="endodoncia"]')).toBeTruthy();
     });
 
+    const panelEditor = container.querySelector('.prof-odo-sheet') as HTMLElement;
+    const maquinaTiempo = container.querySelector('.prof-odo-time') as HTMLElement;
+
     // En el presente (consulta 3): pieza 36 tiene overlay de endodoncia y guardar está habilitado
-    const btnGuardar = screen.getByRole('button', { name: /guardar en odontograma/i }) as HTMLButtonElement;
+    const btnGuardar = within(panelEditor).getByRole('button', {
+      name: /guardar en odontograma/i,
+    }) as HTMLButtonElement;
     expect(btnGuardar.disabled).toBe(false);
 
     // Ir a la primera consulta (indice 0): 16 tenía caries y 36 aún NO tenía endodoncia
-    const slider = screen.getByLabelText(/fecha de consulta/i) as HTMLInputElement;
+    const slider = within(maquinaTiempo).getByLabelText(/fecha de consulta/i) as HTMLInputElement;
     fireEvent.change(slider, { target: { value: '0' } });
 
     expect(container.querySelector('[data-pieza="36"] [data-overlay="endodoncia"]')).toBeNull();
     expect(btnGuardar.disabled).toBe(true);
 
-    const btnVolver = screen.getByRole('button', { name: /volver al presente/i });
+    const btnVolver = within(maquinaTiempo).getByRole('button', { name: /volver al presente/i });
     expect(btnVolver).toBeTruthy();
 
     // Volver al presente restaura endodoncia en 36 y rehabilita guardado
@@ -436,14 +535,7 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
 
   it('oculta el canvas 3D y aplica la clase de mapa centrado en modo Mapa clásico', async () => {
     establecerSesion(SESION_PROF);
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = leerUrl(input);
-      if (url === '/api/pacientes') return jsonResp(PACIENTES_SEED);
-      if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
-      if (url === '/api/pacientes/pac-1/historia') return jsonResp([]);
-      if (url === '/api/pacientes/pac-1/odontograma') return jsonResp(ODONTOGRAMA_HISTORIAL_SEED);
-      return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
-    });
+    mockFetchClinica();
 
     const { container } = renderClinica();
 
@@ -451,7 +543,10 @@ describe('Odontograma3d en ClinicaPage — fallback 2D, dentición, paleta, borr
       expect(container.querySelectorAll('[data-tooth-fdi]').length).toBe(32);
     });
 
-    expect(screen.getByRole('button', { name: /mapa clásico/i }).getAttribute('aria-pressed')).toBe('true');
+    const toolbar = container.querySelector('.prof-odo-toolbar') as HTMLElement;
+    expect(within(toolbar).getByRole('button', { name: /mapa clásico/i }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
 
     const canvas3d = container.querySelector<HTMLCanvasElement>('canvas.prof-odo-canvas');
     expect(canvas3d).toBeTruthy();

@@ -1,3 +1,4 @@
+import type * as THREE from 'three';
 import type { CaraPiezaApi } from './apiProfesional';
 import type { EstadoVisualPieza } from './odontogramaFdi';
 import {
@@ -8,18 +9,52 @@ import {
   TODAS_LAS_PIEZAS_FDI,
   type TipoDenticion,
 } from './odontogramaHistorial';
-import type {
-  ThreeBufferGeometry,
-  ThreeGroup,
-  ThreeLine,
-  ThreeMaterial,
-  ThreeMaterialParams,
-  ThreeMesh,
-  ThreeMeshPhysicalMaterial,
-  ThreeModulos,
-  ThreeVector3,
-  ThreeWebGLRenderTarget,
-} from './threeCdn';
+
+export interface ThreeModulos {
+  readonly THREE: typeof import('three');
+  readonly OrbitControls: typeof import('three/examples/jsm/controls/OrbitControls.js').OrbitControls;
+  readonly RoomEnvironment: typeof import('three/examples/jsm/environments/RoomEnvironment.js').RoomEnvironment;
+}
+
+let cacheModulos: Promise<ThreeModulos> | null = null;
+
+/**
+ * Verifica de forma defensiva si el entorno soporta WebGL 2 sin arrojar excepciones ni ruido en jsdom.
+ */
+export function soportaWebGl2(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  if (typeof window.WebGL2RenderingContext === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('webgl2', { alpha: true, antialias: true });
+    if (!ctx) return false;
+    const ext = ctx.getExtension('WEBGL_lose_context');
+    ext?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function cargarThree(): Promise<ThreeModulos> {
+  if (!cacheModulos) {
+    cacheModulos = Promise.all([
+      import('three'),
+      import('three/examples/jsm/controls/OrbitControls.js'),
+      import('three/examples/jsm/environments/RoomEnvironment.js'),
+    ])
+      .then(([THREE, { OrbitControls }, { RoomEnvironment }]) => ({
+        THREE,
+        OrbitControls,
+        RoomEnvironment,
+      }))
+      .catch((err: unknown) => {
+        cacheModulos = null;
+        throw err;
+      });
+  }
+  return cacheModulos;
+}
 
 export interface HoverPieza3d {
   readonly pieza: number;
@@ -88,50 +123,50 @@ interface PerfilDental {
 }
 
 interface MarcaGeometria {
-  readonly caries: ThreeBufferGeometry;
-  readonly filling: ThreeBufferGeometry;
-  readonly rim: ThreeBufferGeometry;
+  readonly caries: THREE.BufferGeometry;
+  readonly filling: THREE.BufferGeometry;
+  readonly rim: THREE.BufferGeometry;
 }
 
 interface ActivosPerfil {
-  readonly crown: ThreeBufferGeometry;
+  readonly crown: THREE.BufferGeometry;
   readonly marks: readonly MarcaGeometria[];
-  readonly roots: readonly ThreeBufferGeometry[];
-  readonly canals: readonly ThreeBufferGeometry[];
-  readonly contour: ThreeBufferGeometry;
-  readonly wire: ThreeBufferGeometry;
-  readonly rootWires: readonly ThreeBufferGeometry[];
-  readonly edge: ThreeBufferGeometry;
+  readonly roots: readonly THREE.BufferGeometry[];
+  readonly canals: readonly THREE.BufferGeometry[];
+  readonly contour: THREE.BufferGeometry;
+  readonly wire: THREE.BufferGeometry;
+  readonly rootWires: readonly THREE.BufferGeometry[];
+  readonly edge: THREE.BufferGeometry;
 }
 
 interface MarcaMeshes {
-  readonly decay: ThreeMesh;
-  readonly fill: ThreeMesh;
-  readonly border: ThreeMesh;
+  readonly decay: THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+  readonly fill: THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+  readonly border: THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
 }
 
 interface ModeloPieza3d {
   readonly id: number;
-  readonly group: ThreeGroup;
-  readonly anatomy: ThreeGroup;
-  readonly crown: ThreeMesh;
-  readonly roots: readonly ThreeMesh[];
-  readonly canals: readonly ThreeMesh[];
-  readonly wire: ThreeLine;
-  readonly rootWires: readonly ThreeLine[];
-  readonly cover: ThreeGroup;
-  readonly shell: ThreeMesh;
-  readonly edge: ThreeLine;
-  readonly pulse: ThreeLine;
-  readonly silhouette: ThreeMesh;
-  readonly outline: ThreeLine;
-  readonly signal: ThreeLine;
+  readonly group: THREE.Group;
+  readonly anatomy: THREE.Group;
+  readonly crown: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>;
+  readonly roots: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>[];
+  readonly canals: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[];
+  readonly wire: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>;
+  readonly rootWires: readonly THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>[];
+  readonly cover: THREE.Group;
+  readonly shell: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>;
+  readonly edge: THREE.LineLoop<THREE.BufferGeometry, THREE.LineBasicMaterial>;
+  readonly pulse: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>;
+  readonly silhouette: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  readonly outline: THREE.LineLoop<THREE.BufferGeometry, THREE.LineBasicMaterial>;
+  readonly signal: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>;
   readonly marks: readonly MarcaMeshes[];
-  readonly focusPatches: readonly ThreeMesh[];
+  readonly focusPatches: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[];
   readonly isolated: boolean;
   readonly faceMap: readonly CaraPiezaApi[];
-  base: ThreeVector3;
-  contact?: ThreeMesh;
+  base: THREE.Vector3;
+  contact?: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   flashAt: number;
   crownAt: number;
   prev: string;
@@ -150,10 +185,10 @@ interface EstadoPuntero {
 }
 
 interface VueloCamara {
-  readonly a: ThreeVector3;
-  readonly p: ThreeVector3;
-  readonly b: ThreeVector3;
-  readonly t: ThreeVector3;
+  readonly a: THREE.Vector3;
+  readonly p: THREE.Vector3;
+  readonly b: THREE.Vector3;
+  readonly t: THREE.Vector3;
   readonly start: number;
 }
 
@@ -337,20 +372,20 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
       : null;
   const reducedMotion = (): boolean => Boolean(motionQuery?.matches);
 
-  const geometriasCreadas: ThreeBufferGeometry[] = [];
-  const materialesCreados: ThreeMaterial[] = [];
-  const renderTargetsCreados: ThreeWebGLRenderTarget[] = [];
+  const geometriasCreadas: THREE.BufferGeometry[] = [];
+  const materialesCreados: THREE.Material[] = [];
+  const renderTargetsCreados: THREE.WebGLRenderTarget[] = [];
 
-  const trackGeo = <G extends ThreeBufferGeometry>(g: G): G => {
+  const trackGeo = <G extends THREE.BufferGeometry>(g: G): G => {
     geometriasCreadas.push(g);
     return g;
   };
-  const trackMat = <M extends ThreeMaterial>(m: M): M => {
+  const trackMat = <M extends THREE.Material>(m: M): M => {
     materialesCreados.push(m);
     return m;
   };
 
-  const v = (x = 0, y = 0, z = 0): ThreeVector3 => new T.Vector3(x, y, z);
+  const v = (x = 0, y = 0, z = 0): THREE.Vector3 => new T.Vector3(x, y, z);
 
   const makeRenderer = (target: HTMLCanvasElement, context: WebGL2RenderingContext) => {
     const renderer = new T.WebGLRenderer({ canvas: target, context, alpha: true, antialias: true });
@@ -411,13 +446,16 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
   miniCamera.position.set(1.8, 1.94, 3.95);
   miniCamera.lookAt(0, -0.06, 0);
 
-  const phys = (params: ThreeMaterialParams): ThreeMeshPhysicalMaterial =>
+  const phys = (params: THREE.MeshPhysicalMaterialParameters): THREE.MeshPhysicalMaterial =>
     trackMat(new T.MeshPhysicalMaterial(params));
-  const basic = (params: ThreeMaterialParams): ThreeMaterial =>
+  const basic = (params: THREE.MeshBasicMaterialParameters): THREE.MeshBasicMaterial =>
     trackMat(new T.MeshBasicMaterial(params));
 
-  const materialCache = new Map<string, ThreeMeshPhysicalMaterial>();
-  function enamel(isChild: boolean, kind: 'solid' | 'xray' | 'endo' | 'faint' | 'faint-x'): ThreeMeshPhysicalMaterial {
+  const materialCache = new Map<string, THREE.MeshPhysicalMaterial>();
+  function enamel(
+    isChild: boolean,
+    kind: 'solid' | 'xray' | 'endo' | 'faint' | 'faint-x',
+  ): THREE.MeshPhysicalMaterial {
     const key = `${String(isChild)}:${kind}`;
     const cached = materialCache.get(key);
     if (cached) return cached;
@@ -498,9 +536,9 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
     side: T.DoubleSide,
   });
 
-  const directions: readonly ThreeVector3[] = [v(0, 1, 0), v(1), v(-1), v(0, 0, 1), v(0, 0, -1)];
+  const directions: readonly THREE.Vector3[] = [v(0, 1, 0), v(1), v(-1), v(0, 0, 1), v(0, 0, -1)];
 
-  function makeCrown(profile: PerfilDental, steps = 60, shouldTrack = true): ThreeBufferGeometry {
+  function makeCrown(profile: PerfilDental, steps = 60, shouldTrack = true): THREE.BufferGeometry {
     const arrays: number[][] = Array.from({ length: 5 }, () => []);
     const points: number[] = [];
     const [width, depth] = profile.half;
@@ -560,7 +598,7 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
       const w = normal.y ? v(0, 0, 1) : v(0, 1);
       const center = index ? v(0, profile.height * 0.49, 0) : v(0.025, 0, 0.028);
 
-      const stamp = (damage: boolean, size: number): ThreeBufferGeometry => {
+      const stamp = (damage: boolean, size: number): THREE.BufferGeometry => {
         const vertices: number[] = [];
         const indices: number[] = [];
         const segments = 32;
@@ -599,18 +637,19 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
 
     probeMat.dispose();
 
-    const roots: ThreeBufferGeometry[] = [];
-    const canals: ThreeBufferGeometry[] = [];
+    const roots: THREE.BufferGeometry[] = [];
+    const canals: THREE.BufferGeometry[] = [];
     for (const [dx, dz, len] of profile.roots) {
       const cross = profile.roots.length === 1 ? 0.225 : 0.164;
-      const profile2d = [
+      const perfilRadicular: readonly (readonly [number, number])[] = [
         [0.009, -len],
         [0.069, -len * 0.93],
         [0.13, -len * 0.71],
         [0.19, -len * 0.38],
         [cross, -0.1],
         [cross * 0.94, 0.018],
-      ].map(([radius, y]) => new T.Vector2(radius, y));
+      ];
+      const profile2d = perfilRadicular.map(([radius, y]) => new T.Vector2(radius, y));
       const root = trackGeo(new T.LatheGeometry(profile2d, 18));
       const position = root.attributes.position;
       if (position) {
@@ -663,12 +702,14 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
     milkMolar: makeAssets(PROFILES.milkMolar),
   };
 
+  const crownToTooth = new WeakMap<THREE.Mesh, ModeloPieza3d>();
+
   function model(id: number, isolated = false): ModeloPieza3d {
     const asset = assets[profileFor(id)];
     const group = new T.Group();
     const anatomy = new T.Group();
     group.add(anatomy);
-    const add = <O extends ThreeMesh | ThreeLine>(mesh: O): O => {
+    const add = <O extends THREE.Object3D>(mesh: O): O => {
       anatomy.add(mesh);
       return mesh;
     };
@@ -715,9 +756,9 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
     signal.renderOrder = 7;
 
     const marks: MarcaMeshes[] = asset.marks.map(({ caries, filling, rim }) => {
-      const decay = add(new T.Mesh(caries, decayMat));
-      const fill = add(new T.Mesh(filling, restorationMat));
-      const border = add(new T.Mesh(rim, restorationRim));
+      const decay = add(new T.Mesh<THREE.BufferGeometry, THREE.Material>(caries, decayMat));
+      const fill = add(new T.Mesh<THREE.BufferGeometry, THREE.Material>(filling, restorationMat));
+      const border = add(new T.Mesh<THREE.BufferGeometry, THREE.Material>(rim, restorationRim));
       decay.renderOrder = 5;
       border.renderOrder = 4;
       fill.renderOrder = 5;
@@ -770,7 +811,7 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
       eruptAt: 0,
       present: true,
     };
-    crown.userData.tooth = result;
+    crownToTooth.set(crown, result);
     return result;
   }
 
@@ -805,7 +846,11 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
     }),
   );
 
-  function gingiva(isUpper: boolean, child: boolean, mixed: boolean): ThreeMesh {
+  function gingiva(
+    isUpper: boolean,
+    child: boolean,
+    mixed: boolean,
+  ): THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial> {
     const extent = child ? 3.28 * (mixed ? 0.92 : 1) : 5.61;
     const rows = 88;
     const sides = 24;
@@ -858,9 +903,18 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
     return mesh;
   }
 
-  const gumAdult: readonly ThreeMesh[] = [gingiva(true, false, false), gingiva(false, false, false)];
-  const gumChild: readonly ThreeMesh[] = [gingiva(true, true, false), gingiva(false, true, false)];
-  const gumMixed: readonly ThreeMesh[] = [gingiva(true, true, true), gingiva(false, true, true)];
+  const gumAdult: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>[] = [
+    gingiva(true, false, false),
+    gingiva(false, false, false),
+  ];
+  const gumChild: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>[] = [
+    gingiva(true, true, false),
+    gingiva(false, true, false),
+  ];
+  const gumMixed: readonly THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>[] = [
+    gingiva(true, true, true),
+    gingiva(false, true, true),
+  ];
 
   const shade = document.createElement('canvas');
   shade.width = 128;
@@ -1218,11 +1272,11 @@ export function crearMotorOdontograma3d(opciones: OpcionesMotor3d): InstanciaMot
         : []
       : [...teeth.values()].filter((tooth) => tooth.group.visible).map((tooth) => tooth.crown);
     const result = ray.intersectObjects(list, false)[0];
-    if (!result) return null;
-    const tooth = result.object.userData.tooth as ModeloPieza3d | undefined;
+    if (!result || !(result.object instanceof T.Mesh)) return null;
+    const tooth = crownToTooth.get(result.object);
     if (!tooth) return null;
     const triangle = (result.faceIndex ?? 0) * 3;
-    const surface = result.object.geometry.groups.find(
+    const surface = tooth.crown.geometry.groups.find(
       ({ start, count }) => triangle >= start && triangle < start + count,
     );
     const cara = tooth.faceMap[surface?.materialIndex ?? 0] ?? 'oclusal';

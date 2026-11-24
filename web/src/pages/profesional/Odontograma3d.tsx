@@ -24,10 +24,13 @@ import {
   nombreAnatomicoFdi,
 } from './odontogramaFdi';
 import {
+  cargarThree,
   crearMotorOdontograma3d,
+  soportaWebGl2,
   type ClickArcada3d,
   type HoverPieza3d,
   type InstanciaMotor3d,
+  type OpcionesMotor3d,
 } from './odontograma3dMotor';
 import {
   agregarCambioBorrador,
@@ -43,7 +46,11 @@ import {
   TODAS_LAS_PIEZAS_FDI,
   type TipoDenticion,
 } from './odontogramaHistorial';
-import { cargarThreeCdn, soportaWebGl2 } from './threeCdn';
+
+export type OpcionesInicializadorMotor3d = Omit<
+  OpcionesMotor3d,
+  'modulos' | 'contextoArcadas' | 'contextoAislada'
+>;
 
 export interface PropsOdontograma3d {
   readonly pacienteId: string;
@@ -54,6 +61,9 @@ export interface PropsOdontograma3d {
   readonly onGuardarCambios: (items: readonly ItemActualizacionPiezaPayload[]) => Promise<boolean>;
   readonly onNotificar?: (mensaje: string) => void;
   readonly contenidoDebajoDiagrama?: ReactNode;
+  readonly inicializarMotor3d?: (
+    opciones: OpcionesInicializadorMotor3d,
+  ) => Promise<InstanciaMotor3d>;
 }
 
 type ModoVista = '3d' | '2d';
@@ -76,6 +86,7 @@ export function Odontograma3d({
   onGuardarCambios,
   onNotificar,
   contenidoDebajoDiagrama,
+  inicializarMotor3d,
 }: PropsOdontograma3d) {
   const [denticion, setDenticion] = useState<TipoDenticion>('permanente');
   const [modoVista, setModoVista] = useState<ModoVista>('2d');
@@ -201,7 +212,7 @@ export function Odontograma3d({
     vista3dActiva: modoVista === '3d',
   };
 
-  // Inicialización progresiva del motor 3D (con fallback silencioso a 2D si falta WebGL 2 o falla la carga CDN)
+  // Inicialización progresiva del motor 3D (con fallback automático a 2D si falta WebGL 2 o falla la inicialización)
   useEffect(() => {
     const canvasArcadas = canvasArcadasRef.current;
     const canvasAislada = canvasAisladaRef.current;
@@ -210,20 +221,25 @@ export function Odontograma3d({
 
     if (!canvasArcadas || !canvasAislada || !viewport || !mini) return;
 
-    if (!soportaWebGl2()) {
-      setMensajeFallback('WebGL 2 no está disponible en este entorno. Usando mapa clásico FDI.');
-      setMotorListo(false);
-      setModoVista('2d');
-      return;
-    }
+    let ctxArcadas: WebGL2RenderingContext | null = null;
+    let ctxAislada: WebGL2RenderingContext | null = null;
 
-    const ctxArcadas = canvasArcadas.getContext('webgl2', { alpha: true, antialias: true });
-    const ctxAislada = canvasAislada.getContext('webgl2', { alpha: true, antialias: true });
-    if (!ctxArcadas || !ctxAislada) {
-      setMensajeFallback('WebGL 2 no está disponible en este navegador. Usando mapa clásico FDI.');
-      setMotorListo(false);
-      setModoVista('2d');
-      return;
+    if (!inicializarMotor3d) {
+      if (!soportaWebGl2()) {
+        setMensajeFallback('WebGL 2 no está disponible en este entorno. Usando mapa clásico FDI.');
+        setMotorListo(false);
+        setModoVista('2d');
+        return;
+      }
+
+      ctxArcadas = canvasArcadas.getContext('webgl2', { alpha: true, antialias: true });
+      ctxAislada = canvasAislada.getContext('webgl2', { alpha: true, antialias: true });
+      if (!ctxArcadas || !ctxAislada) {
+        setMensajeFallback('WebGL 2 no está disponible en este navegador. Usando mapa clásico FDI.');
+        setMotorListo(false);
+        setModoVista('2d');
+        return;
+      }
     }
 
     let cancelado = false;
@@ -243,34 +259,54 @@ export function Odontograma3d({
     canvasArcadas.addEventListener('webglcontextlost', handleContextLost, { once: true });
     canvasAislada.addEventListener('webglcontextlost', handleContextLost, { once: true });
 
-    cargarThreeCdn()
-      .then((modulos) => {
-        if (cancelado) return;
-        instancia = crearMotorOdontograma3d({
+    const opcionesBase: OpcionesInicializadorMotor3d = {
+      canvasArcadas,
+      canvasAislada,
+      contenedorViewport: viewport,
+      contenedorMini: mini,
+      estadoInicial: {
+        ...estadoMotorRef.current,
+        vista3dActiva: true,
+      },
+      onHover: (info) => setHover3d(info),
+      onClickArcada: (click: ClickArcada3d) => {
+        seleccionarPiezaRef.current(click.pieza, click.cara);
+        setEnfocada(true);
+        instancia?.enfocarPieza(click.pieza);
+      },
+      onClickAislada: (cara: CaraPiezaApi) => {
+        if (!estadoMotorRef.current.soloPiezaCompleta) {
+          setCaraSel(cara);
+        }
+      },
+      onCambioMovimientoReducido: (reducido) => setMovimientoReducido(reducido),
+    };
+
+    let promesaMotor: Promise<InstanciaMotor3d>;
+    if (inicializarMotor3d) {
+      promesaMotor = inicializarMotor3d(opcionesBase);
+    } else if (ctxArcadas && ctxAislada) {
+      const contextoArcadas = ctxArcadas;
+      const contextoAislada = ctxAislada;
+      promesaMotor = cargarThree().then((modulos) =>
+        crearMotorOdontograma3d({
+          ...opcionesBase,
           modulos,
-          canvasArcadas,
-          canvasAislada,
-          contenedorViewport: viewport,
-          contenedorMini: mini,
-          contextoArcadas: ctxArcadas,
-          contextoAislada: ctxAislada,
-          estadoInicial: {
-            ...estadoMotorRef.current,
-            vista3dActiva: true,
-          },
-          onHover: (info) => setHover3d(info),
-          onClickArcada: (click: ClickArcada3d) => {
-            seleccionarPiezaRef.current(click.pieza, click.cara);
-            setEnfocada(true);
-            instancia?.enfocarPieza(click.pieza);
-          },
-          onClickAislada: (cara: CaraPiezaApi) => {
-            if (!estadoMotorRef.current.soloPiezaCompleta) {
-              setCaraSel(cara);
-            }
-          },
-          onCambioMovimientoReducido: (reducido) => setMovimientoReducido(reducido),
-        });
+          contextoArcadas,
+          contextoAislada,
+        }),
+      );
+    } else {
+      return;
+    }
+
+    promesaMotor
+      .then((nuevaInstancia) => {
+        if (cancelado) {
+          nuevaInstancia.dispose();
+          return;
+        }
+        instancia = nuevaInstancia;
         motorRef.current = instancia;
         setMotorListo(true);
         setMensajeFallback(null);
@@ -280,7 +316,9 @@ export function Odontograma3d({
         if (cancelado) return;
         setMotorListo(false);
         setModoVista('2d');
-        setMensajeFallback('No se pudo cargar la vista 3D. Podés trabajar con el mapa clásico FDI.');
+        setMensajeFallback(
+          'No se pudo inicializar el visor 3D. Podés trabajar con el mapa clásico FDI.',
+        );
       });
 
     return () => {
@@ -290,7 +328,7 @@ export function Odontograma3d({
       instancia?.dispose();
       motorRef.current = null;
     };
-  }, []);
+  }, [inicializarMotor3d]);
 
   // Sincronizar estado de React con el motor 3D
   useEffect(() => {
@@ -493,7 +531,7 @@ export function Odontograma3d({
               <button
                 type="button"
                 className="prof-odo-toggle"
-                aria-pressed={rayosX}
+                aria-pressed={modoVista === '3d' && motorListo ? rayosX : false}
                 disabled={modoVista !== '3d' || !motorListo}
                 onClick={() => setRayosX((prev) => !prev)}
               >

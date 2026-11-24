@@ -128,7 +128,7 @@ describe('Helpers puros de horarios y bloqueos intuitivos', () => {
 });
 
 describe('HorariosPage — UX intuitiva de bloqueos y horarios semanales', () => {
-  it('chip 1-click de Box selecciona el box, actualiza el resumen previo y envía solo boxId', async () => {
+  it('Chips de box sincronizados con el selector de bloqueo', async () => {
     establecerSesion(SESION_PROF);
     const payloads: Record<string, unknown>[] = [];
 
@@ -245,7 +245,7 @@ describe('HorariosPage — UX intuitiva de bloqueos y horarios semanales', () =>
     expect(inputMotivo.value).toBe('Limpieza y desinfección');
   });
 
-  it('botón Elegir franja horaria muestra presets y auto-ajusta Hora hasta al cambiar Hora desde en el mismo día', async () => {
+  it('Atajos de fecha y franja horaria con autoajuste de Hora hasta', async () => {
     establecerSesion(SESION_PROF);
     const postSpy = vi.fn();
 
@@ -268,6 +268,23 @@ describe('HorariosPage — UX intuitiva de bloqueos y horarios semanales', () =>
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /elegir franja horaria/i })).toBeTruthy();
     });
+
+    const hoyIso = fechaLocalADateIso(new Date());
+    const mananaIso = diaSiguienteIso(hoyIso);
+    const inputDesde = screen.getByLabelText(/día desde/i) as HTMLInputElement;
+    const inputHasta = screen.getByLabelText(/día hasta/i) as HTMLInputElement;
+
+    // Atajos 1-click de fecha
+    fireEvent.click(screen.getByRole('button', { name: 'Mañana' }));
+    expect(inputDesde.value).toBe(mananaIso);
+    expect(inputHasta.value).toBe(mananaIso);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima semana' }));
+    expect(inputHasta.value > inputDesde.value).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hoy' }));
+    expect(inputDesde.value).toBe(hoyIso);
+    expect(inputHasta.value).toBe(hoyIso);
 
     // Día completo activo por defecto; selector de horas oculto
     const checkDiaCompleto = screen.getByLabelText(/bloquear día completo/i) as HTMLInputElement;
@@ -321,7 +338,7 @@ describe('HorariosPage — UX intuitiva de bloqueos y horarios semanales', () =>
     expect(postSpy).not.toHaveBeenCalled();
   });
 
-  it('filtros Todos / Mi agenda / Boxes filtran la tabla de bloqueos vigentes', async () => {
+  it('Filtros Todos, Mi agenda y Boxes sobre los bloqueos vigentes', async () => {
     establecerSesion(SESION_PROF);
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -386,7 +403,7 @@ describe('HorariosPage — UX intuitiva de bloqueos y horarios semanales', () =>
     expect(within(seccionBloqueos).getByText(/sin bloqueos en esta categoría/i)).toBeTruthy();
   });
 
-  it('tira semanal Lun–Dom agrega una franja 09:00–13:00 en 1 click para un día libre (Sáb)', async () => {
+  it('Tira semanal Lun–Dom para sumar franjas en un clic', async () => {
     establecerSesion(SESION_PROF);
     let bodyPost: unknown = null;
 
