@@ -36,9 +36,9 @@ const prestaciones = {
 } satisfies Record<string, Prestacion>;
 
 const pacientes = {
-  uno: { id: id(501), usuarioId: usuarios.paciente1.id, nombre: 'Paciente', apellido: 'Ficticio Uno',
+  uno: { id: id(501), usuarioId: usuarios.paciente1.id, nombre: 'Susanita', apellido: 'Chirusi',
     documento: '00000001', email: 'paciente1@example.com', telefono: '0000-000001', obraSocial: 'Obra Social Ficticia' },
-  dos: { id: id(502), nombre: 'Paciente', apellido: 'Ficticio Dos', documento: '00000002', email: 'paciente2@example.com' },
+  dos: { id: id(502), nombre: 'Manolito', apellido: 'Goreiro', documento: '00000002', email: 'paciente2@example.com' },
 } satisfies Record<string, Paciente>;
 
 const DIAS_HABILES: DiaSemana[] = [1, 2, 3, 4, 5];

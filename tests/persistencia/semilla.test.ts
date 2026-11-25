@@ -71,7 +71,7 @@ describe('Semilla de datos ficticios', () => {
     expect(pacientes.length).toBeGreaterThan(0);
     expect(usuarios.length).toBeGreaterThan(0);
     expect(pacientes.every(({ nombre, apellido, documento, email }) =>
-      `${nombre} ${apellido}`.startsWith('Paciente Ficticio') &&
+      ['Susanita Chirusi', 'Manolito Goreiro'].includes(`${nombre} ${apellido}`) &&
       /^0000000\d$/.test(documento) && email.endsWith('@example.com'))).toBe(true);
     expect(usuarios.every(({ email }) => email.endsWith('@example.com'))).toBe(true);
   });

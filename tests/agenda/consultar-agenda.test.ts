@@ -20,7 +20,7 @@ describe('consultarAgenda (repositorios en memoria)', () => {
 
     expect(t).toMatchObject({
       id: 'turno-agenda-base',
-      paciente: { id: SEED.pacientes.uno.id, nombre: 'Paciente', apellido: 'Ficticio Uno' },
+      paciente: { id: SEED.pacientes.uno.id, nombre: 'Susanita', apellido: 'Chirusi' },
       profesional: { id: SEED.profesionales.anaPerez.id, nombre: 'Dra. Ana Pérez' },
       box: { id: SEED.boxes.box1.id, nombre: 'Box 1' },
       prestacion: { id: SEED.prestaciones.consulta.id, nombre: 'Consulta', duracionMin: 30 },
@@ -32,7 +32,7 @@ describe('consultarAgenda (repositorios en memoria)', () => {
     const [t] = await consultarAgenda(RANGO, { repos });
 
     expect(t?.prestacion).toEqual({ id: SEED.prestaciones.consulta.id, nombre: 'Consulta', duracionMin: 30 });
-    expect(t?.paciente).toEqual({ id: SEED.pacientes.uno.id, nombre: 'Paciente', apellido: 'Ficticio Uno' });
+    expect(t?.paciente).toEqual({ id: SEED.pacientes.uno.id, nombre: 'Susanita', apellido: 'Chirusi' });
   });
 
   it('Los turnos cancelados aparecen con su estado', async () => {

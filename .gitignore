@@ -4,8 +4,10 @@
 *.pem
 *.key
 
-# Configuración local del agente
-.claude/settings.local.json
+# Configuración local del agente y de herramientas (no se versiona, como la del IDE)
+.claude/
+.codex/
+.codegraph/
 
 # Dependencias y builds
 node_modules/
