@@ -13,7 +13,7 @@ export const LUNES_ISO = {
 /** Hora del lunes 23/11/2026 en Mendoza → instante UTC. `hhmm` = '09:00'. */
 export const lunes = (hhmm: string): Date => new Date(`2026-11-23T${hhmm}:00-03:00`);
 
-/** Turno de "Paciente Ficticio Uno" con la Dra. Pérez en el Box 1, Consulta de 30 min, lunes a las 09:00. */
+/** Turno de Susanita Chirusi (paciente semilla 1) con la Dra. Pérez en el Box 1, Consulta de 30 min, lunes a las 09:00. */
 export function turno(cambios: Partial<Turno> = {}): Turno {
   const inicio = cambios.inicio ?? lunes('09:00');
   return {

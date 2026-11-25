@@ -1390,8 +1390,8 @@ describe('Especificación HTTP de clinica', () => {
     it('Suite clínica libre de datos reales de pacientes', async () => {
       const pacientes = await repos.pacientes.listar();
       expect(pacientes.map((p) => `${p.nombre} ${p.apellido}`)).toEqual([
-        'Paciente Ficticio Uno',
-        'Paciente Ficticio Dos',
+        'Susanita Chirusi',
+        'Manolito Goreiro',
       ]);
       expect(pacientes.every((p) => p.documento.startsWith('000000'))).toBe(true);
 

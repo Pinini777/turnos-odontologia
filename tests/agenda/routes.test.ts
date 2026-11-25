@@ -8,7 +8,7 @@ import { SEED } from '../../src/shared/seed';
 import { authDeTest } from '../plataforma/helpers';
 import { LUNES_ISO, lunes, registro, turno } from './fixtures';
 
-/** 'prof' = Dra. Ana Pérez, 'recep' = recepción, 'pac' = Paciente Ficticio Uno (tests/plataforma/helpers.ts). */
+/** 'prof' = Dra. Ana Pérez, 'recep' = recepción, 'pac' = Susanita Chirusi, paciente semilla 1 (tests/plataforma/helpers.ts). */
 const con = (token: 'prof' | 'recep' | 'pac') => ({ authorization: `Bearer ${token}` });
 
 const apps: FastifyInstance[] = [];
@@ -158,7 +158,7 @@ describe('Turno enriquecido en la agenda', () => {
       id: 'turno-agenda-base',
       estado: 'reservado',
       inicio: '2026-11-23T12:00:00.000Z',
-      paciente: { id: SEED.pacientes.uno.id, nombre: 'Paciente', apellido: 'Ficticio Uno' },
+      paciente: { id: SEED.pacientes.uno.id, nombre: 'Susanita', apellido: 'Chirusi' },
       profesional: { id: SEED.profesionales.anaPerez.id, nombre: 'Dra. Ana Pérez' },
       box: { id: SEED.boxes.box1.id, nombre: 'Box 1' },
       prestacion: { id: SEED.prestaciones.consulta.id, nombre: 'Consulta', duracionMin: 30 },
@@ -317,7 +317,7 @@ describe('Acceso a la auditoría', () => {
   });
 
   it('El paciente no accede a la auditoría', async () => {
-    // El turno base es de "Paciente Ficticio Uno", la misma persona que la sesión 'pac'.
+    // El turno base es de Susanita Chirusi, la misma persona que la sesión 'pac'.
     const { app } = await armar([turno()], [registro()]);
     const res = await app.inject({ method: 'GET', url: urlAuditoria('turno-agenda-base'), headers: con('pac') });
 

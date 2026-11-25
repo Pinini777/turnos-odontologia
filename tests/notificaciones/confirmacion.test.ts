@@ -39,7 +39,7 @@ describe('armarEmailConfirmacion', () => {
     expect(email.para).toBe('paciente1@example.com');
     expect(email.asunto).toBe('Confirmación de turno - Consulta (23/11/2026 09:00)');
 
-    expect(email.texto).toContain('Paciente Ficticio Uno');
+    expect(email.texto).toContain('Susanita Chirusi');
     expect(email.texto).toContain('23/11/2026');
     expect(email.texto).toContain('09:00');
     expect(email.texto).toContain('09:30');

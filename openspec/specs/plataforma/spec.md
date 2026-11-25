@@ -114,7 +114,7 @@ En memoria, la API SHALL arrancar con los datos semilla de `04_modelo_de_datos.m
 
 #### Scenario: Pacientes y usuarios ficticios
 - **WHEN** se revisan los pacientes y usuarios de la semilla base
-- **THEN** todos los emails terminan en `@example.com`, todos los documentos tienen la forma `0000000N` y ningún nombre completo de paciente deja de empezar con "Paciente Ficticio"
+- **THEN** todos los emails terminan en `@example.com`, todos los documentos tienen la forma `0000000N` y cada nombre completo de paciente es un personaje de ficción aprobado por EP ("Susanita Chirusi" o "Manolito Goreiro")
 
 #### Scenario: Sin contraseñas en claro
 - **WHEN** se revisan los usuarios semilla

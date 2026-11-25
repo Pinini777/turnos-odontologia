@@ -92,7 +92,8 @@ describe('Datos semilla ficticios', () => {
     const usuarios = await repos.usuarios.listar();
     expect(pacientes.length).toBeGreaterThan(0);
     for (const p of pacientes) {
-      expect(`${p.nombre} ${p.apellido}`).toMatch(/^Paciente Ficticio /);
+      // RN-DA-01: solo personajes de ficción aprobados por EP (amigos de Mafalda, de Quino).
+      expect(['Susanita Chirusi', 'Manolito Goreiro']).toContain(`${p.nombre} ${p.apellido}`);
       expect(p.documento).toMatch(/^0000000\d$/);
       expect(p.email).toMatch(/@example\.com$/);
     }
