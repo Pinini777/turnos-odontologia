@@ -124,6 +124,7 @@ Cada integrante **conduce al menos dos changes** con el agente, de explore a arc
 | UI | Lucas | C-14 web-paciente | `web-paciente` | `web/src/pages/paciente/` |
 | UI | Facundo | C-15 web-profesional | `web-profesional` | `web/src/pages/profesional/` |
 | 5 | EP | C-16 persistencia-supabase | `persistencia` | `src/shared/persistencia/`, `src/server.ts`, `supabase/migrations/`, `tests/persistencia/`, `package.json`, lockfile, `.env.example`, `README.md`, KB (`02`, `08`, `09`), `AGENTS.md` y `CLAUDE.md` (fila de persistencia) |
+| 6 | Facundo | C-17 cierre-integracion | `agenda-paciente` (+ deltas de `turnos-alta`, `turnos-reprogramacion`, `reserva-online`, `web-base`, `web-paciente`, `web-recepcion`, `web-profesional`, `plataforma`) | `src/modules/{turnos-alta,turnos-reprogramacion,reserva-online}/`, `tests/{turnos-alta,turnos-reprogramacion,reserva-online,plataforma}/`, `src/shared/errores.ts`, `src/shared/seed-demo.ts`, `web/src/base/` (`InicioPage.tsx`, `AppLayout.tsx`, errores), `web/src/pages/{paciente,recepcion,profesional}/`, `knowledge-base/05_reglas_de_negocio.md` |
 
 Además, cada change escribe en `openspec/changes/<nombre-del-change>/` y, al archivar, en `openspec/specs/<su-capability>/`. Como **ninguna capability se repite**, los archive no chocan.
 
@@ -499,6 +500,30 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/04_modelo_de_datos.md` (entidades y constraints)
   - `knowledge-base/05_reglas_de_negocio.md` §RN-AG, RN-TU-03, RN-TU-05, RN-CL-01, RN-DA-01
 
+### [C-17] `cierre-integracion`
+- **Estado**: `[ ]` pendiente
+- **Responsable**: Facundo · **Capability**: `agenda-paciente` (nueva), con deltas de `turnos-alta`, `turnos-reprogramacion`, `reserva-online`, `web-base`, `web-paciente`, `web-recepcion`, `web-profesional` y `plataforma` · **Prioridad**: P1 antes del video
+- **Origen**: pruebas manuales de punta a punta de Facundo (2026-11-25), aprobadas por EP.
+- **Scope**:
+  - **Sin solapamiento por paciente** (regla nueva): un paciente no puede tener dos turnos no cancelados superpuestos, sin importar el profesional ni el box. Se valida en C-02, C-10 y C-11 dentro de `conLockDeAgenda`, con el código nuevo `409 SOLAPAMIENTO_PACIENTE`. **Orden de los chequeos: profesional → box → paciente**, para que los tests actuales de C-02 (change evaluado) devuelvan los mismos códigos. Al reprogramar se excluye el propio turno.
+  - **Un solo turno pendiente en la reserva online** (regla nueva): el paciente no puede reservar online si ya tiene un turno `reservado` o `confirmado` con `inicio` posterior a ahora → `409 TURNO_PENDIENTE_EXISTENTE`. Sí puede reprogramar o cancelar ese turno. En `/paciente/reservar` se muestra el turno pendiente con acceso directo a Reprogramar y Cancelar.
+  - **`/inicio` con datos reales**: `web/src/base/InicioPage.tsx` deja de usar `AGENDA_RECEPCION_INICIAL`, `AGENDA_PROFESIONAL_INICIAL` y el turno de ejemplo del paciente, y consulta `GET /api/agenda` (recepción y profesional) y `GET /api/paciente/turnos` (paciente). Se quitan las etiquetas "Datos de ejemplo" y los botones pasan a llamar a la API o a navegar a la pantalla real.
+  - **Nombre real en la barra lateral**: `web/src/base/AppLayout.tsx` deja de mostrar "Lucía Fernández" fijo y usa el nombre de la sesión o de `GET /api/paciente/datos`.
+  - **Cambio de estado en `/profesional/agenda`**: botones que usan `POST /api/turnos/:id/estado`.
+  - **Semilla demo**: turnos `reservado` y `confirmado` de hoy (semana 0) para la Dra. Pérez y el Dr. Gómez, y Mario Santos con un solo turno futuro. Se ajusta `tests/plataforma/seed-demo.test.ts` (los turnos de hoy pueden haber empezado ya).
+  - Códigos nuevos en `src/shared/errores.ts` y sus mensajes en la web; reglas nuevas en `knowledge-base/05_reglas_de_negocio.md` (agenda y reserva online, y RN-EX-01).
+- **Supuestos por defecto** (EP puede cambiarlos al aprobar el propose):
+  - "Un solo turno pendiente" aplica **solo a la reserva online del paciente**. El personal puede agendar varias sesiones futuras del mismo paciente (tratamientos en etapas), pero nunca superpuestas.
+  - La base de Supabase **no se vuelve a sembrar sola**: para ver los turnos de hoy contra Supabase, EP decide si la vacía y vuelve a arrancar. En memoria (`npm start` sin `DATABASE_URL`) se ven siempre.
+  - Sin migración nueva en Supabase: la regla por paciente vive en el dominio, dentro del lock.
+- **Dependencias**: `C-01` a `C-16` (todos mergeados)
+- **Governance**: ALTO (toca reglas de agenda del change evaluado C-02): EP aprueba el spec antes de `apply`. Los tests existentes de C-02, C-10 y C-11 no se modifican y tienen que seguir en verde; cada escenario nuevo con su test de nombre exacto.
+- **Corte**: si no está mergeado antes del jueves 26/11 a las 09:00, queda fuera de la entrega.
+- **Leer antes**:
+  - `knowledge-base/05_reglas_de_negocio.md` §RN-AG, RN-RE, RN-EX-01
+  - `openspec/specs/turnos-alta/spec.md`, `openspec/specs/turnos-reprogramacion/spec.md`, `openspec/specs/reserva-online/spec.md`
+  - `web/src/base/InicioPage.tsx`, `web/src/base/AppLayout.tsx`, `src/shared/seed-demo.ts`
+
 ---
 
 ## Resumen
@@ -511,6 +536,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
 | 3 · Reprogramación y reserva | C-10, C-11 | Lautaro, Renzo | MEDIO, ALTO |
 | 4 · Interfaz web | C-12, C-13, C-14, C-15 | Lucas, Lautaro, Lucas, Facundo | MEDIO, BAJO, BAJO, BAJO |
 | 5 · Persistencia | C-16 | EP | CRITICO |
+| 6 · Cierre de integración | C-17 | Facundo | ALTO |
 
 **Changes por persona**: EP 2 (C-01, C-02) · Agustin 2 (C-07, C-08, los más simples) · Renzo 2 (C-03, C-11) · Facundo 3 (C-04, C-09, C-15) · Lautaro 3 (C-05, C-10, C-13) · Lucas 3 (C-06, C-12, C-14). Si se corta la UI, todos conservan al menos 2 changes de backend, salvo Lucas, que queda con 1 (C-06).
 
