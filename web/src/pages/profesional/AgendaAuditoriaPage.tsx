@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AppLayout } from '../../base/AppLayout';
 import { ErrorApi } from '../../base/api';
 import {
   AlertaErrorNegocio,
   BadgeEstadoTurno,
+  Boton,
   Campo,
   EstadoVacio,
   SkeletonTabla,
+  type EstadoTurnoUi,
 } from '../../base/components';
 import {
+  cambiarEstadoTurnoProfesional,
   listarAgenda,
   listarAuditoriaTurno,
   listarBoxes,
@@ -28,6 +31,207 @@ import {
 import { GuardiaProfesional } from './GuardiaProfesional';
 import { MENU_PROFESIONAL } from './menuProfesional';
 
+const ESTADOS_VALIDOS = new Set<EstadoTurnoUi>([
+  'reservado',
+  'confirmado',
+  'atendido',
+  'ausente',
+  'cancelado',
+]);
+
+const ACTORES_CONOCIDOS: Readonly<Record<string, string>> = {
+  paciente: 'Paciente (reserva online)',
+  recepcionista: 'Recepción',
+  recepcion: 'Recepción',
+  'u-recep': 'Recepción',
+  '00000000-0000-4000-8000-000000000603': 'Recepción',
+  '00000000-0000-4000-8000-000000000003': 'Recepción',
+  profesional: 'Profesional',
+  'u-prof-1': 'Dra. Ana Pérez',
+  '00000000-0000-4000-8000-000000000601': 'Dra. Ana Pérez',
+  '00000000-0000-4000-8000-000000000101': 'Dra. Ana Pérez',
+  '00000000-0000-4000-8000-000000000001': 'Dra. Ana Pérez',
+  'u-prof-2': 'Dr. Bruno Gómez',
+  '00000000-0000-4000-8000-000000000602': 'Dr. Bruno Gómez',
+  '00000000-0000-4000-8000-000000000102': 'Dr. Bruno Gómez',
+  '00000000-0000-4000-8000-000000000002': 'Dr. Bruno Gómez',
+  '00000000-0000-4000-8000-000000000604': 'Paciente (reserva online)',
+  '00000000-0000-4000-8000-000000007001': 'Paciente (reserva online)',
+  sistema: 'Sistema',
+};
+
+const BOXES_CONOCIDOS: Readonly<Record<string, string>> = {
+  'box-1': 'Box 1',
+  'box-2': 'Box 2',
+  '00000000-0000-4000-8000-000000000201': 'Box 1',
+  '00000000-0000-4000-8000-000000000202': 'Box 2',
+};
+
+function esEstadoTurno(valor: unknown): valor is EstadoTurnoUi {
+  return typeof valor === 'string' && ESTADOS_VALIDOS.has(valor as EstadoTurnoUi);
+}
+
+function esObjeto(valor: unknown): valor is Readonly<Record<string, unknown>> {
+  return typeof valor === 'object' && valor !== null;
+}
+
+function extraerEstado(nodo: unknown): EstadoTurnoUi | null {
+  if (esEstadoTurno(nodo)) return nodo;
+  if (esObjeto(nodo) && esEstadoTurno(nodo.estado)) return nodo.estado;
+  return null;
+}
+
+function extraerHorario(nodo: unknown): { inicio: string; fin?: string } | null {
+  if (!esObjeto(nodo) || typeof nodo.inicio !== 'string') return null;
+  return {
+    inicio: nodo.inicio,
+    ...(typeof nodo.fin === 'string' ? { fin: nodo.fin } : {}),
+  };
+}
+
+function extraerBoxId(nodo: unknown): string | null {
+  if (!esObjeto(nodo) || typeof nodo.boxId !== 'string') return null;
+  return nodo.boxId;
+}
+
+function formatearRangoHorario(horario: { inicio: string; fin?: string }): string {
+  return horario.fin
+    ? `${formatearFechaHora(horario.inicio)} – ${formatearHora(horario.fin)}`
+    : formatearFechaHora(horario.inicio);
+}
+
+function etiquetaAccionMovimiento(
+  accion: string,
+  detalle: Readonly<Record<string, unknown>>,
+): string {
+  if (detalle.revertido === true || accion === 'reversion_fallo_guardado') {
+    return 'Cambio revertido por error al guardar';
+  }
+  if (accion === 'creado') return 'Turno reservado';
+  if (accion === 'estado_cambiado') return 'Cambio de estado';
+  if (accion === 'reprogramado') return 'Turno reprogramado';
+  if (accion === 'cancelado') return 'Turno cancelado';
+  return 'Movimiento del turno';
+}
+
+function etiquetaActorMovimiento(
+  actor: string,
+  profesionales: readonly ProfesionalApi[],
+): string {
+  const directo = ACTORES_CONOCIDOS[actor];
+  if (directo) return directo;
+  const prof = profesionales.find((p) => p.usuarioId === actor || p.id === actor);
+  if (prof) return prof.nombre;
+  if (/^[0-9a-f-]{20,}$/i.test(actor) || actor.startsWith('u-')) {
+    return 'Personal del consultorio';
+  }
+  return actor;
+}
+
+function nombreBoxLegible(boxId: string, boxes: readonly BoxApi[]): string {
+  return boxes.find((b) => b.id === boxId)?.nombre ?? BOXES_CONOCIDOS[boxId] ?? 'Box asignado';
+}
+
+function renderizarDetalleMovimiento(
+  reg: AuditoriaTurnoApi,
+  boxes: readonly BoxApi[],
+): ReactNode {
+  const det = reg.detalle;
+  const nodoAntes = det.antes ?? det.anterior ?? det.estadoAnterior;
+  const nodoDespues = det.despues ?? det.nuevo ?? det.estadoNuevo;
+
+  const estadoAntes = extraerEstado(nodoAntes);
+  const estadoDespues = extraerEstado(nodoDespues) ?? extraerEstado(det.estado);
+  const horarioAntes = extraerHorario(nodoAntes);
+  const horarioDespues = extraerHorario(nodoDespues) ?? extraerHorario(det);
+  const boxDespues = extraerBoxId(nodoDespues) ?? extraerBoxId(det);
+  const motivo = typeof det.motivo === 'string' && det.motivo.trim() ? det.motivo.trim() : null;
+
+  if (reg.accion === 'creado') {
+    const estadoInicial = estadoDespues ?? 'reservado';
+    return (
+      <div
+        className="prof-movimiento-detalle"
+        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
+        <span>Estado inicial:</span>
+        <BadgeEstadoTurno estado={estadoInicial} />
+        {horarioDespues ? (
+          <span>· Horario: {formatearRangoHorario(horarioDespues)}</span>
+        ) : null}
+        {boxDespues ? <span>· {nombreBoxLegible(boxDespues, boxes)}</span> : null}
+      </div>
+    );
+  }
+
+  if (reg.accion === 'reprogramado') {
+    return (
+      <div
+        className="prof-movimiento-detalle"
+        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
+        {horarioAntes ? <span>Horario anterior: {formatearRangoHorario(horarioAntes)}</span> : null}
+        {horarioDespues ? (
+          <span>
+            {horarioAntes ? '→ ' : ''}Nuevo horario: {formatearRangoHorario(horarioDespues)}
+          </span>
+        ) : null}
+        {boxDespues ? <span>· {nombreBoxLegible(boxDespues, boxes)}</span> : null}
+        {estadoDespues ? <BadgeEstadoTurno estado={estadoDespues} /> : null}
+      </div>
+    );
+  }
+
+  if (reg.accion === 'cancelado') {
+    return (
+      <div
+        className="prof-movimiento-detalle"
+        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
+        {estadoAntes ? (
+          <>
+            <span>Pasó de</span>
+            <BadgeEstadoTurno estado={estadoAntes} />
+            <span>a</span>
+          </>
+        ) : (
+          <span>Estado:</span>
+        )}
+        <BadgeEstadoTurno estado="cancelado" />
+        {motivo ? <span>· Motivo: {motivo}</span> : null}
+      </div>
+    );
+  }
+
+  if (estadoAntes && estadoDespues) {
+    return (
+      <div
+        className="prof-movimiento-detalle"
+        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
+        <span>Pasó de</span>
+        <BadgeEstadoTurno estado={estadoAntes} />
+        <span>a</span>
+        <BadgeEstadoTurno estado={estadoDespues} />
+      </div>
+    );
+  }
+
+  if (estadoDespues) {
+    return (
+      <div
+        className="prof-movimiento-detalle"
+        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
+        <span>Estado:</span>
+        <BadgeEstadoTurno estado={estadoDespues} />
+      </div>
+    );
+  }
+
+  return <p style={{ margin: 0 }}>Movimiento registrado en el turno.</p>;
+}
+
 function ContenidoAgenda() {
   const hoy = fechaLocalADateIso(new Date());
   const [diaDesde, setDiaDesde] = useState<string>(hoy);
@@ -40,6 +244,24 @@ function ContenidoAgenda() {
   const [turnos, setTurnos] = useState<readonly TurnoAgendaApi[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
+  const [recarga, setRecarga] = useState<number>(0);
+  const [cambiandoId, setCambiandoId] = useState<string | null>(null);
+
+  async function handleCambiarEstado(
+    turnoId: string,
+    estado: 'confirmado' | 'atendido' | 'ausente',
+  ): Promise<void> {
+    setCambiandoId(turnoId);
+    setErrorApi(null);
+    try {
+      await cambiarEstadoTurnoProfesional(turnoId, estado);
+      setRecarga((n) => n + 1);
+    } catch (err: unknown) {
+      setErrorApi(err instanceof ErrorApi ? err : new ErrorApi(500, 'ERROR_INTERNO'));
+    } finally {
+      setCambiandoId(null);
+    }
+  }
 
   useEffect(() => {
     let activo = true;
@@ -86,12 +308,12 @@ function ContenidoAgenda() {
     return () => {
       activo = false;
     };
-  }, [diaDesde, diaHasta, profesionalId, boxId]);
+  }, [diaDesde, diaHasta, profesionalId, boxId, recarga]);
 
   return (
     <AppLayout
       titulo="Agenda profesional"
-      subtitulo="Consultá la agenda del consultorio y accedé al historial de auditoría inmutable de cada turno."
+      subtitulo="Consultá la agenda del consultorio, actualizá el estado de atención y revisá el historial de cada turno."
       itemsExtra={MENU_PROFESIONAL}
     >
       <div className="prof-stack">
@@ -183,7 +405,7 @@ function ContenidoAgenda() {
                       <th scope="col">Prestación</th>
                       <th scope="col">Paciente</th>
                       <th scope="col">Estado</th>
-                      <th scope="col">Auditoría</th>
+                      <th scope="col">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -201,13 +423,48 @@ function ContenidoAgenda() {
                         <td data-label="Estado">
                           <BadgeEstadoTurno estado={t.estado} />
                         </td>
-                        <td data-label="Auditoría">
-                          <Link
-                            to={`/profesional/turnos/${encodeURIComponent(t.id)}/auditoria`}
-                            className="wb-btn wb-btn--secundario"
-                          >
-                            Ver auditoría
-                          </Link>
+                        <td data-label="Acciones">
+                          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                            {t.estado === 'reservado' ? (
+                              <Boton
+                                variante="primario"
+                                disabled={cambiandoId === t.id}
+                                onClick={() => {
+                                  void handleCambiarEstado(t.id, 'confirmado');
+                                }}
+                              >
+                                Confirmar
+                              </Boton>
+                            ) : null}
+                            {t.estado === 'confirmado' ? (
+                              <>
+                                <Boton
+                                  variante="primario"
+                                  disabled={cambiandoId === t.id}
+                                  onClick={() => {
+                                    void handleCambiarEstado(t.id, 'atendido');
+                                  }}
+                                >
+                                  Marcar atendido
+                                </Boton>
+                                <Boton
+                                  variante="secundario"
+                                  disabled={cambiandoId === t.id}
+                                  onClick={() => {
+                                    void handleCambiarEstado(t.id, 'ausente');
+                                  }}
+                                >
+                                  Marcar ausente
+                                </Boton>
+                              </>
+                            ) : null}
+                            <Link
+                              to={`/profesional/turnos/${encodeURIComponent(t.id)}/auditoria`}
+                              className="wb-btn wb-btn--secundario"
+                            >
+                              Ver historial
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -225,6 +482,8 @@ function ContenidoAgenda() {
 function ContenidoAuditoria() {
   const { id } = useParams<{ id: string }>();
   const [registros, setRegistros] = useState<readonly AuditoriaTurnoApi[]>([]);
+  const [profesionales, setProfesionales] = useState<readonly ProfesionalApi[]>([]);
+  const [boxes, setBoxes] = useState<readonly BoxApi[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
 
@@ -239,10 +498,16 @@ function ContenidoAuditoria() {
     setCargando(true);
     setErrorApi(null);
 
-    listarAuditoriaTurno(id)
-      .then((lista) => {
+    Promise.all([
+      listarAuditoriaTurno(id),
+      listarProfesionales().catch((): ProfesionalApi[] => []),
+      listarBoxes().catch((): BoxApi[] => []),
+    ])
+      .then(([lista, listaProf, listaBoxes]) => {
         if (!activo) return;
         setRegistros(lista);
+        setProfesionales(Array.isArray(listaProf) ? listaProf : []);
+        setBoxes(Array.isArray(listaBoxes) ? listaBoxes : []);
       })
       .catch((err: unknown) => {
         if (!activo) return;
@@ -261,8 +526,8 @@ function ContenidoAuditoria() {
 
   return (
     <AppLayout
-      titulo="Auditoría del turno"
-      subtitulo={id ? `Cronología inmutable de eventos del turno #${id}.` : 'Cronología inmutable de eventos.'}
+      titulo="Historial del turno"
+      subtitulo="Movimientos registrados del turno desde su reserva."
       itemsExtra={MENU_PROFESIONAL}
       acciones={
         <Link to="/profesional/agenda" className="wb-btn wb-btn--secundario">
@@ -282,32 +547,31 @@ function ContenidoAuditoria() {
             <div className="prof-card__head">
               <div>
                 <h2 id="titulo-auditoria" className="prof-card__titulo">
-                  Historial de auditoría (solo lectura)
+                  Movimientos del turno
                 </h2>
                 <p className="prof-card__sub">
-                  Registro append-only: conserva cada creación, reprogramación, cambio de estado o cancelación.
+                  Registro de reserva, cambios de estado, reprogramaciones o cancelación.
                 </p>
               </div>
             </div>
 
             {registros.length === 0 ? (
               <EstadoVacio
-                titulo="Sin registros de auditoría"
-                descripcion="Este turno todavía no tiene eventos registrados."
+                titulo="Sin movimientos registrados"
+                descripcion="Este turno todavía no tiene movimientos."
               />
             ) : (
               <div className="prof-timeline">
                 {registros.map((reg) => (
                   <article key={reg.id} className="prof-entry">
                     <div className="prof-entry__meta">
-                      <strong>Acción: {reg.accion}</strong>
+                      <strong>{etiquetaAccionMovimiento(reg.accion, reg.detalle)}</strong>
                       <span>
-                        Actor: {reg.actor} · {formatearFechaHora(reg.fecha)}
+                        Realizado por: {etiquetaActorMovimiento(reg.actor, profesionales)} ·{' '}
+                        {formatearFechaHora(reg.fecha)}
                       </span>
                     </div>
-                    <pre className="prof-auditoria-detalle">
-                      {JSON.stringify(reg.detalle, null, 2)}
-                    </pre>
+                    {renderizarDetalleMovimiento(reg, boxes)}
                   </article>
                 ))}
               </div>
@@ -329,7 +593,7 @@ export function AgendaProfesionalPage() {
 
 export function AuditoriaTurnoPage() {
   return (
-    <GuardiaProfesional titulo="Auditoría del turno">
+    <GuardiaProfesional titulo="Historial del turno">
       <ContenidoAuditoria />
     </GuardiaProfesional>
   );

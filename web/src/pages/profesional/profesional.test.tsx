@@ -903,7 +903,14 @@ describe('Agenda profesional y auditoría append-only de turnos', () => {
       accion: 'creado',
       actor: 'paciente',
       fecha: '2026-11-20T12:00:00-03:00',
-      detalle: { estado: 'reservado' },
+      detalle: {
+        despues: {
+          inicio: '2026-11-23T09:00:00-03:00',
+          fin: '2026-11-23T09:30:00-03:00',
+          boxId: 'box-1',
+          estado: 'reservado',
+        },
+      },
     },
     {
       id: 'aud-2',
@@ -911,7 +918,18 @@ describe('Agenda profesional y auditoría append-only de turnos', () => {
       accion: 'estado_cambiado',
       actor: 'u-recep',
       fecha: '2026-11-21T09:15:00-03:00',
-      detalle: { antes: 'reservado', despues: 'confirmado' },
+      detalle: { antes: { estado: 'reservado' }, despues: { estado: 'confirmado' } },
+    },
+    {
+      id: 'aud-3',
+      turnoId: 'turno-1',
+      accion: 'reprogramado',
+      actor: 'u-prof-1',
+      fecha: '2026-11-22T10:00:00-03:00',
+      detalle: {
+        antes: { inicio: '2026-11-23T09:00:00-03:00', fin: '2026-11-23T09:30:00-03:00', estado: 'confirmado' },
+        despues: { inicio: '2026-11-23T10:00:00-03:00', fin: '2026-11-23T10:30:00-03:00', boxId: 'box-2', estado: 'reservado' },
+      },
     },
   ];
 
@@ -937,7 +955,7 @@ describe('Agenda profesional y auditoría append-only de turnos', () => {
     });
 
     expect(screen.getByText('Confirmado')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /ver auditoría/i })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /ver historial/i })).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText(/filtrar por profesional/i), { target: { value: 'prof-1' } });
     fireEvent.change(screen.getByLabelText(/filtrar por box/i), { target: { value: 'box-1' } });
@@ -955,22 +973,101 @@ describe('Agenda profesional y auditoría append-only de turnos', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = leerUrl(input);
       if (url === '/api/turnos/turno-1/auditoria') return jsonResp(AUDITORIA_SEED);
+      if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
+      if (url === '/api/boxes') return jsonResp(BOXES_SEED);
       return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
     });
 
-    renderRutaProfesional('/profesional/turnos/turno-1/auditoria');
+    const { container } = renderRutaProfesional('/profesional/turnos/turno-1/auditoria');
 
     await waitFor(() => {
-      expect(screen.getByText(/estado_cambiado/i)).toBeTruthy();
+      expect(screen.getByText('Cambio de estado')).toBeTruthy();
     });
 
-    expect(screen.getByText(/creado/i)).toBeTruthy();
-    expect(screen.getByText(/u-recep/i)).toBeTruthy();
-    expect(screen.getByText(/confirmado/i)).toBeTruthy();
+    expect(screen.getByText('Turno reservado')).toBeTruthy();
+    expect(screen.getByText('Turno reprogramado')).toBeTruthy();
+    expect(screen.getByText(/Paciente \(reserva online\)/i)).toBeTruthy();
+    expect(screen.getByText(/Recepción/i)).toBeTruthy();
+    expect(screen.getByText(/Nuevo horario:/i)).toBeTruthy();
+    expect(screen.getAllByText('Reservado').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Confirmado')).toBeTruthy();
 
-    // Auditoría append-only: sin botones de editar ni borrar
+    // Sin JSON crudo ni jerga técnica para el odontólogo
+    const texto = container.textContent ?? '';
+    expect(texto).not.toContain('{');
+    expect(texto).not.toContain('estado_cambiado');
+    expect(texto).not.toContain('append-only');
+
+    // Historial solo lectura: sin botones de editar ni borrar
     expect(screen.queryByRole('button', { name: /editar/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /eliminar|borrar/i })).toBeNull();
+  });
+
+  it('Profesional confirma o marca atendido o ausente un turno desde su agenda', async () => {
+    establecerSesion(SESION_PROF);
+    const turnosMutables = [
+      {
+        ...TURNOS_AGENDA[0]!,
+        id: 'turno-res-1',
+        estado: 'reservado' as const,
+      },
+      {
+        ...TURNOS_AGENDA[0]!,
+        id: 'turno-conf-2',
+        inicio: '2026-11-23T10:00:00-03:00',
+        fin: '2026-11-23T10:30:00-03:00',
+        estado: 'confirmado' as const,
+        paciente: { id: 'pac-2', nombre: 'Paciente Ficticio', apellido: 'Dos' },
+      },
+    ];
+    const llamadasEstado: { url: string; body: unknown }[] = [];
+    let consultasAgenda = 0;
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = leerUrl(input);
+      const method = init?.method ?? 'GET';
+      if (url === '/api/profesionales') return jsonResp(PROFESIONALES_SEED);
+      if (url === '/api/boxes') return jsonResp(BOXES_SEED);
+      if (url.startsWith('/api/agenda?') && method === 'GET') {
+        consultasAgenda += 1;
+        return jsonResp(turnosMutables);
+      }
+      if (url.startsWith('/api/turnos/') && url.endsWith('/estado') && method === 'POST') {
+        const body = leerBody(init);
+        llamadasEstado.push({ url, body });
+        return jsonResp({ ok: true });
+      }
+      return jsonResp({ code: 'NO_ENCONTRADO' }, 404);
+    });
+
+    renderRutaProfesional('/profesional/agenda');
+
+    await waitFor(() => {
+      expect(screen.getByText('Paciente Ficticio Uno')).toBeTruthy();
+      expect(screen.getByText('Paciente Ficticio Dos')).toBeTruthy();
+    });
+
+    const consultasAntes = consultasAgenda;
+    fireEvent.click(screen.getByRole('button', { name: /^confirmar$/i }));
+
+    await waitFor(() => {
+      expect(llamadasEstado).toContainEqual({
+        url: '/api/turnos/turno-res-1/estado',
+        body: { estado: 'confirmado' },
+      });
+      expect(consultasAgenda).toBeGreaterThan(consultasAntes);
+    });
+
+    const consultasIntermedias = consultasAgenda;
+    fireEvent.click(screen.getByRole('button', { name: /marcar atendido/i }));
+
+    await waitFor(() => {
+      expect(llamadasEstado).toContainEqual({
+        url: '/api/turnos/turno-conf-2/estado',
+        body: { estado: 'atendido' },
+      });
+      expect(consultasAgenda).toBeGreaterThan(consultasIntermedias);
+    });
   });
 });
 

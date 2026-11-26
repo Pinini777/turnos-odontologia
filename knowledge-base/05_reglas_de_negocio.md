@@ -10,7 +10,7 @@ Cada regla tiene un código `RN-{DOMINIO}-{NN}` para trazabilidad con specs, tes
 > |---|---|
 > | Duración de las prestaciones | RN-AG-05, RN-AG-06 |
 > | Sillones o boxes | RN-AG-01, RN-AG-03, RN-AG-08 |
-> | Prevención de solapamientos | RN-AG-02, RN-AG-03, RN-AG-04, RN-AG-07, RN-TU-02, RN-TU-04, RN-RE-04 |
+> | Prevención de solapamientos | RN-AG-02, RN-AG-03, RN-AG-04, RN-AG-07, RN-AG-11, RN-TU-02, RN-TU-04, RN-RE-04 |
 >
 > Ningún competidor documenta estas reglas en público (NE-01 a NE-05 en `10_preguntas_abiertas.md`).
 
@@ -24,6 +24,7 @@ Cada regla tiene un código `RN-{DOMINIO}-{NN}` para trazabilidad con specs, tes
 - **RN-AG-08**: Un turno no puede caer dentro de un **bloqueo** del profesional o del box (feriado, ausencia, mantenimiento).
 - **RN-AG-09**: Un turno debe quedar **dentro del horario de atención** del profesional para ese día. **Cada profesional carga y mantiene sus propios horarios** (PA-02, resuelta).
 - **RN-AG-10**: No se crean ni se reprograman turnos con `inicio` en el pasado, según el reloj del sistema (zona horaria del consultorio, DD-08).
+- **RN-AG-11**: **Un paciente no puede tener dos turnos no cancelados superpuestos**, sin importar el profesional ni el box (`a.inicio < b.fin && b.inicio < a.fin` → `409 SOLAPAMIENTO_PACIENTE`). El orden de validación es `profesional → box → paciente`; al reprogramar se excluye el propio turno (`RN-TU-04`).
 
 ## Dominio: Turnos (RN-TU)
 
@@ -43,6 +44,7 @@ Cada regla tiene un código `RN-{DOMINIO}-{NN}` para trazabilidad con specs, tes
 - **RN-RE-03**: El paciente reserva y opera **con su propia cuenta** (PA-01). Solo ve y modifica **sus** turnos y datos; intentar operar sobre el turno de otro paciente responde `404`, para no revelar que existe.
 - **RN-RE-05**: Para reservar online el paciente necesita una cuenta registrada con email. Ese email recibe las confirmaciones (RN-NO-01).
 - **RN-RE-04**: Si dos reservas compiten por el mismo hueco, gana la primera confirmada y la segunda recibe `409 SOLAPAMIENTO_*`. La validación y el guardado son atómicos.
+- **RN-RE-06**: Un paciente **no puede reservar online (`POST /api/paciente/turnos`) si ya tiene un turno `reservado` o `confirmado` con `inicio` posterior a ahora** (`409 TURNO_PENDIENTE_EXISTENTE`). Sí puede reprogramar o cancelar ese turno; cuando el turno se cancela o alcanza su horario de inicio (`inicio <= ahora`), puede volver a reservar. El personal puede agendar varias sesiones futuras no superpuestas del mismo paciente.
 
 ## Dominio: Notificaciones (RN-NO)
 
@@ -76,4 +78,4 @@ Cada regla tiene un código `RN-{DOMINIO}-{NN}` para trazabilidad con specs, tes
 
 ## Excepciones globales
 
-- **RN-EX-01**: Toda violación de una regla de negocio responde `409` con un código estable (`SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`, `DUPLICADO`). `DUPLICADO` se usa cuando un dato que debe ser único ya existe (email o documento del paciente, matrícula, nombre de box); se agregó el 2026-11-22 a pedido de C-03 y C-04. Los errores de formato responden `400`.
+- **RN-EX-01**: Toda violación de una regla de negocio responde `409` con un código estable (`SOLAPAMIENTO_PROFESIONAL`, `SOLAPAMIENTO_BOX`, `SOLAPAMIENTO_PACIENTE`, `TURNO_PENDIENTE_EXISTENTE`, `FUERA_DE_GRILLA`, `DURACION_INVALIDA`, `EN_BLOQUEO`, `FUERA_DE_HORARIO`, `EN_EL_PASADO`, `PLAZO_VENCIDO`, `TRANSICION_INVALIDA`, `DUPLICADO`). `DUPLICADO` se usa cuando un dato que debe ser único ya existe (email o documento del paciente, matrícula, nombre de box); se agregó el 2026-11-22 a pedido de C-03 y C-04. `SOLAPAMIENTO_PACIENTE` y `TURNO_PENDIENTE_EXISTENTE` se agregaron el 2026-11-25 en `C-17`. Los errores de formato responden `400`.

@@ -687,4 +687,46 @@ describe('web-paciente (C-14)', () => {
     expect(texto).not.toContain('98765');
     expect(texto).not.toContain('$');
   });
+
+  it('Al abrir Reservar turno con un turno futuro pendiente muestra el turno con acceso a Reprogramar y Cancelar', async () => {
+    sesionPaciente();
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/api/public/prestaciones')) {
+        return Promise.resolve(respuestaJson(PRESTACIONES_MOCK));
+      }
+      if (url.includes('/api/paciente/turnos')) {
+        return Promise.resolve(
+          respuestaJson([
+            {
+              id: 'turno-pendiente-santos',
+              profesionalId: ID_PROF_ANA,
+              boxId: ID_BOX_1,
+              pacienteId: 'p1',
+              prestacionId: ID_PREST_CONSULTA,
+              inicio: '2026-11-26T09:45:00-03:00',
+              fin: '2026-11-26T10:15:00-03:00',
+              estado: 'confirmado',
+              origen: 'online',
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(respuestaJson([]));
+    });
+
+    renderConRutas('/paciente/reservar', () => new Date('2026-11-24T10:00:00-03:00'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ya tenés un turno pendiente/i)).toBeTruthy();
+    });
+
+    expect(screen.getByText(/Dra\. Ana Pérez/i)).toBeTruthy();
+    expect(screen.getByText(/Box 1/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Reprogramar/i }).getAttribute('href')).toBe(
+      '/paciente/turnos/turno-pendiente-santos/reprogramar',
+    );
+    expect(screen.getByRole('button', { name: /Cancelar turno/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Confirmar turno' })).toBeNull();
+  });
 });

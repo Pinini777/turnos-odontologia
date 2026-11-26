@@ -13,6 +13,18 @@ export function conflictos(turnos: Turno[], nuevo: Turno): { profesional: boolea
   };
 }
 
+export function conflictoPaciente(
+  turnos: ReadonlyArray<Turno>,
+  nuevo: Pick<Turno, 'pacienteId' | 'inicio' | 'fin'>,
+): boolean {
+  return turnos.some(
+    (turno) =>
+      turno.estado !== 'cancelado' &&
+      turno.pacienteId === nuevo.pacienteId &&
+      seSuperponen(turno, nuevo),
+  );
+}
+
 export function enGrilla(inicio: Date, tz?: string): boolean {
   const minutos = Number(enZonaConsultorio(inicio, tz).hhmm.slice(3));
   return minutos % 15 === 0 && inicio.getUTCSeconds() === 0 && inicio.getUTCMilliseconds() === 0;

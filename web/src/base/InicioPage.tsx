@@ -1,8 +1,10 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
+import { ErrorApi } from './api';
 import { CLINICA } from './clinica';
 import {
+  AlertaErrorNegocio,
   AvatarIniciales,
   BadgeEstadoTurno,
   Boton,
@@ -13,9 +15,125 @@ import {
   type EstadoTurnoUi,
 } from './components';
 import { Icono } from './iconos';
-import { useSesion } from './sesion';
+import { apiConsultorio, useSesion } from './sesion';
 
-interface TurnoAgenda {
+const ZONA_CONSULTORIO = 'America/Argentina/Mendoza';
+
+const PROFESIONALES_POR_ID: Readonly<Record<string, string>> = {
+  '00000000-0000-4000-8000-000000000101': 'Dra. Ana Pérez',
+  '00000000-0000-4000-8000-000000000102': 'Dr. Bruno Gómez',
+};
+
+const BOXES_POR_ID: Readonly<Record<string, string>> = {
+  '00000000-0000-4000-8000-000000000201': 'Box 1',
+  '00000000-0000-4000-8000-000000000202': 'Box 2',
+};
+
+const fmtHora = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ZONA_CONSULTORIO,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+const fmtFechaYmd = new Intl.DateTimeFormat('en-CA', {
+  timeZone: ZONA_CONSULTORIO,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const fmtFechaSubtitulo = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ZONA_CONSULTORIO,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+const fmtMesCorto = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ZONA_CONSULTORIO,
+  month: 'short',
+});
+
+const fmtDiaNumero = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ZONA_CONSULTORIO,
+  day: '2-digit',
+});
+
+const fmtDiaSemanaCorto = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ZONA_CONSULTORIO,
+  weekday: 'short',
+});
+
+function capitalizar(texto: string): string {
+  return texto.length > 0 ? `${texto[0]?.toUpperCase() ?? ''}${texto.slice(1)}` : texto;
+}
+
+function horaEnConsultorio(iso: string): string {
+  return fmtHora.format(new Date(iso));
+}
+
+function fechaLargaEnConsultorio(iso: string): string {
+  return capitalizar(fmtFechaSubtitulo.format(new Date(iso)));
+}
+
+function sumarUnDiaYmd(fechaYmd: string): string {
+  const [yStr, mStr, dStr] = fechaYmd.split('-');
+  const utc = new Date(Date.UTC(Number(yStr), Number(mStr) - 1, Number(dStr) + 1));
+  const y = String(utc.getUTCFullYear()).padStart(4, '0');
+  const m = String(utc.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(utc.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function rangoHoyConsultorio(ahora: Date): { desde: string; hasta: string } {
+  const hoy = fmtFechaYmd.format(ahora);
+  const manana = sumarUnDiaYmd(hoy);
+  return {
+    desde: `${hoy}T00:00:00-03:00`,
+    hasta: `${manana}T00:00:00-03:00`,
+  };
+}
+
+interface TurnoAgendaApi {
+  readonly id: string;
+  readonly profesionalId: string;
+  readonly boxId: string;
+  readonly prestacionId: string;
+  readonly pacienteId: string;
+  readonly inicio: string;
+  readonly fin: string;
+  readonly estado: EstadoTurnoUi;
+  readonly paciente: { readonly id: string; readonly nombre: string; readonly apellido: string } | null;
+  readonly profesional: { readonly id: string; readonly nombre: string } | null;
+  readonly box: { readonly id: string; readonly nombre: string } | null;
+  readonly prestacion: { readonly id: string; readonly nombre: string; readonly duracionMin: number } | null;
+}
+
+interface TurnoPacienteApi {
+  readonly id: string;
+  readonly profesionalId: string;
+  readonly boxId: string;
+  readonly pacienteId: string;
+  readonly prestacionId: string;
+  readonly inicio: string;
+  readonly fin: string;
+  readonly estado: EstadoTurnoUi;
+}
+
+interface PrestacionPublicaApi {
+  readonly id: string;
+  readonly nombre: string;
+  readonly duracionMin: number;
+}
+
+interface ProfesionalApi {
+  readonly id: string;
+  readonly nombre: string;
+  readonly usuarioId: string;
+}
+
+interface TurnoAgendaFila {
   readonly id: string;
   readonly horario: string;
   readonly box: string;
@@ -25,83 +143,24 @@ interface TurnoAgenda {
   readonly estado: EstadoTurnoUi;
 }
 
-const AGENDA_PROFESIONAL_INICIAL: readonly TurnoAgenda[] = [
-  {
-    id: 'p-1',
-    horario: '09:00 – 09:30',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Consulta odontológica (30 min)',
-    paciente: 'Lucía Fernández',
-    estado: 'atendido',
-  },
-  {
-    id: 'p-2',
-    horario: '09:30 – 10:15',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Limpieza dental (45 min)',
-    paciente: 'Martín Quiroga',
-    estado: 'confirmado',
-  },
-  {
-    id: 'p-3',
-    horario: '10:15 – 10:45',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Control de ortodoncia (30 min)',
-    paciente: 'Sofía Morales',
-    estado: 'confirmado',
-  },
-  {
-    id: 'p-4',
-    horario: '11:00 – 12:00',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Endodoncia (60 min)',
-    paciente: 'Tomás Benítez',
-    estado: 'reservado',
-  },
-];
-
-const AGENDA_RECEPCION_INICIAL: readonly TurnoAgenda[] = [
-  {
-    id: 'r-1',
-    horario: '09:00 – 09:30',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Consulta odontológica (30 min)',
-    paciente: 'Lucía Fernández',
-    estado: 'confirmado',
-  },
-  {
-    id: 'r-2',
-    horario: '09:30 – 10:15',
-    box: 'Box 1',
-    profesional: 'Dra. Ana Pérez',
-    prestacion: 'Limpieza dental (45 min)',
-    paciente: 'Martín Quiroga',
-    estado: 'reservado',
-  },
-  {
-    id: 'r-3',
-    horario: '10:00 – 10:15',
-    box: 'Box 2',
-    profesional: 'Dr. Bruno Gómez',
-    prestacion: 'Control post-tratamiento (15 min)',
-    paciente: 'Sofía Morales',
-    estado: 'confirmado',
-  },
-  {
-    id: 'r-4',
-    horario: '10:15 – 10:45',
-    box: 'Box 2',
-    profesional: 'Dr. Bruno Gómez',
-    prestacion: 'Consulta odontológica (30 min)',
-    paciente: 'Valentina Arias',
-    estado: 'reservado',
-  },
-];
+function aFilaAgenda(t: TurnoAgendaApi): TurnoAgendaFila {
+  const horario = `${horaEnConsultorio(t.inicio)} – ${horaEnConsultorio(t.fin)}`;
+  const box = t.box?.nombre ?? BOXES_POR_ID[t.boxId] ?? t.boxId;
+  const profesional = t.profesional?.nombre ?? PROFESIONALES_POR_ID[t.profesionalId] ?? t.profesionalId;
+  const prestacion = t.prestacion
+    ? `${t.prestacion.nombre} (${t.prestacion.duracionMin} min)`
+    : t.prestacionId;
+  const paciente = t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : t.pacienteId;
+  return {
+    id: t.id,
+    horario,
+    box,
+    profesional,
+    prestacion,
+    paciente,
+    estado: t.estado,
+  };
+}
 
 const SECCIONES_SECUNDARIAS: Readonly<
   Record<string, { titulo: string; subtitulo: string; descripcion: string }>
@@ -162,19 +221,9 @@ const SECCIONES_SECUNDARIAS: Readonly<
   },
 };
 
-function saludoProfesional(email: string): string {
-  if (email.toLowerCase().includes('profesional2')) return 'Buen día, Dr. Bruno Gómez';
-  return 'Buen día, Dra. Ana Pérez';
-}
-
-function boxProfesional(email: string): string {
-  if (email.toLowerCase().includes('profesional2')) return 'Box 2';
-  return 'Box 1';
-}
-
 function construirColumnasConAcciones(
-  onCambiarEstado: (id: string, nuevoEstado: EstadoTurnoUi) => void,
-): ColumnaTabla<TurnoAgenda>[] {
+  onCambiarEstado: (id: string, nuevoEstado: 'confirmado' | 'atendido') => void,
+): ColumnaTabla<TurnoAgendaFila>[] {
   return [
     { encabezado: 'Horario', render: (t) => t.horario },
     { encabezado: 'Box', render: (t) => t.box },
@@ -232,27 +281,99 @@ export function InicioPage() {
   const { sesion } = useSesion();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [aviso, setAviso] = useState<string | null>(null);
   const [actualizando, setActualizando] = useState(false);
+  const [errorApi, setErrorApi] = useState<ErrorApi | null>(null);
 
-  const [turnosProfesional, setTurnosProfesional] = useState<readonly TurnoAgenda[]>(
-    AGENDA_PROFESIONAL_INICIAL,
-  );
-  const [turnosRecepcion, setTurnosRecepcion] = useState<readonly TurnoAgenda[]>(
-    AGENDA_RECEPCION_INICIAL,
+  const [turnosHoy, setTurnosHoy] = useState<readonly TurnoAgendaFila[]>([]);
+  const [nombreProfesional, setNombreProfesional] = useState<string>('');
+  const [proximoTurnoPaciente, setProximoTurnoPaciente] = useState<TurnoPacienteApi | null>(null);
+  const [prestacionesMap, setPrestacionesMap] = useState<ReadonlyMap<string, PrestacionPublicaApi>>(
+    () => new Map(),
   );
 
   const vista = searchParams.get('vista') ?? '';
 
-  useEffect(() => {
-    setAviso(null);
-  }, [vista]);
+  const cargarDatos = useCallback(async () => {
+    if (!sesion) return;
+    setActualizando(true);
+    setErrorApi(null);
+
+    try {
+      const rolActual = sesion.usuario.rol;
+      if (rolActual === 'profesional') {
+        const { desde, hasta } = rangoHoyConsultorio(new Date());
+        const listaProfs = await apiConsultorio
+          .get<ProfesionalApi[]>('/api/profesionales')
+          .catch((): ProfesionalApi[] => []);
+        const miProf = Array.isArray(listaProfs)
+          ? listaProfs.find((p) => p.usuarioId === sesion.usuario.id)
+          : undefined;
+        if (miProf?.nombre) {
+          setNombreProfesional(miProf.nombre);
+        }
+        const qs = new URLSearchParams({ desde, hasta });
+        if (miProf?.id) {
+          qs.set('profesionalId', miProf.id);
+        }
+        const agenda = await apiConsultorio.get<TurnoAgendaApi[]>(`/api/agenda?${qs.toString()}`);
+        setTurnosHoy(Array.isArray(agenda) ? agenda.map(aFilaAgenda) : []);
+      } else if (rolActual === 'recepcionista') {
+        const { desde, hasta } = rangoHoyConsultorio(new Date());
+        const qs = new URLSearchParams({ desde, hasta });
+        const agenda = await apiConsultorio.get<TurnoAgendaApi[]>(`/api/agenda?${qs.toString()}`);
+        setTurnosHoy(Array.isArray(agenda) ? agenda.map(aFilaAgenda) : []);
+      } else if (rolActual === 'paciente') {
+        const [misTurnos, prestaciones] = await Promise.all([
+          apiConsultorio.get<TurnoPacienteApi[]>('/api/paciente/turnos'),
+          apiConsultorio
+            .get<PrestacionPublicaApi[]>('/api/public/prestaciones')
+            .catch((): PrestacionPublicaApi[] => []),
+        ]);
+        const mapa = new Map<string, PrestacionPublicaApi>();
+        if (Array.isArray(prestaciones)) {
+          for (const p of prestaciones) mapa.set(p.id, p);
+        }
+        setPrestacionesMap(mapa);
+
+        const ahoraMs = Date.now();
+        const lista = Array.isArray(misTurnos) ? misTurnos : [];
+        const activosFuturos = lista.filter(
+          (t) =>
+            (t.estado === 'reservado' || t.estado === 'confirmado') &&
+            Date.parse(t.inicio) > ahoraMs,
+        );
+        const candidato =
+          activosFuturos[0] ??
+          lista.find((t) => t.estado === 'reservado' || t.estado === 'confirmado') ??
+          null;
+        setProximoTurnoPaciente(candidato);
+      }
+    } catch (err: unknown) {
+      setErrorApi(err instanceof ErrorApi ? err : new ErrorApi(500, 'ERROR_INTERNO'));
+    } finally {
+      setActualizando(false);
+    }
+  }, [sesion]);
 
   useEffect(() => {
-    if (!actualizando) return;
-    const timer = window.setTimeout(() => setActualizando(false), 260);
-    return () => window.clearTimeout(timer);
-  }, [actualizando]);
+    if (!sesion || vista) return;
+    void cargarDatos();
+  }, [sesion, vista, cargarDatos]);
+
+  const handleCambiarEstado = useCallback(
+    async (id: string, nuevoEstado: 'confirmado' | 'atendido') => {
+      setErrorApi(null);
+      try {
+        await apiConsultorio.post(`/api/turnos/${encodeURIComponent(id)}/estado`, {
+          estado: nuevoEstado,
+        });
+        await cargarDatos();
+      } catch (err: unknown) {
+        setErrorApi(err instanceof ErrorApi ? err : new ErrorApi(500, 'ERROR_INTERNO'));
+      }
+    },
+    [cargarDatos],
+  );
 
   if (!sesion) {
     return <Navigate to="/login" replace />;
@@ -278,37 +399,40 @@ export function InicioPage() {
   }
 
   if (rol === 'profesional') {
-    const boxAsignado = boxProfesional(sesion.usuario.email);
-    const confirmados = turnosProfesional.filter((t) => t.estado === 'confirmado').length;
-    const reservados = turnosProfesional.filter((t) => t.estado === 'reservado').length;
-    const atendidos = turnosProfesional.filter((t) => t.estado === 'atendido').length;
-    const proximo = turnosProfesional.find(
+    const confirmados = turnosHoy.filter((t) => t.estado === 'confirmado').length;
+    const reservados = turnosHoy.filter((t) => t.estado === 'reservado').length;
+    const atendidos = turnosHoy.filter((t) => t.estado === 'atendido').length;
+    const proximo = turnosHoy.find(
       (t) => t.estado === 'confirmado' || t.estado === 'reservado',
     );
-
+    const boxAsignado = turnosHoy[0]?.box ?? 'Box 1';
+    const saludo = nombreProfesional ? `Buen día, ${nombreProfesional}` : 'Panel del profesional';
+    const subtituloHoy = `${fechaLargaEnConsultorio(new Date().toISOString())} · ${CLINICA.nombre}`;
     const columnasProfesional = construirColumnasConAcciones((id, nuevoEstado) => {
-      setTurnosProfesional((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t)),
-      );
+      void handleCambiarEstado(id, nuevoEstado);
     });
 
     return (
       <AppLayout
-        titulo={saludoProfesional(sesion.usuario.email)}
-        subtitulo={`Lunes 23 de noviembre · ${CLINICA.nombre}`}
+        titulo={saludo}
+        subtitulo={subtituloHoy}
         claveVista="inicio-profesional"
         acciones={
           <Boton
             variante="secundario"
             cargando={actualizando}
             textoCargando="Actualizando…"
-            onClick={() => setActualizando(true)}
+            onClick={() => void cargarDatos()}
           >
             Actualizar agenda
           </Boton>
         }
       >
-        {actualizando ? (
+        {errorApi ? (
+          <AlertaErrorNegocio code={errorApi.code} detalles={errorApi.detalles} />
+        ) : null}
+
+        {actualizando && turnosHoy.length === 0 ? (
           <SkeletonTarjetas cantidad={3} />
         ) : (
           <div className="wb-cards-grid">
@@ -319,7 +443,7 @@ export function InicioPage() {
                   <Icono nombre="agenda" tamano={18} />
                 </span>
               </div>
-              <p className="wb-card__valor">{turnosProfesional.length}</p>
+              <p className="wb-card__valor">{turnosHoy.length}</p>
               <p className="wb-card__texto">
                 {confirmados} confirmados · {reservados} por confirmar · {atendidos} atendidos
               </p>
@@ -332,7 +456,9 @@ export function InicioPage() {
                   <Icono nombre="horarios" tamano={18} />
                 </span>
               </div>
-              <p className="wb-card__valor">{proximo ? proximo.horario.split(' ')[0] : 'Sin pendientes'}</p>
+              <p className="wb-card__valor">
+                {proximo ? proximo.horario.split(' ')[0] : 'Sin pendientes'}
+              </p>
               <p className="wb-card__texto">
                 {proximo
                   ? `${proximo.paciente} · ${proximo.prestacion}`
@@ -348,7 +474,7 @@ export function InicioPage() {
                 </span>
               </div>
               <p className="wb-card__valor">{boxAsignado}</p>
-              <p className="wb-card__texto">Turno mañana · 09:00 a 13:00</p>
+              <p className="wb-card__texto">{CLINICA.horario}</p>
             </div>
           </div>
         )}
@@ -361,13 +487,12 @@ export function InicioPage() {
             >
               Tu agenda de hoy
             </h2>
-            <span className="wb-tag-ejemplo">Datos de ejemplo</span>
           </div>
           <Tabla
             columnas={columnasProfesional}
-            filas={turnosProfesional}
+            filas={turnosHoy}
             claveFila={(t) => t.id}
-            cargando={actualizando}
+            cargando={actualizando && turnosHoy.length === 0}
             filasSkeleton={4}
           />
         </section>
@@ -376,11 +501,15 @@ export function InicioPage() {
   }
 
   if (rol === 'recepcionista') {
-    const pendientesConfirmar = turnosRecepcion.filter((t) => t.estado === 'reservado').length;
+    const pendientesConfirmar = turnosHoy.filter((t) => t.estado === 'reservado').length;
+    const turnoBox1 = turnosHoy.find(
+      (t) => t.box === 'Box 1' && (t.estado === 'confirmado' || t.estado === 'reservado'),
+    );
+    const turnoBox2 = turnosHoy.find(
+      (t) => t.box === 'Box 2' && (t.estado === 'confirmado' || t.estado === 'reservado'),
+    );
     const columnasRecepcion = construirColumnasConAcciones((id, nuevoEstado) => {
-      setTurnosRecepcion((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, estado: nuevoEstado } : t)),
-      );
+      void handleCambiarEstado(id, nuevoEstado);
     });
 
     return (
@@ -394,17 +523,13 @@ export function InicioPage() {
               variante="secundario"
               cargando={actualizando}
               textoCargando="Actualizando…"
-              onClick={() => setActualizando(true)}
+              onClick={() => void cargarDatos()}
             >
               Actualizar
             </Boton>
             <Boton
               variante="primario"
-              onClick={() =>
-                setAviso(
-                  'Seleccioná profesional, box y horario libre en la agenda para agendar el nuevo turno.',
-                )
-              }
+              onClick={() => void navigate('/recepcion/turnos/nuevo')}
             >
               <Icono nombre="plus" tamano={16} />
               <span>+ Nuevo turno</span>
@@ -412,16 +537,11 @@ export function InicioPage() {
           </div>
         }
       >
-        {aviso ? (
-          <div className="wb-banner-info" role="status" aria-live="polite">
-            <span>{aviso}</span>
-            <Boton variante="fantasma" onClick={() => setAviso(null)}>
-              Cerrar
-            </Boton>
-          </div>
+        {errorApi ? (
+          <AlertaErrorNegocio code={errorApi.code} detalles={errorApi.detalles} />
         ) : null}
 
-        {actualizando ? (
+        {actualizando && turnosHoy.length === 0 ? (
           <SkeletonTarjetas cantidad={3} />
         ) : (
           <div className="wb-cards-grid">
@@ -432,11 +552,24 @@ export function InicioPage() {
                   <Icono nombre="box" tamano={18} />
                 </span>
               </div>
-              <div className="wb-estado-box wb-estado-box--ocupado">
-                <BadgeEstadoTurno estado="confirmado" />
-                <span>Ocupado</span>
-              </div>
-              <p className="wb-card__texto">Dra. Ana Pérez · Lucía Fernández (09:00 – 09:30)</p>
+              {turnoBox1 ? (
+                <>
+                  <div className="wb-estado-box wb-estado-box--ocupado">
+                    <BadgeEstadoTurno estado={turnoBox1.estado} />
+                    <span>Con turnos hoy</span>
+                  </div>
+                  <p className="wb-card__texto">
+                    {`${turnoBox1.profesional} · ${turnoBox1.paciente} (${turnoBox1.horario})`}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="wb-estado-box wb-estado-box--libre">
+                    <span>Libre ahora</span>
+                  </div>
+                  <p className="wb-card__texto">Sin turnos pendientes en Box 1</p>
+                </>
+              )}
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 1 } as CSSProperties}>
@@ -446,10 +579,24 @@ export function InicioPage() {
                   <Icono nombre="check" tamano={18} />
                 </span>
               </div>
-              <div className="wb-estado-box wb-estado-box--libre">
-                <span>Libre ahora</span>
-              </div>
-              <p className="wb-card__texto">Disponible hasta las 10:00 · Dr. Bruno Gómez</p>
+              {turnoBox2 ? (
+                <>
+                  <div className="wb-estado-box wb-estado-box--ocupado">
+                    <BadgeEstadoTurno estado={turnoBox2.estado} />
+                    <span>Con turnos hoy</span>
+                  </div>
+                  <p className="wb-card__texto">
+                    {`${turnoBox2.profesional} · ${turnoBox2.paciente} (${turnoBox2.horario})`}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="wb-estado-box wb-estado-box--libre">
+                    <span>Libre ahora</span>
+                  </div>
+                  <p className="wb-card__texto">Sin turnos pendientes en Box 2</p>
+                </>
+              )}
             </div>
 
             <div className="wb-card wb-stagger-card" style={{ '--stagger-i': 2 } as CSSProperties}>
@@ -479,13 +626,12 @@ export function InicioPage() {
             >
               Turnos de hoy por box
             </h2>
-            <span className="wb-tag-ejemplo">Datos de ejemplo</span>
           </div>
           <Tabla
             columnas={columnasRecepcion}
-            filas={turnosRecepcion}
+            filas={turnosHoy}
             claveFila={(t) => t.id}
-            cargando={actualizando}
+            cargando={actualizando && turnosHoy.length === 0}
             filasSkeleton={4}
           />
         </section>
@@ -493,7 +639,31 @@ export function InicioPage() {
     );
   }
 
-  // Vista exclusiva de Paciente: bloque de fecha calendario + próximo turno + info de la clínica.
+  // Vista exclusiva de Paciente conectada a GET /api/paciente/turnos
+  const prestacionPaciente = proximoTurnoPaciente
+    ? prestacionesMap.get(proximoTurnoPaciente.prestacionId)
+    : undefined;
+  const tituloPrestacion = prestacionPaciente
+    ? `${prestacionPaciente.nombre} (${prestacionPaciente.duracionMin} min)`
+    : 'Turno odontológico';
+  const nombreProfPaciente = proximoTurnoPaciente
+    ? PROFESIONALES_POR_ID[proximoTurnoPaciente.profesionalId] ?? 'Profesional asignado'
+    : '';
+  const nombreBoxPaciente = proximoTurnoPaciente
+    ? BOXES_POR_ID[proximoTurnoPaciente.boxId] ?? 'Box asignado'
+    : '';
+  const fechaInicioDate = proximoTurnoPaciente ? new Date(proximoTurnoPaciente.inicio) : null;
+  const mesCorto = fechaInicioDate
+    ? fmtMesCorto.format(fechaInicioDate).replace(/\.$/, '').toUpperCase()
+    : '';
+  const diaNum = fechaInicioDate ? fmtDiaNumero.format(fechaInicioDate) : '';
+  const diaSemCorto = fechaInicioDate
+    ? capitalizar(fmtDiaSemanaCorto.format(fechaInicioDate).replace(/\.$/, ''))
+    : '';
+  const fechaHorarioTexto = proximoTurnoPaciente
+    ? `${fechaLargaEnConsultorio(proximoTurnoPaciente.inicio)} · ${horaEnConsultorio(proximoTurnoPaciente.inicio)} a ${horaEnConsultorio(proximoTurnoPaciente.fin)}`
+    : '';
+
   return (
     <AppLayout
       titulo="Tu espacio de turnos"
@@ -506,13 +676,8 @@ export function InicioPage() {
         </Boton>
       }
     >
-      {aviso ? (
-        <div className="wb-banner-info" role="status" aria-live="polite">
-          <span>{aviso}</span>
-          <Boton variante="fantasma" onClick={() => setAviso(null)}>
-            Cerrar
-          </Boton>
-        </div>
+      {errorApi ? (
+        <AlertaErrorNegocio code={errorApi.code} detalles={errorApi.detalles} />
       ) : null}
 
       <div className="wb-paciente-grid">
@@ -521,60 +686,95 @@ export function InicioPage() {
           style={{ '--stagger-i': 0 } as CSSProperties}
           aria-labelledby="titulo-proximo-turno"
         >
-          <div className="wb-turno-destacado__top">
-            <div className="wb-turno-cab-izq">
-              <div className="wb-fecha-cal" aria-label="Lunes 23 de noviembre">
-                <span className="wb-fecha-cal__mes">NOV</span>
-                <span className="wb-fecha-cal__dia">23</span>
-                <span className="wb-fecha-cal__semana">Lun</span>
+          {proximoTurnoPaciente ? (
+            <>
+              <div className="wb-turno-destacado__top">
+                <div className="wb-turno-cab-izq">
+                  <div
+                    className="wb-fecha-cal"
+                    aria-label={fechaLargaEnConsultorio(proximoTurnoPaciente.inicio)}
+                  >
+                    <span className="wb-fecha-cal__mes">{mesCorto}</span>
+                    <span className="wb-fecha-cal__dia">{diaNum}</span>
+                    <span className="wb-fecha-cal__semana">{diaSemCorto}</span>
+                  </div>
+                  <div>
+                    <p className="wb-card__etiqueta" id="titulo-proximo-turno">
+                      Tu próximo turno
+                    </p>
+                    <h2 className="wb-turno-destacado__prestacion">{tituloPrestacion}</h2>
+                    <p className="wb-turno-destacado__fecha">{fechaHorarioTexto}</p>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <BadgeEstadoTurno estado={proximoTurnoPaciente.estado} />
+                </div>
               </div>
-              <div>
-                <p className="wb-card__etiqueta" id="titulo-proximo-turno">
-                  Tu próximo turno
-                </p>
-                <h2 className="wb-turno-destacado__prestacion">Consulta odontológica (30 min)</h2>
-                <p className="wb-turno-destacado__fecha">Lunes 23 de noviembre · 09:00 a 09:30</p>
+
+              <dl className="wb-turno-destacado__detalles">
+                <div>
+                  <dt>Profesional</dt>
+                  <dd>
+                    <span className="wb-persona-celda">
+                      <AvatarIniciales nombre={nombreProfPaciente} tamano="sm" />
+                      <span>{nombreProfPaciente}</span>
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Consultorio / Box</dt>
+                  <dd>{nombreBoxPaciente}</dd>
+                </div>
+                <div>
+                  <dt>Dirección</dt>
+                  <dd>{CLINICA.direccion}</dd>
+                </div>
+              </dl>
+
+              <div className="wb-turno-destacado__acciones">
+                <Boton
+                  variante="primario"
+                  onClick={() =>
+                    void navigate(
+                      `/paciente/turnos/${encodeURIComponent(proximoTurnoPaciente.id)}/reprogramar`,
+                    )
+                  }
+                >
+                  Reprogramar turno
+                </Boton>
+                <Boton variante="secundario" onClick={() => void navigate('/paciente/turnos')}>
+                  Cancelar turno
+                </Boton>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-              <span className="wb-tag-ejemplo">Datos de ejemplo</span>
-              <BadgeEstadoTurno estado="confirmado" />
-            </div>
-          </div>
 
-          <dl className="wb-turno-destacado__detalles">
+              <p className="wb-card__texto" style={{ fontSize: 'var(--text-xs)' }}>
+                Recordá que podés reprogramar o cancelar online hasta 24 horas antes del horario del
+                turno.
+              </p>
+            </>
+          ) : (
             <div>
-              <dt>Profesional</dt>
-              <dd>
-                <span className="wb-persona-celda">
-                  <AvatarIniciales nombre="Dra. Ana Pérez" tamano="sm" />
-                  <span>Dra. Ana Pérez</span>
-                </span>
-              </dd>
+              <p className="wb-card__etiqueta" id="titulo-proximo-turno">
+                Tu próximo turno
+              </p>
+              <EstadoVacio
+                titulo="No tenés turnos pendientes"
+                descripcion="Reservá un turno online eligiendo la prestación y el horario disponible que prefieras."
+                accion={
+                  <Boton variante="primario" onClick={() => void navigate('/paciente/reservar')}>
+                    Reservar turno
+                  </Boton>
+                }
+              />
             </div>
-            <div>
-              <dt>Consultorio / Box</dt>
-              <dd>Box 1</dd>
-            </div>
-            <div>
-              <dt>Dirección</dt>
-              <dd>{CLINICA.direccion}</dd>
-            </div>
-          </dl>
-
-          <div className="wb-turno-destacado__acciones">
-            <Boton variante="primario" onClick={() => void navigate('/paciente/turnos')}>
-              Reprogramar turno
-            </Boton>
-            <Boton variante="secundario" onClick={() => void navigate('/paciente/turnos')}>
-              Cancelar turno
-            </Boton>
-          </div>
-
-          <p className="wb-card__texto" style={{ fontSize: 'var(--text-xs)' }}>
-            Recordá que podés reprogramar o cancelar online hasta 24 horas antes del horario del
-            turno.
-          </p>
+          )}
         </section>
 
         <aside

@@ -12,7 +12,7 @@ import {
   validarUnicidadPaciente,
 } from '../../cuentas/dominio/reglas';
 import { enviarConfirmacionTurno } from '../../notificaciones';
-import { conflictos, enGrilla, seSuperponen } from '../../turnos-alta/dominio/agenda';
+import { conflictoPaciente, conflictos, enGrilla, seSuperponen } from '../../turnos-alta/dominio/agenda';
 import { seleccionarBoxLibre } from '../dominio/disponibilidad';
 
 const MINUTO_MS = 60_000;
@@ -165,7 +165,10 @@ async function validarAgendaYSeleccionarBox(params: {
     }
 
     const turnosExistentes = await deps.repos.turnos.listar(
-      (t) => t.profesionalId === profesional.id || t.boxId === boxExplicito.id,
+      (t) =>
+        t.profesionalId === profesional.id ||
+        t.boxId === boxExplicito.id ||
+        t.pacienteId === paciente.id,
     );
     const candidato = construirTurno({
       profesional,
@@ -181,6 +184,9 @@ async function validarAgendaYSeleccionarBox(params: {
     const choque = conflictos(turnosExistentes, candidato);
     if (choque.profesional) throw new ReglaDeNegocioError('SOLAPAMIENTO_PROFESIONAL');
     if (choque.box) throw new ReglaDeNegocioError('SOLAPAMIENTO_BOX');
+    if (conflictoPaciente(turnosExistentes, candidato)) {
+      throw new ReglaDeNegocioError('SOLAPAMIENTO_PACIENTE');
+    }
 
     return { box: boxExplicito, turno: candidato };
   }
@@ -221,6 +227,10 @@ async function validarAgendaYSeleccionarBox(params: {
     bloqueos,
     turnos,
   });
+
+  if (conflictoPaciente(turnos, { pacienteId: paciente.id, inicio, fin })) {
+    throw new ReglaDeNegocioError('SOLAPAMIENTO_PACIENTE');
+  }
 
   const codigo = await deps.disponibilidad.verificar({
     profesionalId: profesional.id,
@@ -361,6 +371,15 @@ export async function reservarTurnoOnline(
       creadoPor,
       deps,
     });
+    const turnosPaciente = await deps.repos.turnos.listar(
+      (t) =>
+        t.pacienteId === paciente.id &&
+        (t.estado === 'reservado' || t.estado === 'confirmado') &&
+        t.inicio.getTime() > ahora.getTime(),
+    );
+    if (turnosPaciente.length > 0) {
+      throw new ReglaDeNegocioError('TURNO_PENDIENTE_EXISTENTE');
+    }
     await persistirTurnoConAuditoria(resultado.turno, 'paciente', ahora, deps);
     return resultado;
   });

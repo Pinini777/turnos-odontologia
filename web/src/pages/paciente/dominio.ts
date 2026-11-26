@@ -49,6 +49,7 @@ const BOXES_CONOCIDOS: Readonly<Record<string, string>> = {
 const CODIGOS_CONFLICTO_HUECO = new Set<string>([
   'SOLAPAMIENTO_PROFESIONAL',
   'SOLAPAMIENTO_BOX',
+  'SOLAPAMIENTO_PACIENTE',
   'EN_BLOQUEO',
   'FUERA_DE_HORARIO',
   'EN_EL_PASADO',

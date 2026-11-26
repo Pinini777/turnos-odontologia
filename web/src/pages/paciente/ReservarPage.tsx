@@ -12,7 +12,9 @@ import {
 } from '../../base/components';
 import {
   aErrorApi,
+  cancelarMiTurno,
   descargarCalendarioIcs,
+  listarMisTurnos,
   listarPrestacionesPublicas,
   reservarTurnoPaciente,
   type HuecoDisponibleApi,
@@ -56,18 +58,32 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
   const [enviando, setEnviando] = useState(false);
   const [errorReserva, setErrorReserva] = useState<ErrorApi | null>(null);
   const [turnoConfirmado, setTurnoConfirmado] = useState<TurnoPacienteApi | null>(null);
+  const [turnoPendiente, setTurnoPendiente] = useState<TurnoPacienteApi | null>(null);
+  const [cancelandoPendiente, setCancelandoPendiente] = useState(false);
   const [descargandoIcs, setDescargandoIcs] = useState(false);
   const [errorIcs, setErrorIcs] = useState<ErrorApi | null>(null);
 
   useEffect(() => {
     let vigente = true;
-    listarPrestacionesPublicas()
-      .then((lista) => {
+    const ahoraMs = obtenerAhora().getTime();
+    Promise.all([
+      listarPrestacionesPublicas(),
+      listarMisTurnos().catch((): TurnoPacienteApi[] => []),
+    ])
+      .then(([lista, misTurnos]) => {
         if (!vigente) return;
         const reservables = lista.filter((p) => p.activa && p.reservableOnline);
         setPrestaciones(reservables);
         if (reservables[0]) {
           setPrestacionId(reservables[0].id);
+        }
+        if (Array.isArray(misTurnos)) {
+          const pendiente = misTurnos.find(
+            (t) =>
+              (t.estado === 'reservado' || t.estado === 'confirmado') &&
+              Date.parse(t.inicio) > ahoraMs,
+          );
+          setTurnoPendiente(pendiente ?? null);
         }
       })
       .catch((err: unknown) => {
@@ -76,7 +92,7 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [obtenerAhora]);
 
   const prestacionActual = prestaciones?.find((p) => p.id === prestacionId) ?? null;
 
@@ -116,12 +132,107 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
     }
   }
 
-  function handleNuevaReserva(): void {
-    setTurnoConfirmado(null);
-    setHuecoElegido(null);
+  async function handleCancelarPendiente(turnoId: string): Promise<void> {
+    setCancelandoPendiente(true);
     setErrorReserva(null);
-    setErrorIcs(null);
-    setRecargaHuecos((n) => n + 1);
+    try {
+      await cancelarMiTurno(turnoId);
+      setTurnoPendiente(null);
+    } catch (err: unknown) {
+      setErrorReserva(aErrorApi(err));
+    } finally {
+      setCancelandoPendiente(false);
+    }
+  }
+
+  if (turnoPendiente) {
+    const bloque = fechaBloqueCalendario(turnoPendiente.inicio);
+    const prestacionPendiente = prestaciones?.find((p) => p.id === turnoPendiente.prestacionId);
+    const nombrePrestacion = prestacionPendiente?.nombre ?? 'Consulta odontológica';
+    const nombreProfesional = etiquetaProfesional(turnoPendiente.profesionalId);
+    const nombreBox = etiquetaBox(turnoPendiente.boxId);
+
+    return (
+      <AppLayout
+        titulo="Reservar turno"
+        subtitulo={`${CLINICA.nombre} · ${CLINICA.direccion}`}
+        itemsExtra={ITEMS_PACIENTE}
+      >
+        <article className="pa-card pa-stack" style={{ maxWidth: '48rem' }}>
+          <div className="pa-banner-exito" role="status" aria-live="polite">
+            <span>
+              Ya tenés un turno pendiente de atención. Para cambiar de fecha u horario podés
+              reprogramarlo o cancelarlo desde aquí.
+            </span>
+          </div>
+
+          {errorReserva ? (
+            <AlertaErrorNegocio code={errorReserva.code} mensaje={errorReserva.mensajeLegible} />
+          ) : null}
+
+          <div className="pa-turno-card__top">
+            <div className="pa-fecha-bloque" aria-hidden="true">
+              <div className="pa-fecha-bloque__mes">{bloque.mesCorto}</div>
+              <div className="pa-fecha-bloque__dia">{bloque.dia}</div>
+              <div className="pa-fecha-bloque__sem">{bloque.diaSemanaCorto}</div>
+            </div>
+            <div className="pa-turno-card__info">
+              <div className="pa-turno-card__encabezado">
+                <h2 className="pa-turno-card__titulo">
+                  {nombrePrestacion}
+                  {prestacionPendiente ? ` (${prestacionPendiente.duracionMin} min)` : ''}
+                </h2>
+                <BadgeEstadoTurno estado={turnoPendiente.estado} />
+              </div>
+              <p className="pa-turno-card__fecha">
+                {fechaLargaEnZona(turnoPendiente.inicio)} · {horaEnZona(turnoPendiente.inicio)} a{' '}
+                {horaEnZona(turnoPendiente.fin)}
+              </p>
+            </div>
+          </div>
+
+          <div className="pa-turno-card__detalles">
+            <div className="pa-detalle-item">
+              <span className="pa-detalle-item__label">Profesional</span>
+              <span className="pa-detalle-item__prof">
+                <AvatarIniciales nombre={nombreProfesional} tamano="sm" />
+                {nombreProfesional}
+              </span>
+            </div>
+            <div className="pa-detalle-item">
+              <span className="pa-detalle-item__label">Consultorio</span>
+              <strong>{nombreBox}</strong>
+            </div>
+            <div className="pa-detalle-item">
+              <span className="pa-detalle-item__label">Dirección</span>
+              <strong>{CLINICA.direccion}</strong>
+            </div>
+          </div>
+
+          <div className="pa-acciones">
+            <Link
+              to={`/paciente/turnos/${encodeURIComponent(turnoPendiente.id)}/reprogramar`}
+              className="wb-btn wb-btn--primario"
+            >
+              Reprogramar
+            </Link>
+            <Boton
+              variante="secundario"
+              cargando={cancelandoPendiente}
+              textoCargando="Cancelando…"
+              onClick={() => {
+                void handleCancelarPendiente(turnoPendiente.id);
+              }}
+            >
+              Cancelar turno
+            </Boton>
+            <Link to="/paciente/turnos" className="wb-btn wb-btn--secundario">
+              Ver Mis turnos
+            </Link>
+          </div>
+        </article>
+      </AppLayout>
+    );
   }
 
   if (turnoConfirmado) {
@@ -216,9 +327,6 @@ function ReservarContenido({ obtenerAhora = relojPorDefecto }: PropsReservarPage
             <Link to="/paciente/turnos" className="wb-btn wb-btn--secundario">
               Ver Mis turnos
             </Link>
-            <Boton variante="fantasma" onClick={handleNuevaReserva}>
-              Reservar otro turno
-            </Boton>
           </div>
 
           <p className="pa-nota-ayuda">

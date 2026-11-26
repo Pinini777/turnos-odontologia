@@ -80,6 +80,14 @@
       "sessions": 1,
       "memories": 3,
       "prompts": 0
+    },
+    {
+      "id": "0162eff7",
+      "created_by": "Facu",
+      "created_at": "2026-11-26T01:30:30Z",
+      "sessions": 0,
+      "memories": 7,
+      "prompts": 0
     }
   ]
 }
