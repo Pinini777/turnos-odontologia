@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { establecerSesion, limpiarSesion } from '../../base/sesion';
@@ -20,6 +20,9 @@ import {
   type InstanciaMotor3d,
 } from './odontograma3dMotor';
 import { routes } from './routes';
+
+// El primer render en frío del odontograma (52 piezas SVG en jsdom) puede superar el segundo por defecto de waitFor.
+configure({ asyncUtilTimeout: 4000 });
 
 const SESION_PROF = {
   token: 'jwt-prof-3d',
