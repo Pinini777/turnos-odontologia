@@ -501,7 +501,7 @@ Decidido en D.3 y en `knowledge-base/01`: recordatorios y confirmación por What
   - `knowledge-base/05_reglas_de_negocio.md` §RN-AG, RN-TU-03, RN-TU-05, RN-CL-01, RN-DA-01
 
 ### [C-17] `cierre-integracion`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` mergeado en `main` (2026-11-25)
 - **Responsable**: Facundo · **Capability**: `agenda-paciente` (nueva), con deltas de `turnos-alta`, `turnos-reprogramacion`, `reserva-online`, `web-base`, `web-paciente`, `web-recepcion`, `web-profesional` y `plataforma` · **Prioridad**: P1 antes del video
 - **Origen**: pruebas manuales de punta a punta de Facundo (2026-11-25), aprobadas por EP.
 - **Scope**:
