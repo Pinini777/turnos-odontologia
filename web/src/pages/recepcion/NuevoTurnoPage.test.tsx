@@ -134,4 +134,23 @@ describe('Requirement: Errores de negocio legibles', () => {
     confirmar();
     expect(await screen.findByText('El box elegido ya está ocupado en ese horario. Elegí otro box o un turno contiguo libre.')).toBeTruthy();
   });
+
+  it('El paciente ya tiene otro turno superpuesto al agendar desde recepción', async () => {
+    const { de } = servidorQueChoca('SOLAPAMIENTO_PACIENTE');
+    renderizarEn(NUEVO_MARTES);
+    await elegirProfesional();
+    fireEvent.click(await screen.findByRole('button', { name: '10:30' }));
+    await elegirPacienteUno();
+    const pedidosAntes = de('GET', '/api/recepcion/disponibilidad').length;
+    confirmar();
+
+    expect(
+      await screen.findByText(
+        'El paciente ya tiene otro turno reservado en ese horario. Elegí otro bloque disponible.',
+      ),
+    ).toBeTruthy();
+    const seccionPaciente = screen.getByRole('region', { name: /Paciente$/ });
+    expect(within(seccionPaciente).getByText('Paciente Ficticio Uno')).toBeTruthy();
+    await waitFor(() => expect(de('GET', '/api/recepcion/disponibilidad').length).toBe(pedidosAntes + 1));
+  });
 });

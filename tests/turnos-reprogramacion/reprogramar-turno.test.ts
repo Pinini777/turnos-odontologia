@@ -135,6 +135,19 @@ describe('reprogramarTurno: rechazos (el turno no cambia)', () => {
     expect(await rechazo(otro, { inicio: a('11:00') })).toBe('SOLAPAMIENTO_BOX');
   });
 
+  it('Chocar con otro turno activo del mismo paciente en distinto profesional y box', async () => {
+    const otro = (deps: DepsReprogramacion) =>
+      guardarTurno(deps.repos, {
+        id: 'otro-paciente-mismo',
+        profesionalId: GOMEZ,
+        boxId: BOX2,
+        estado: 'confirmado',
+        inicio: a('11:00'),
+        fin: a('11:30'),
+      });
+    expect(await rechazo(otro, { inicio: a('11:15') })).toBe('SOLAPAMIENTO_PACIENTE');
+  });
+
   it('inicio fuera de la grilla → FUERA_DE_GRILLA', async () => {
     expect(await rechazo(nada, { inicio: a('10:10') })).toBe('FUERA_DE_GRILLA');
   });

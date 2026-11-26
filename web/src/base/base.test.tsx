@@ -238,10 +238,65 @@ describe('Pantallas de Login y Registro contra C-04', () => {
 });
 
 describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
-  it('Profesional ve sus métricas del día y su agenda sin jerga técnica', () => {
+  const TURNOS_HOY_API = [
+    {
+      id: 't-hoy-1',
+      profesionalId: 'prof-1',
+      boxId: 'box-1',
+      prestacionId: 'prest-1',
+      pacienteId: 'pac-1',
+      inicio: '2026-11-23T09:00:00-03:00',
+      fin: '2026-11-23T09:30:00-03:00',
+      estado: 'confirmado' as const,
+      origen: 'recepcion' as const,
+      creadoPor: 'u-r',
+      creadoEn: '2026-11-20T08:00:00-03:00',
+      paciente: { id: 'pac-1', nombre: 'Emilio', apellido: 'Ravenna' },
+      profesional: { id: 'prof-1', nombre: 'Dra. Ana Pérez' },
+      box: { id: 'box-1', nombre: 'Box 1' },
+      prestacion: { id: 'prest-1', nombre: 'Consulta', duracionMin: 30 },
+    },
+    {
+      id: 't-hoy-2',
+      profesionalId: 'prof-1',
+      boxId: 'box-1',
+      prestacionId: 'prest-2',
+      pacienteId: 'pac-2',
+      inicio: '2026-11-23T10:30:00-03:00',
+      fin: '2026-11-23T10:45:00-03:00',
+      estado: 'reservado' as const,
+      origen: 'recepcion' as const,
+      creadoPor: 'u-r',
+      creadoEn: '2026-11-20T08:00:00-03:00',
+      paciente: { id: 'pac-2', nombre: 'Mafalda', apellido: 'de Quino' },
+      profesional: { id: 'prof-1', nombre: 'Dra. Ana Pérez' },
+      box: { id: 'box-1', nombre: 'Box 1' },
+      prestacion: { id: 'prest-2', nombre: 'Control', duracionMin: 15 },
+    },
+  ];
+
+  function jsonResp(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  it('Profesional ve métricas del día y su agenda sin jerga técnica', async () => {
     establecerSesion({
       token: 'jwt-prof',
       usuario: { id: 'u-p', email: 'profesional@example.com', rol: 'profesional', activo: true },
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/profesionales')) {
+        return jsonResp([{ id: 'prof-1', nombre: 'Dra. Ana Pérez', matricula: 'MP-1001', activo: true, usuarioId: 'u-p' }]);
+      }
+      if (url.includes('/api/agenda')) {
+        return jsonResp(TURNOS_HOY_API);
+      }
+      return jsonResp([]);
     });
 
     const { container } = render(
@@ -250,18 +305,45 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
       </MemoryRouter>,
     );
 
+    await waitFor(() => {
+      expect(screen.getByText('Emilio Ravenna')).toBeTruthy();
+    });
+
     expect(screen.getByText(/turnos de hoy/i)).toBeTruthy();
     expect(screen.getByText(/próximo paciente/i)).toBeTruthy();
     expect(screen.getByText(/box asignado/i)).toBeTruthy();
     expect(screen.getByText(/tu agenda de hoy/i)).toBeTruthy();
-    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
+    expect(screen.queryByText('Datos de ejemplo')).toBeNull();
+    expect(container.textContent).not.toContain('Lucía Fernández');
     expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base|datos ficticios/i);
   });
 
-  it('Recepcionista ve estado de boxes, pendientes y botón + Nuevo turno sin precios ni ganancias', () => {
+  it('Recepcionista ve boxes, pendientes, botón + Nuevo turno y actualiza estados en vivo', async () => {
     establecerSesion({
       token: 'jwt-recep',
       usuario: { id: 'u-r', email: 'recepcion@example.com', rol: 'recepcionista', activo: true },
+    });
+
+    const turnosMutables = TURNOS_HOY_API.map((t) => ({ ...t }));
+    const llamadasEstado: { url: string; body: unknown }[] = [];
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/agenda') && method === 'GET') {
+        return jsonResp(turnosMutables);
+      }
+      if (url.includes('/api/turnos/') && url.endsWith('/estado') && method === 'POST') {
+        const body = JSON.parse(String(init?.body)) as { estado: 'confirmado' | 'atendido' };
+        llamadasEstado.push({ url, body });
+        const id = url.split('/api/turnos/')[1]?.split('/estado')[0];
+        const idx = turnosMutables.findIndex((t) => t.id === id);
+        if (idx >= 0 && turnosMutables[idx]) {
+          turnosMutables[idx] = { ...turnosMutables[idx], estado: body.estado } as (typeof turnosMutables)[number];
+        }
+        return jsonResp(turnosMutables[idx] ?? {});
+      }
+      return jsonResp([]);
     });
 
     render(
@@ -270,18 +352,78 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
       </MemoryRouter>,
     );
 
+    await waitFor(() => {
+      expect(screen.getByText('Emilio Ravenna')).toBeTruthy();
+    });
+
     expect(screen.getByText(/estado · box 1/i)).toBeTruthy();
     expect(screen.getByText(/estado · box 2/i)).toBeTruthy();
     expect(screen.getByText(/pendientes de confirmar/i)).toBeTruthy();
-    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
+    expect(screen.queryByText('Datos de ejemplo')).toBeNull();
     expect(screen.getByRole('button', { name: /\+ nuevo turno/i })).toBeTruthy();
     expect(screen.queryByText(/mis ganancias/i)).toBeNull();
+    expect(screen.getByText('1 turno')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /^confirmar$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('0 turnos')).toBeTruthy();
+    });
+    expect(llamadasEstado[0]).toEqual({
+      url: '/api/turnos/t-hoy-2/estado',
+      body: { estado: 'confirmado' },
+    });
+
+    const botonesAtendido = screen.getAllByRole('button', { name: /marcar atendido/i });
+    fireEvent.click(botonesAtendido[0]!);
+
+    await waitFor(() => {
+      expect(screen.getByText('Atendido')).toBeTruthy();
+    });
+    expect(llamadasEstado[1]).toEqual({
+      url: '/api/turnos/t-hoy-1/estado',
+      body: { estado: 'atendido' },
+    });
   });
 
-  it('Paciente ve su próximo turno + info de la clínica y NUNCA turnos de otros pacientes', () => {
+  it('Paciente ve solo su próximo turno con bloque calendario y nunca turnos ajenos', async () => {
     establecerSesion({
       token: 'jwt-pac',
-      usuario: { id: 'u-pac', email: 'paciente1@example.com', rol: 'paciente', activo: true },
+      usuario: { id: 'u-pac', email: 'santos@example.com', rol: 'paciente', activo: true },
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/paciente/datos')) {
+        return jsonResp({
+          id: 'pac-santos',
+          nombre: 'Mario',
+          apellido: 'Santos',
+          documento: '00000101',
+          email: 'santos@example.com',
+        });
+      }
+      if (url.includes('/api/public/prestaciones')) {
+        return jsonResp([
+          { id: '00000000-0000-4000-8000-000000000304', nombre: 'Control', duracionMin: 15, reservableOnline: true, activa: true },
+        ]);
+      }
+      if (url.includes('/api/paciente/turnos')) {
+        return jsonResp([
+          {
+            id: 't-santos-1',
+            profesionalId: '00000000-0000-4000-8000-000000000101',
+            boxId: '00000000-0000-4000-8000-000000000201',
+            pacienteId: 'pac-santos',
+            prestacionId: '00000000-0000-4000-8000-000000000304',
+            inicio: '2099-11-30T09:45:00-03:00',
+            fin: '2099-11-30T10:00:00-03:00',
+            estado: 'confirmado',
+            origen: 'online',
+          },
+        ]);
+      }
+      return jsonResp([]);
     });
 
     const { container } = render(
@@ -290,51 +432,70 @@ describe('Inicio diferenciado por rol y limpieza de interfaz', () => {
       </MemoryRouter>,
     );
 
+    await waitFor(() => {
+      expect(screen.getByText(/Control \(15 min\)/i)).toBeTruthy();
+    });
+
     expect(screen.getByText(/tu próximo turno/i)).toBeTruthy();
-    expect(screen.getByText('Datos de ejemplo')).toBeTruthy();
+    expect(screen.queryByText('Datos de ejemplo')).toBeNull();
     expect(screen.getByText('NOV')).toBeTruthy();
-    expect(screen.getByText('23')).toBeTruthy();
+    expect(screen.getByText('30')).toBeTruthy();
     expect(screen.getByText(/información de la clínica/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /reprogramar turno/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeTruthy();
-    // RN-RE-03: jamás expone turnos de otros pacientes
+    expect(container.textContent).not.toContain('Lucía Fernández');
     expect(container.textContent).not.toContain('Martín Quiroga');
     expect(container.textContent).not.toContain('Sofía Morales');
     expect(container.textContent).not.toContain('Tomás Benítez');
     expect(container.textContent).not.toMatch(/C-04|C-12|token Bearer|Maqueta base/i);
   });
 
-  it('AvatarIniciales ignora títulos profesionales y genera iniciales consistentes', () => {
-    expect(obtenerIniciales('Dra. Ana Pérez')).toBe('AP');
-    expect(obtenerIniciales('Dr. Bruno Gómez')).toBe('BG');
-    expect(obtenerIniciales('Lucía Fernández')).toBe('LF');
-
-    const { container } = render(<AvatarIniciales nombre="Lucía Fernández" />);
-    expect(container.textContent).toBe('LF');
-  });
-
-  it('Acciones rápidas en vivo cambian el estado de un turno y actualizan el contador', () => {
+  it('Barra lateral muestra el nombre real del paciente desde la API y traduce nuevos códigos 409', async () => {
     establecerSesion({
-      token: 'jwt-recep',
-      usuario: { id: 'u-r', email: 'recepcion@example.com', rol: 'recepcionista', activo: true },
+      token: 'jwt-pac',
+      usuario: { id: 'u-santos', email: 'santos@example.com', rol: 'paciente', activo: true },
     });
 
-    render(
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/paciente/datos')) {
+        return jsonResp({
+          id: 'pac-santos',
+          nombre: 'Mario',
+          apellido: 'Santos',
+          documento: '00000101',
+          email: 'santos@example.com',
+        });
+      }
+      return jsonResp([]);
+    });
+
+    const { container } = render(
       <MemoryRouter initialEntries={['/inicio']}>
-        <InicioPage />
+        <AppLayout titulo="Panel paciente">
+          <p>Contenido</p>
+        </AppLayout>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('2 turnos')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('Mario Santos')).toBeTruthy();
+    });
+    expect(container.textContent).toContain('MS');
+    expect(container.textContent).not.toContain('Lucía Fernández');
 
-    const botonesConfirmar = screen.getAllByRole('button', { name: /^confirmar$/i });
-    expect(botonesConfirmar.length).toBeGreaterThan(0);
-    fireEvent.click(botonesConfirmar[0]!);
+    const errSolapamiento = new ErrorApi(409, 'SOLAPAMIENTO_PACIENTE');
+    const errPendiente = new ErrorApi(409, 'TURNO_PENDIENTE_EXISTENTE');
+    expect(errSolapamiento.mensajeLegible.toLowerCase()).toContain('paciente');
+    expect(errPendiente.mensajeLegible.toLowerCase()).toContain('pendiente');
+  });
 
-    expect(screen.getByText('1 turno')).toBeTruthy();
+  it('AvatarIniciales ignora títulos profesionales y genera iniciales consistentes', () => {
+    expect(obtenerIniciales('Dra. Ana Pérez')).toBe('AP');
+    expect(obtenerIniciales('Dr. Bruno Gómez')).toBe('BG');
+    expect(obtenerIniciales('Mario Santos')).toBe('MS');
 
-    const botonesAtendido = screen.getAllByRole('button', { name: /marcar atendido/i });
-    fireEvent.click(botonesAtendido[0]!);
-    expect(screen.getByText('Atendido')).toBeTruthy();
+    const { container } = render(<AvatarIniciales nombre="Mario Santos" />);
+    expect(container.textContent).toBe('MS');
   });
 });

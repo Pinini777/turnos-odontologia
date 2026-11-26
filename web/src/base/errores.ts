@@ -8,6 +8,10 @@ const MENSAJES_POR_CODIGO: Readonly<Record<string, string>> = {
     'El profesional ya tiene un turno reservado en ese horario. Elegí otro bloque disponible.',
   SOLAPAMIENTO_BOX:
     'El box elegido ya está ocupado en ese horario. Elegí otro box o un turno contiguo libre.',
+  SOLAPAMIENTO_PACIENTE:
+    'El paciente ya tiene otro turno reservado en ese horario. Elegí otro bloque disponible.',
+  TURNO_PENDIENTE_EXISTENTE:
+    'Ya tenés un turno pendiente de atención. Podés reprogramarlo o cancelarlo desde Mis turnos.',
   FUERA_DE_GRILLA:
     'El horario debe empezar en bloques de 15 minutos (:00, :15, :30 o :45).',
   DURACION_INVALIDA:

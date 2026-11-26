@@ -48,9 +48,15 @@ interface Visita {
 
 const { santos, ravenna, medina, lamponne, mafalda, felipe } = pacientes;
 
-/** Cada visita cae en una semana distinta, así no hay dos turnos el mismo día (sin solapamientos). */
+/** Cada visita cae en un horario sin solapamientos de profesional, box ni paciente; hoy (semana 0) tiene turnos para ambos profesionales y Mario Santos tiene un solo turno futuro. */
 const VISITAS: readonly Visita[] = [
-  // Mario Santos: caries tratadas en dos consultas y controles al día.
+  // Turnos del día actual (semana: 0) para Dra. Ana Pérez (Box 1) y Dr. Bruno Gómez (Box 2).
+  { paciente: ravenna, profesional: 'anaPerez', prestacion: 'consulta', semana: 0, hora: '09:00', estado: 'confirmado' },
+  { paciente: mafalda, profesional: 'anaPerez', prestacion: 'control', semana: 0, hora: '10:30', estado: 'reservado' },
+  { paciente: lamponne, profesional: 'brunoGomez', prestacion: 'consulta', semana: 0, hora: '09:30', estado: 'confirmado' },
+  { paciente: medina, profesional: 'brunoGomez', prestacion: 'control', semana: 0, hora: '11:00', estado: 'reservado' },
+
+  // Mario Santos: caries tratadas en dos consultas, controles al día y un único turno futuro pendiente.
   { paciente: santos, profesional: 'anaPerez', prestacion: 'consulta', semana: -20, hora: '09:00', estado: 'atendido',
     nota: 'Primera consulta. Refiere sensibilidad al frío en el sector superior derecho. Caries en 16 (oclusal) y 26 (mesial). Corona antigua en 36 en buen estado. 48 ausente.',
     odontograma: [[16, 'caries', 'oclusal'], [26, 'caries', 'mesial'], [36, 'corona'], [48, 'ausente']] },
@@ -61,7 +67,6 @@ const VISITAS: readonly Visita[] = [
     nota: 'Obturación de 26 mesial y limpieza completa. Buena higiene; control en seis meses.',
     odontograma: [[26, 'obturado', 'mesial']] },
   { paciente: santos, profesional: 'anaPerez', prestacion: 'control', semana: 1, hora: '09:45', estado: 'confirmado' },
-  { paciente: santos, profesional: 'anaPerez', prestacion: 'limpieza', semana: 6, hora: '10:00', estado: 'reservado' },
 
   // Emilio Ravenna: tratamiento de conducto en 21, corona y extracción de cordal.
   { paciente: ravenna, profesional: 'anaPerez', prestacion: 'consulta', semana: -19, hora: '11:30', estado: 'atendido',

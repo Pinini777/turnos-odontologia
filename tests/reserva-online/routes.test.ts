@@ -563,6 +563,69 @@ describe('POST /api/paciente/turnos', () => {
       expect(res403.json()).toEqual({ code: 'SIN_PERMISO' });
     }
   });
+
+  it('Rechaza nueva reserva online si el paciente ya tiene un turno futuro pendiente', async () => {
+    const { app, repos } = await crearApi('2026-11-30T08:00:00-03:00');
+    await repos.turnos.guardar(
+      turnoBase({
+        id: 't-pendiente-futuro',
+        inicio: new Date('2026-12-01T10:00:00-03:00'),
+        fin: new Date('2026-12-01T10:30:00-03:00'),
+        estado: 'reservado',
+      }),
+    );
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/paciente/turnos',
+      headers: bearer('pac1'),
+      payload: {
+        profesionalId: SEED.profesionales.anaPerez.id,
+        prestacionId: SEED.prestaciones.consulta.id,
+        inicio: '2026-12-02T10:00:00-03:00',
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ code: 'TURNO_PENDIENTE_EXISTENTE' });
+    expect(await repos.turnos.listar()).toHaveLength(1);
+  });
+
+  it('Permite nueva reserva online tras cancelar el turno pendiente o cuando su inicio ya pasó', async () => {
+    const { app, repos } = await crearApi('2026-11-30T10:00:00-03:00');
+    await repos.turnos.guardar(
+      turnoBase({
+        id: 't-pasado-o-actual',
+        inicio: new Date('2026-11-30T10:00:00-03:00'),
+        fin: new Date('2026-11-30T10:30:00-03:00'),
+        estado: 'confirmado',
+      }),
+    );
+    await repos.turnos.guardar(
+      turnoBase({
+        id: 't-futuro-cancelado',
+        inicio: new Date('2026-12-01T10:00:00-03:00'),
+        fin: new Date('2026-12-01T10:30:00-03:00'),
+        estado: 'cancelado',
+      }),
+    );
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/paciente/turnos',
+      headers: bearer('pac1'),
+      payload: {
+        profesionalId: SEED.profesionales.anaPerez.id,
+        prestacionId: SEED.prestaciones.consulta.id,
+        inicio: '2026-12-02T10:00:00-03:00',
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
+      estado: 'reservado',
+      origen: 'online',
+      pacienteId: SEED.pacientes.uno.id,
+    });
+  });
 });
 
 describe('GET /api/paciente/turnos y /api/paciente/turnos/:id/calendario.ics', () => {
@@ -1128,5 +1191,50 @@ describe('GET /api/recepcion/disponibilidad y POST /api/recepcion/turnos', () =>
     });
     expect(resSinToken.statusCode).toBe(401);
     expect(resSinToken.json()).toEqual({ code: 'NO_AUTENTICADO' });
+  });
+
+  it('Recepción puede agendar otra sesión futura del mismo paciente pero no en horario superpuesto', async () => {
+    const { app, repos } = await crearApi('2026-11-30T08:00:00-03:00');
+    await repos.turnos.guardar(
+      turnoBase({
+        id: 't-sesion-1',
+        profesionalId: SEED.profesionales.anaPerez.id,
+        boxId: SEED.boxes.box1.id,
+        pacienteId: SEED.pacientes.uno.id,
+        inicio: new Date('2026-11-30T10:00:00-03:00'),
+        fin: new Date('2026-11-30T10:30:00-03:00'),
+        estado: 'reservado',
+      }),
+    );
+
+    const resSolapado = await app.inject({
+      method: 'POST',
+      url: '/api/recepcion/turnos',
+      headers: bearer('recep'),
+      payload: {
+        pacienteId: SEED.pacientes.uno.id,
+        profesionalId: SEED.profesionales.brunoGomez.id,
+        boxId: SEED.boxes.box2.id,
+        prestacionId: SEED.prestaciones.consulta.id,
+        inicio: '2026-11-30T10:15:00-03:00',
+      },
+    });
+    expect(resSolapado.statusCode).toBe(409);
+    expect(resSolapado.json()).toEqual({ code: 'SOLAPAMIENTO_PACIENTE' });
+
+    const resSegundaSesion = await app.inject({
+      method: 'POST',
+      url: '/api/recepcion/turnos',
+      headers: bearer('recep'),
+      payload: {
+        pacienteId: SEED.pacientes.uno.id,
+        profesionalId: SEED.profesionales.brunoGomez.id,
+        boxId: SEED.boxes.box2.id,
+        prestacionId: SEED.prestaciones.consulta.id,
+        inicio: '2026-11-30T11:00:00-03:00',
+      },
+    });
+    expect(resSegundaSesion.statusCode).toBe(201);
+    expect(await repos.turnos.listar()).toHaveLength(2);
   });
 });

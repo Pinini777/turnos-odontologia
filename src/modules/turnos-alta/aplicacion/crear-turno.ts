@@ -3,7 +3,7 @@ import type { Turno } from '../../../shared/entidades';
 import { ReglaDeNegocioError } from '../../../shared/errores';
 import type { Deps } from '../../../shared/puertos';
 import type { UsuarioSesion } from '../../../shared/sesion';
-import { conflictos, enGrilla } from '../dominio/agenda';
+import { conflictoPaciente, conflictos, enGrilla } from '../dominio/agenda';
 import { armarEmailDeAlta } from './email';
 
 export interface SolicitudTurno {
@@ -46,11 +46,14 @@ export async function crearTurno(deps: Deps, sesion: UsuarioSesion, solicitud: S
     });
     if (codigo) throw new ReglaDeNegocioError(codigo);
     const turnos = await deps.repos.turnos.listar((existente) =>
-      existente.profesionalId === turno.profesionalId || existente.boxId === turno.boxId,
+      existente.profesionalId === turno.profesionalId ||
+      existente.boxId === turno.boxId ||
+      existente.pacienteId === turno.pacienteId,
     );
     const choque = conflictos(turnos, turno);
     if (choque.profesional) throw new ReglaDeNegocioError('SOLAPAMIENTO_PROFESIONAL');
     if (choque.box) throw new ReglaDeNegocioError('SOLAPAMIENTO_BOX');
+    if (conflictoPaciente(turnos, turno)) throw new ReglaDeNegocioError('SOLAPAMIENTO_PACIENTE');
     await deps.repos.turnos.guardar(turno);
     await deps.repos.auditoria.agregar({
       id: randomUUID(), turnoId: turno.id, accion: 'creado', actor: sesion.usuarioId,

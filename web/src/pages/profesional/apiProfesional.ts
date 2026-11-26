@@ -290,6 +290,16 @@ export function listarAuditoriaTurno(
   );
 }
 
+export function cambiarEstadoTurnoProfesional(
+  turnoId: string,
+  estado: 'confirmado' | 'atendido' | 'ausente',
+  cliente: ClienteHttp = apiConsultorio,
+): Promise<TurnoAgendaApi> {
+  return cliente.post<TurnoAgendaApi>(`/api/turnos/${encodeURIComponent(turnoId)}/estado`, {
+    estado,
+  });
+}
+
 export function listarPacientes(cliente: ClienteHttp = apiConsultorio): Promise<PacienteApi[]> {
   return cliente.get<PacienteApi[]>('/api/pacientes');
 }

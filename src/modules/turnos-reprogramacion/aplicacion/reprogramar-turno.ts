@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Box, Paciente, Prestacion, Profesional, Turno } from '../../../shared/entidades';
 import { ReglaDeNegocioError } from '../../../shared/errores';
 import type { Deps } from '../../../shared/puertos';
-import { conflictos, enGrilla } from '../../turnos-alta/dominio/agenda';
+import { conflictoPaciente, conflictos, enGrilla } from '../../turnos-alta/dominio/agenda';
 import { armarEmailDeAlta } from '../../turnos-alta/aplicacion/email';
 import { esReprogramable, intervaloNuevo, sinElPropio } from '../dominio/reprogramacion';
 
@@ -89,10 +89,14 @@ async function validarYGuardar(
 
   const codigo = await deps.disponibilidad.verificar({ profesionalId, boxId, inicio: turno.inicio, fin: turno.fin });
   if (codigo) throw new ReglaDeNegocioError(codigo);
-  const otros = await deps.repos.turnos.listar((t) => t.profesionalId === profesionalId || t.boxId === boxId);
-  const choque = conflictos(sinElPropio(otros, turnoId), turno);
+  const otros = await deps.repos.turnos.listar(
+    (t) => t.profesionalId === profesionalId || t.boxId === boxId || t.pacienteId === original.pacienteId,
+  );
+  const sinPropio = sinElPropio(otros, turnoId);
+  const choque = conflictos(sinPropio, turno);
   if (choque.profesional) throw new ReglaDeNegocioError('SOLAPAMIENTO_PROFESIONAL');
   if (choque.box) throw new ReglaDeNegocioError('SOLAPAMIENTO_BOX');
+  if (conflictoPaciente(sinPropio, turno)) throw new ReglaDeNegocioError('SOLAPAMIENTO_PACIENTE');
 
   // Auditar ANTES de guardar (design D5): el turno solo cambia si su registro ya existe.
   await auditar(turnoId, actor, ahora, { antes: foto(original), despues: foto(turno) }, deps);

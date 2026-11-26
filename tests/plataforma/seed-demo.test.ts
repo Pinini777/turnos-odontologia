@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app';
-import { conflictos, enGrilla } from '../../src/modules/turnos-alta/dominio/agenda';
+import { conflictoPaciente, conflictos, enGrilla } from '../../src/modules/turnos-alta/dominio/agenda';
 import { FixedClock } from '../../src/shared/clock';
 import { crearRepositoriosEnMemoria } from '../../src/shared/repositorios';
+import { SEED } from '../../src/shared/seed';
 import { cargarSeedDemo, SEED_DEMO } from '../../src/shared/seed-demo';
 import { enZonaConsultorio } from '../../src/shared/zona';
 
@@ -20,21 +21,55 @@ describe('Seed de demostración', () => {
   it.each(INSTANTES)('respeta la agenda con ahora = %s', async (ahora) => {
     const turnos = await (await cargar(ahora)).turnos.listar();
     expect(turnos.length).toBeGreaterThan(15);
+    const fechaHoy = enZonaConsultorio(ahora).fecha;
 
     for (const t of turnos) {
       const otros = turnos.filter((o) => o.id !== t.id);
-      if (t.estado !== 'cancelado') expect(conflictos(otros, t)).toEqual({ profesional: false, box: false });
+      if (t.estado !== 'cancelado') {
+        expect(conflictos(otros, t)).toEqual({ profesional: false, box: false });
+        expect(conflictoPaciente(otros, t)).toBe(false);
+      }
       expect(enGrilla(t.inicio)).toBe(true);
       const desde = enZonaConsultorio(t.inicio);
       const hasta = enZonaConsultorio(t.fin);
       expect(desde.diaSemana).toBeLessThanOrEqual(5);
       expect(desde.hhmm >= '09:00' && hasta.hhmm <= '13:00' && desde.fecha === hasta.fecha).toBe(true);
       if (t.estado === 'reservado' || t.estado === 'confirmado') {
-        expect(t.inicio.getTime() - ahora.getTime()).toBeGreaterThan(DIA);
+        expect(desde.fecha >= fechaHoy).toBe(true);
       } else {
         expect(t.fin.getTime()).toBeLessThan(ahora.getTime());
       }
     }
+  });
+
+  it('La semilla demo carga turnos del día actual y un solo turno futuro para Mario Santos sin solapamientos', async () => {
+    const ahora = new Date('2026-11-23T08:00:00-03:00');
+    const fechaHoy = enZonaConsultorio(ahora).fecha;
+    const turnos = await (await cargar(ahora)).turnos.listar();
+
+    const turnosDeHoy = turnos.filter(
+      (t) =>
+        enZonaConsultorio(t.inicio).fecha === fechaHoy &&
+        (t.estado === 'reservado' || t.estado === 'confirmado'),
+    );
+    expect(turnosDeHoy.some((t) => t.profesionalId === SEED.profesionales.anaPerez.id)).toBe(true);
+    expect(turnosDeHoy.some((t) => t.profesionalId === SEED.profesionales.brunoGomez.id)).toBe(true);
+    expect(turnosDeHoy.some((t) => t.estado === 'reservado')).toBe(true);
+    expect(turnosDeHoy.some((t) => t.estado === 'confirmado')).toBe(true);
+
+    for (const t of turnos) {
+      if (t.estado === 'cancelado') continue;
+      const otros = turnos.filter((o) => o.id !== t.id);
+      expect(conflictoPaciente(otros, t)).toBe(false);
+    }
+
+    const futurosSantos = turnos.filter(
+      (t) =>
+        t.pacienteId === SEED_DEMO.pacientes.santos.id &&
+        (t.estado === 'reservado' || t.estado === 'confirmado'),
+    );
+    expect(futurosSantos).toHaveLength(1);
+    expect(futurosSantos[0]!.inicio.getTime()).toBeGreaterThan(ahora.getTime());
   });
 
   it('usa solo datos ficticios y piezas FDI válidas', async () => {
@@ -56,7 +91,7 @@ describe('Seed de demostración', () => {
     const santos = await login('santos@example.com', 'simulador-ejemplo');
     const turnos = await app.inject({ method: 'GET', url: '/api/paciente/turnos', headers: { authorization: `Bearer ${santos}` } });
     expect(turnos.statusCode).toBe(200);
-    expect(turnos.json<unknown[]>()).toHaveLength(5);
+    expect(turnos.json<unknown[]>()).toHaveLength(4);
 
     const prof = await login('profesional@example.com', 'profesional-ejemplo');
     const odo = await app.inject({

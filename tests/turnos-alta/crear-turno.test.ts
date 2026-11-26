@@ -246,4 +246,39 @@ describe('POST /api/turnos', () => {
     expect(await repos.auditoria.listar()).toHaveLength(1);
     expect(notificador.bandeja).toHaveLength(0);
   });
+
+  it('El paciente ya tiene un turno en ese horario con otro profesional y otro box', async () => {
+    await repos.turnos.guardar(existente);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/turnos',
+      headers: { authorization: 'Bearer recep' },
+      payload: {
+        ...solicitud,
+        profesionalId: SEED.profesionales.brunoGomez.id,
+        boxId: SEED.boxes.box2.id,
+        inicio: '2026-11-24T10:15:00-03:00',
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ code: 'SOLAPAMIENTO_PACIENTE' });
+    expect(await repos.turnos.listar()).toEqual([existente]);
+    expect(await repos.auditoria.listar()).toHaveLength(0);
+    expect(notificador.bandeja).toHaveLength(0);
+  });
+
+  it('El personal agenda una segunda sesión futura del mismo paciente en otro horario', async () => {
+    await repos.turnos.guardar(existente);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/turnos',
+      headers: { authorization: 'Bearer recep' },
+      payload: {
+        ...solicitud,
+        inicio: '2026-11-24T10:30:00-03:00',
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(await repos.turnos.listar()).toHaveLength(2);
+  });
 });
