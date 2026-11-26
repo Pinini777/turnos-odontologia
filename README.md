@@ -126,7 +126,7 @@ Después de C-01, solo EP cambia `src/shared/`, `src/app.ts`, `package.json`, el
 
 ## Estado
 
-Los 15 changes de [CHANGES.md](CHANGES.md) están mergeados en `main` y archivados en `openspec/changes/archive/`. El change evaluado es **C-02 `crear-turno-sin-solapamientos`**: su spec está en `openspec/specs/turnos-alta/` y sus tests en `tests/turnos-alta/`.
+Los 17 changes de [CHANGES.md](CHANGES.md) están mergeados en `main` y archivados en `openspec/changes/archive/`. El change evaluado es **C-02 `crear-turno-sin-solapamientos`**: su spec está en `openspec/specs/turnos-alta/` y sus tests en `tests/turnos-alta/`.
 
 | Change | Código |
 |---|---|
@@ -145,5 +145,7 @@ Los 15 changes de [CHANGES.md](CHANGES.md) están mergeados en `main` y archivad
 | C-13 web de recepción | `web/src/pages/recepcion/` |
 | C-14 web del paciente | `web/src/pages/paciente/` |
 | C-15 web del profesional | `web/src/pages/profesional/` |
+| C-16 persistencia en Supabase (optativa) | `src/shared/persistencia/`, `supabase/migrations/` |
+| C-17 cierre de integración (reglas por paciente y `/inicio` con datos reales) | `src/modules/{turnos-alta,turnos-reprogramacion,reserva-online}/`, `web/src/base/`, `web/src/pages/` |
 
 Los tests de cada módulo de la API están en `tests/<capability>/`, y los de la web junto a cada pantalla, en `web/src/`.

@@ -4,7 +4,7 @@
 > Este archivo (y su copia idéntica `CLAUDE.md`) es lo PRIMERO que todo agente lee al entrar al repo.
 > Generado con `agent-instruction` a partir de `knowledge-base/`, `CHANGES.md` y `.atl/skill-registry.md` (2026-11-22). Lo mantiene solo EP: si cambia, se editan los dos archivos juntos.
 
-Agenda para consultorios odontológicos de 1 a 3 profesionales con recepcionista, en Argentina. Su diferencial: **ningún profesional ni box puede tener turnos superpuestos**, con intervalos `[inicio, fin)`, grilla de 15 minutos y sin sobreturnos. Trabajo Global SDD + Active Stack (UTN FRM), entrega el **25/11/2026 a las 23:00**.
+Agenda para consultorios odontológicos de 1 a 3 profesionales con recepcionista, en Argentina. Su diferencial: **ningún profesional ni box puede tener turnos superpuestos**, con intervalos `[inicio, fin)`, grilla de 15 minutos y sin sobreturnos. Trabajo Global SDD + Active Stack (UTN FRM), entrega el **jueves 26/11/2026 a las 12:00**.
 
 **Contexto del trabajo:** [docs/BIBLIA-PROYECTO.md](docs/BIBLIA-PROYECTO.md) tiene la consigna completa, los criterios de evaluación, las etapas 0 a 7, el ciclo OPSX, Engram, el flujo de GitHub y el checklist final (§17). Consultala antes de decidir algo sobre la entrega o el proceso. Si contradice a la consigna oficial, manda la consigna.
 
@@ -74,7 +74,7 @@ Cargá la skill correspondiente al contexto ANTES de escribir código. Si una sk
 
 El plan de implementación completo está en [CHANGES.md](CHANGES.md). Resumen:
 
-- **Total**: 15 changes en 5 fases (0 fundación técnica · 1 núcleo y ola 1 · 2 ganancias y clínica · 3 reprogramación y reserva · 4 interfaz web).
+- **Total**: 17 changes en 7 fases (0 fundación técnica · 1 núcleo y ola 1 · 2 ganancias y clínica · 3 reprogramación y reserva · 4 interfaz web · 5 persistencia · 6 cierre de integración).
 - **Camino crítico de la entrega**: `C-01 fundacion-y-dominio-base → C-02 crear-turno-sin-solapamientos ⭐` (el change evaluado, US-010). MVP backend: `C-01 → C-02 → C-10 → C-11`.
 - **Primer change**: `C-01` (`fundacion-y-dominio-base`, EP, CRITICO). Congela dependencias, `src/app.ts` y `src/shared/`; nadie arranca `apply` hasta que esté en `main`.
 - **Ola 1** (en paralelo, después de C-01): C-02 EP · C-03 Renzo · C-04 Facundo · C-05 Lautaro · C-06 Lucas · C-07 Agustin; segundos turnos C-08 Agustin y C-09 Facundo.
